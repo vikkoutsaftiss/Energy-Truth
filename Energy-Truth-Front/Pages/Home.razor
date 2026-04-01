@@ -1,0 +1,30 @@
+﻿@page "/"
+@using Energy_Truth.Shared
+@inject HttpClient Http
+
+<h1>Mijn Producten</h1>
+
+@if (producten == null)
+{
+    <p>Laden...</p>
+}
+else
+{
+    <ul>
+        @foreach (var p in producten)
+        {
+            <li>@p.Naam - €@p.Prijs</li>
+        }
+    </ul>
+}
+
+@code {
+    private List<Test>? producten;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // We roepen de API aan.
+        // Let op: "api/producten" komt overeen met de naam van je controller
+        producten = await Http.GetFromJsonAsync<List<Test>>("api/producten");
+    }
+}
