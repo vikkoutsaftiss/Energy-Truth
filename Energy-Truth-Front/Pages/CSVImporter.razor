@@ -1,0 +1,153 @@
+﻿@page "/csvimporter"
+@using Energy_Truth.Shared
+@inject HttpClient Http
+
+<PageTitle>Energie Data Import</PageTitle>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Upload Energiegegevens</h4>
+                </div>
+                <div class="card-body">
+                    <p>Selecteer je CSV-bestand om de data in te laden in de applicatie.</p>
+                    
+                    <div class="input-group mb-3">
+                        <InputFile OnChange="UploadBestand" class="form-control" accept=".csv" />
+                    </div>
+
+                    @if (loading)
+                    {
+                        <div class="text-center my-3">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p>Data wordt verwerkt...</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (energyDataList != null)
+            {
+                <div class="mt-4">
+                    <h5>Preview: @energyDataList.Count records gevonden</h5>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Tijd</th>
+                                    <th>Import T1</th>
+                                    <th>Import T2</th>
+                                    <th>Export T1</th>
+                                    <th>Export T2</th>
+                                    <th>L1 Max W</th>
+                                    <th>L2 Max W</th>
+                                    <th>L3 Max W</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in energyDataList.Take(20))
+                                {
+                                    <tr>
+                                        <td>@item.Time.ToString()</td>
+                                        <td>@item.ImportT1</td>
+                                        <td>@item.ImportT2</td>
+                                        <td>@item.ExportT1</td>
+                                        <td>@item.ExportT2</td>
+                                        <td>@item.L1MaxW</td>
+                                        <td>@item.L2MaxW</td>
+                                        <td>@item.L3MaxW</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @if (energyDataList != null)
+                {
+                    <div class="mt-3 text-end">
+                        <button class="btn btn-success btn-lg" @onclick="StartCalculation" disabled="@loading">
+                            <i class="bi bi-calculator"></i> Start Berekening
+                        </button>
+                    </div>
+                }
+
+                @if (calculatedResult != null)
+                {
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5>Totaal Import</h5>
+                                    <h3>@(calculatedResult?.TotalImportKwh.ToString("N2") ?? "0,00") kWh</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5>Totaal Export</h5>
+                                    <h3>@(calculatedResult?.TotalExportKwh.ToString("N2") ?? "0,00") kWh</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<EnergyImportDTO>? energyDataList;
+    private bool loading = false;
+    private CalculationResultDTO? calculatedResult;
+
+    private async Task UploadBestand(InputFileChangeEventArgs e)
+    {
+        loading = true;
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                using var content = new MultipartFormDataContent();
+                // Max 10MB upload toestaan
+                var fileStream = file.OpenReadStream(1024 * 1024 * 10);
+                var streamContent = new StreamContent(fileStream);
+                
+                content.Add(streamContent, "file", file.Name);
+
+                var response = await Http.PostAsync("api/Import/csv", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    energyDataList = await response.Content.ReadFromJsonAsync<List<EnergyImportDTO>>();
+                }
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task StartCalculation()
+{
+    if (energyDataList == null || !energyDataList.Any()) return;
+
+    var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    
+    // We sturen de lijst direct op. 
+    // PostAsJsonAsync regelt de hoofdpijn van het omzetten voor je.
+    var response = await Http.PostAsJsonAsync("api/Import/calculate", energyDataList);
+
+    if (response.IsSuccessStatusCode)
+    {
+        calculatedResult = await response.Content.ReadFromJsonAsync<CalculationResultDTO>(options);
+        StateHasChanged();
+    }
+}
+}
