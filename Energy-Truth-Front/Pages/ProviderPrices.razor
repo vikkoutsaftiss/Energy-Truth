@@ -1,0 +1,49 @@
+﻿@page "/prijzen"
+@using Energy_Truth.Shared;
+@inject HttpClient Http
+
+<h3>Huidige Energieprijzen</h3>
+
+@if (prices == null)
+{
+    <p><em>Prijzen laden...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Provider</th>
+                <th>Prijs per kWh</th>
+                <th>Geldig vanaf</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var price in prices)
+            {
+                <tr>
+                    <td>@price.ProviderCode</td>
+                    <td>€ @price.Price.ToString("F2")</td>
+                    <td>@price.ValidFrom.ToString("dd-MM HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<PriceDTO>? prices;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Verander dit naar het juiste adres van je API controller
+            prices = await Http.GetFromJsonAsync<List<PriceDTO>>("api/price/hourly");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fout bij ophalen data: {ex.Message}");
+        }
+    }
+}

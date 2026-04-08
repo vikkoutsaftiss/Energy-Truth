@@ -1,5 +1,8 @@
 ﻿@page "/csvimporter"
 @using Energy_Truth.Shared
+@using CsvHelper;
+@using System.Globalization;
+@using System.Text.Json;
 @inject HttpClient Http
 
 <PageTitle>Energie Data Import</PageTitle>
@@ -12,29 +15,62 @@
                     <h4 class="mb-0"><i class="bi bi-file-earmark-arrow-up"></i> Upload Energiegegevens</h4>
                 </div>
                 <div class="card-body">
-                    <p>Selecteer je CSV-bestand om de data in te laden in de applicatie.</p>
-                    
+                    <p>Stap 1: Selecteer je CSV-bestand</p>
                     <div class="input-group mb-3">
-                        <InputFile OnChange="UploadBestand" class="form-control" accept=".csv" />
+                        <InputFile OnChange="OnFileSelected" class="form-control" accept=".csv" />
                     </div>
 
-                    @if (loading)
+                    @if (loading && !csvHeaders.Any())
                     {
                         <div class="text-center my-3">
                             <div class="spinner-border text-primary" role="status"></div>
-                            <p>Data wordt verwerkt...</p>
+                            <p>Headers inladen...</p>
                         </div>
                     }
                 </div>
             </div>
 
+            @if (csvHeaders.Any() && energyDataList == null)
+            {
+                <div class="card shadow mt-4">
+                    <div class="card-body">
+                        <h5>Stap 2: Koppel de kolommen</h5>
+                        <div class="row">
+                            @foreach (var key in userMapping.Keys.ToList())
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label fw-bold">@key</label>
+                                    <select class="form-select" @bind="userMapping[key]">
+                                        <option value="">-- Kies kolom --</option>
+                                        @foreach (var header in csvHeaders)
+                                        {
+                                            <option value="@header">@header</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" @onclick="VerwerkImport" disabled="@loading">
+                                @if (loading)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                }
+                                Inlezen en Verwerken
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
             @if (energyDataList != null)
             {
                 <div class="mt-4">
-                    <h5>Preview: @energyDataList.Count records gevonden</h5>
+                    <div class="alert alert-success">Succes! @energyDataList.Count records ingeladen.</div>
+                    <h5>Preview (Eerste 20)</h5>
                     <div class="table-responsive" style="max-height: 400px;">
-                        <table class="table table-sm table-striped">
-                            <thead>
+                        <table class="table table-sm table-striped border">
+                            <thead class="table-dark">
                                 <tr>
                                     <th>Tijd</th>
                                     <th>Import T1</th>
@@ -50,7 +86,7 @@
                                 @foreach (var item in energyDataList.Take(20))
                                 {
                                     <tr>
-                                        <td>@item.Time.ToString()</td>
+                                        <td>@(item.Time?.ToString("dd-MM-yyyy HH:mm") ?? "-")</td>
                                         <td>@item.ImportT1</td>
                                         <td>@item.ImportT2</td>
                                         <td>@item.ExportT1</td>
@@ -63,91 +99,134 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-                @if (energyDataList != null)
-                {
+
                     <div class="mt-3 text-end">
                         <button class="btn btn-success btn-lg" @onclick="StartCalculation" disabled="@loading">
                             <i class="bi bi-calculator"></i> Start Berekening
                         </button>
                     </div>
-                }
+                </div>
+            }
 
-                @if (calculatedResult != null)
-                {
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body">
-                                    <h5>Totaal Import</h5>
-                                    <h3>@(calculatedResult?.TotalImportKwh.ToString("N2") ?? "0,00") kWh</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-success text-white">
-                                <div class="card-body">
-                                    <h5>Totaal Export</h5>
-                                    <h3>@(calculatedResult?.TotalExportKwh.ToString("N2") ?? "0,00") kWh</h3>
-                                </div>
+            @if (calculatedResult != null)
+            {
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h5>Totaal Import</h5>
+                                <h3>@calculatedResult.TotalImportKwh.ToString("N2") kWh</h3>
                             </div>
                         </div>
                     </div>
-                }
-                
+                    <div class="col-md-6">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h5>Totaal Export</h5>
+                                <h3>@calculatedResult.TotalExportKwh.ToString("N2") kWh</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
         </div>
     </div>
 </div>
 
 @code {
+    private List<string> csvHeaders = new();
+    private Dictionary<string, string> userMapping = new();
+    private IBrowserFile? selectedFile;
     private List<EnergyImportDTO>? energyDataList;
     private bool loading = false;
     private CalculationResultDTO? calculatedResult;
 
-    private async Task UploadBestand(InputFileChangeEventArgs e)
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
-        loading = true;
+        selectedFile = e.File;
+        csvHeaders.Clear();
+        energyDataList = null;
+
         try
         {
-            var file = e.File;
-            if (file != null)
+            using var stream = selectedFile.OpenReadStream();
+            using var reader = new StreamReader(stream);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+
+            await csv.ReadAsync();
+            csv.ReadHeader();
+            csvHeaders = csv.HeaderRecord?.ToList() ?? new List<string>();
+
+            userMapping = new Dictionary<string, string>
             {
-                using var content = new MultipartFormDataContent();
-                // Max 10MB upload toestaan
-                var fileStream = file.OpenReadStream(1024 * 1024 * 10);
-                var streamContent = new StreamContent(fileStream);
-                
-                content.Add(streamContent, "file", file.Name);
+                { nameof(EnergyImportDTO.Time), "" },
+                { nameof(EnergyImportDTO.ImportT1), "" },
+                { nameof(EnergyImportDTO.ImportT2), "" },
+                { nameof(EnergyImportDTO.ExportT1), "" },
+                { nameof(EnergyImportDTO.ExportT2), "" },
+                { nameof(EnergyImportDTO.L1MaxW), "" },
+                { nameof(EnergyImportDTO.L2MaxW), "" },
+                { nameof(EnergyImportDTO.L3MaxW), "" }
+            };
+            
+            AutoMapHeaders();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fout bij lezen headers: {ex.Message}");
+        }
+    }
 
-                var response = await Http.PostAsync("api/Import/csv", content);
+    private async Task VerwerkImport()
+    {
+        if (selectedFile == null) return;
+        loading = true;
+        
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileStream = selectedFile.OpenReadStream(1024 * 1024 * 10);
+            content.Add(new StreamContent(fileStream), "file", selectedFile.Name);
+            content.Add(new StringContent(JsonSerializer.Serialize(userMapping)), "mapping");
 
-                if (response.IsSuccessStatusCode)
-                {
-                    energyDataList = await response.Content.ReadFromJsonAsync<List<EnergyImportDTO>>();
-                }
+            var response = await Http.PostAsync("api/Import/csv", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                energyDataList = await response.Content.ReadFromJsonAsync<List<EnergyImportDTO>>(options);
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fout bij verwerken: {ex.Message}");
         }
         finally
         {
             loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AutoMapHeaders()
+    {
+        foreach (var key in userMapping.Keys.ToList())
+        {
+            var match = csvHeaders.FirstOrDefault(h => h.Equals(key, StringComparison.OrdinalIgnoreCase)
+                                                    || h.Contains(key, StringComparison.OrdinalIgnoreCase));
+            if (match != null) userMapping[key] = match;
         }
     }
 
     private async Task StartCalculation()
-{
-    if (energyDataList == null || !energyDataList.Any()) return;
-
-    var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-    
-    // We sturen de lijst direct op. 
-    // PostAsJsonAsync regelt de hoofdpijn van het omzetten voor je.
-    var response = await Http.PostAsJsonAsync("api/Import/calculate", energyDataList);
-
-    if (response.IsSuccessStatusCode)
     {
-        calculatedResult = await response.Content.ReadFromJsonAsync<CalculationResultDTO>(options);
-        StateHasChanged();
+        if (energyDataList == null || !energyDataList.Any()) return;
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var response = await Http.PostAsJsonAsync("api/Import/calculate", energyDataList);
+
+        if (response.IsSuccessStatusCode)
+        {
+            calculatedResult = await response.Content.ReadFromJsonAsync<CalculationResultDTO>(options);
+        }
     }
-}
 }

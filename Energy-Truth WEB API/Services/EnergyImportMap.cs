@@ -3,19 +3,49 @@
 using CsvHelper.Configuration;
 using Energy_Truth.Shared;
 
-public sealed class EnergyImportMap : ClassMap<EnergyImportDTO>
+public sealed class EnergyImportMap : ClassMap<EnergyImportDTO> //sealed omdat we niet willen dat iemand deze map nog verder uitbreidt, en ClassMap omdat dit de basis is voor CsvHelper mapping
 {
-    public EnergyImportMap()
+    public EnergyImportMap(Dictionary<string, string> userMapping) // Wanneer de mapper aangeroepen wordt dient de mapping van de gebruiker meegestuurd te worden. string 1 is de property naam van EnergyImportDTO, string 2 is de kolomnaam in het CSV bestand.
     {
-        // Hier vertel je CsvHelper welke kolomnaam bij welke property hoort
-        Map(m => m.Time).Name("time").TypeConverterOption.Format("yyyy-MM-dd HH:mm", "M/d/yyyy H:mm", "dd-MM-yyyy HH:mm"); 
-        Map(m => m.ImportT1).Name("Import T1 kWh");
-        Map(m => m.ImportT2).Name("Import T2 kWh");
-        Map(m => m.ExportT1).Name("Export T1 kWh");
-        Map(m => m.ExportT2).Name("Export T2 kWh");
-        Map(m => m.L1MaxW).Name("L1 max W");
-        Map(m => m.L2MaxW).Name("L2 max W");
-        Map(m => m.L3MaxW).Name("L3 max W");
-        // 'Time' hoeft niet als de kolom in de CSV ook 'Time' heet
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.Time), out var timeCol)) // Er wordt geprobeerd om een waarde uit de userMapping te halen met als key de naam van de property in EnergyImportDTO. Als dit lukt, wordt de kolomnaam opgeslagen in timeCol.
+        {
+            Map(m => m.Time).Name(timeCol)
+                .TypeConverterOption.Format("yyyy-MM-dd HH:mm", "M/d/yyyy H:mm", "dd-MM-yyyy HH:mm");  //verschillende time formats zijn hiermee toegestaan.
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.ImportT1), out var t1ImCol)) // Hetzelfde gebeurt hier voor ImportT1, en de rest van de properties.
+        {
+            Map(m => m.ImportT1).Name(t1ImCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.ImportT2), out var t2ImCol))
+        {
+            Map(m => m.ImportT2).Name(t2ImCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.ExportT1), out var t1ExCol))
+        {
+            Map(m => m.ExportT1).Name(t1ExCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.ExportT2), out var t2ExCol))
+        {
+            Map(m => m.ExportT2).Name(t2ExCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.L1MaxW), out var l1MWCol))
+        {
+            Map(m => m.L1MaxW).Name(l1MWCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.L2MaxW), out var l2MWCol))
+        {
+            Map(m => m.L2MaxW).Name(l2MWCol);
+        }
+
+        if (userMapping.TryGetValue(nameof(EnergyImportDTO.L3MaxW), out var l3MWCol))
+        {
+            Map(m => m.L3MaxW).Name(l3MWCol);
+        }
     }
 }
