@@ -20,7 +20,7 @@ jobs:
         dotnet-version: 8.0.x # Controleer of je op .NET 8 zit
 
     - name: Dependencies herstellen
-      run: dotnet restore Energy-Truth.sln
+      run: dotnet restore Energy-Truth.slnx
 
     # Bonus stap: Checken op de beveiligingslekken die je in je screenshot ziet!
     - name: Check voor kwetsbare pakketten
