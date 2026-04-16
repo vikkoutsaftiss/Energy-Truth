@@ -1,4 +1,4 @@
-name: Energy-Truth CI
+name: Energy-Truth.sln
 
 on:
   push:
