@@ -31,6 +31,12 @@ public class ImportController : ControllerBase
         if (string.IsNullOrEmpty(mapping))
             return BadRequest("Mapping informatie ontbreekt."); //als de mapping informatie niet is meegegeven dan wordt er een badrequest teruggegeven met een duidelijke melding voor de gebruiker.
 
+        if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Alleen CSV-bestanden zijn toegestaan."); //als het bestand dat geupload is geen CSV-bestand is dan wordt er een badrequest teruggegeven met een duidelijke melding voor de gebruiker.
+
+        if (file.Length > 10 * 1024 * 1024) // hier wordt er een limiet van 10MB ingesteld voor het bestand dat geupload mag worden. Dit is om te voorkomen dat er te grote bestanden geupload worden die de server kunnen overbelasten.
+            return BadRequest("Bestand is te groot. Maximaal toegestaan is 10MB."); // als het bestand groter is dan 10MB dan wordt er een badrequest teruggegeven met een duidelijke melding voor de gebruiker.        
+
         try
         {
             // 2. Veilig deserialiseren

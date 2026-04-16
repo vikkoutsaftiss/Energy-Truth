@@ -1,5 +1,18 @@
 <Solution>
-  <Project Path="Energy-Truth WEB API/Energy-Truth WEB API.csproj" />
-  <Project Path="Energy-Truth-Front/Energy-Truth Presentation.csproj" />
-  <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path="main.yml" />
+  </Folder>
+  <Folder Name="/01. Presentation/">
+    <Project Path="Energy-Truth-Front/Energy-Truth Presentation.csproj" />
+  </Folder>
+  <Folder Name="/02. Core.Domain - API/">
+    <Project Path="Energy-Truth WEB API/Energy-Truth WEB API.csproj" />
+  </Folder>
+  <Folder Name="/03. Shared/">
+    <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
+  </Folder>
+  <Folder Name="/04. Tests/">
+    <Project Path="04. Tests/EnergyTruth.tests.csproj" Id="3af1f116-8aac-4c3e-a062-3de39867ca72" />
+  </Folder>
 </Solution>

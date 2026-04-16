@@ -2,6 +2,7 @@
 
 using CsvHelper.Configuration;
 using Energy_Truth.Shared;
+using Energy_Truth_WEB_API.Services;
 
 public sealed class EnergyImportMap : ClassMap<EnergyImportDTO> //sealed omdat we niet willen dat iemand deze map nog verder uitbreidt, en ClassMap omdat dit de basis is voor CsvHelper mapping
 {

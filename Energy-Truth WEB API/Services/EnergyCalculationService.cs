@@ -2,8 +2,8 @@
 
 namespace Energy_Truth_WEB_API.Services
 {
-    public class EnergyCalculationService
-{
+    public class EnergyCalculationService : IEnergyCalculationService
+    {
     public CalculationResultDTO CalculateEnergy(List<EnergyImportDTO> data)
     {
         var result = new CalculationResultDTO();

@@ -6,7 +6,7 @@ using System.Globalization;
 using Energy_Truth.Shared;
 using Energy_Truth_WEB_API;
 
-public class ImportService
+public class ImportService : IImportService
 {
     public List<EnergyImportDTO> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping) // Deze methode verwerkt het CSV-bestand en retourneert een lijst van EnergyImportDTO's
     {
