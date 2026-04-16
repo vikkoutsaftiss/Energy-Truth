@@ -27,8 +27,8 @@ jobs:
       run: dotnet list package --vulnerable
 
     - name: Project bouwen
-      run: dotnet build Energy-Truth.sln --no-restore --configuration Release
+      run: dotnet build Energy-Truth.slnx --no-restore --configuration Release
 
     - name: Unit Tests draaien
       # Hij vindt automatisch je 'xUnit tests' project binnen de solution
-      run: dotnet test Energy-Truth.sln --no-build --verbosity normal
+      run: dotnet test Energy-Truth.slnx --no-build --verbosity normal
