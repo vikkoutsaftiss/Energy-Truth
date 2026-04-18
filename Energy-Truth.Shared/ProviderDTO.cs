@@ -1,6 +1,5 @@
-﻿using Postgrest.Attributes;
-using Postgrest.Models;
-using System.Text.Json;// VOEG DEZE TOE
+﻿using Supabase.Postgrest.Models; // De nieuwe plek voor BaseModel
+using Supabase.Postgrest.Attributes;
 
 namespace Energy_Truth.Shared;
 

@@ -1,6 +1,6 @@
 ﻿using Energy_Truth.Shared;
 using Microsoft.AspNetCore.Mvc;
-using Postgrest;
+using Supabase.Postgrest;
 
 namespace Energy_Truth_WEB_API.Controllers
 {
@@ -22,7 +22,7 @@ namespace Energy_Truth_WEB_API.Controllers
             {
                 var response = await _supabase
                     .From<PriceDTO>()
-                    .Order("valid_from", Postgrest.Constants.Ordering.Descending)
+                    .Order("valid_from", Supabase.Postgrest.Constants.Ordering.Descending)
                     .Get();
 
                 return Content(response.Content, "application/json");

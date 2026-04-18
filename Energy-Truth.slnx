@@ -6,13 +6,13 @@
   <Folder Name="/01_Presentation/">
     <Project Path="Energy-Truth-Front/Energy-Truth Presentation.csproj" />
   </Folder>
-  <Folder Name="/02_Core.Domain - API/">
+  <Folder Name="/02_API/">
     <Project Path="Energy-Truth WEB API/Energy-Truth WEB API.csproj" />
   </Folder>
   <Folder Name="/03_Shared/">
     <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
   </Folder>
   <Folder Name="/04_Tests/">
-    <Project Path="04. Tests/EnergyTruth.tests.csproj" Id="3af1f116-8aac-4c3e-a062-3de39867ca72" />
+    <Project Path="Tests/EnergyTruth.tests.csproj" />
   </Folder>
 </Solution>
