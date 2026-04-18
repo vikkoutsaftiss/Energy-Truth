@@ -11,24 +11,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Code ophalen
+    - name: Get Code
       uses: actions/checkout@v4
 
-    - name: .NET installeren
+    - name: install .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x # Controleer of je op .NET 8 zit
+        dotnet-version: 10.0.x
 
     - name: Dependencies herstellen
       run: dotnet restore Energy-Truth.slnx
 
-    # Bonus stap: Checken op de beveiligingslekken die je in je screenshot ziet!
-    - name: Check voor kwetsbare pakketten
+    - name: Check for packages with vulnerabilities
       run: dotnet list package --vulnerable
 
-    - name: Project bouwen
+    - name: Build project
       run: dotnet build Energy-Truth.slnx --no-restore --configuration Release
 
-    - name: Unit Tests draaien
-      # Hij vindt automatisch je 'xUnit tests' project binnen de solution
+    - name: Run Unit Tests
       run: dotnet test Energy-Truth.slnx --no-build --verbosity normal
