@@ -38,17 +38,13 @@ namespace Energy_Truth_WEB_API.Controllers
         {
             try
             {
-                // We halen de rauwe response op
                 var response = await _supabase.From<ProviderDTO>().Get();
 
-                // Als er een fout is in de response zelf
                 if (response.ResponseMessage != null && !response.ResponseMessage.IsSuccessStatusCode)
                 {
                     return StatusCode((int)response.ResponseMessage.StatusCode, response.Content);
                 }
-
-                // We sturen de RAUWE JSON tekst direct terug naar de browser/Scalar
-                // Dit negeert alle C# class mapping problemen
+              
                 return Content(response.Content, "application/json");
             }
             catch (Exception ex)
