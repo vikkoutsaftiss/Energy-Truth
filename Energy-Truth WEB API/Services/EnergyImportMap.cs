@@ -6,12 +6,12 @@ using Energy_Truth_WEB_API.Services;
 
 public sealed class EnergyImportMap : ClassMap<EnergyImportDTO> //sealed omdat we niet willen dat iemand deze map nog verder uitbreidt, en ClassMap omdat dit de basis is voor CsvHelper mapping
 {
-    public EnergyImportMap(Dictionary<string, string> userMapping) // Wanneer de mapper aangeroepen wordt dient de mapping van de gebruiker meegestuurd te worden. string 1 is de property naam van EnergyImportDTO, string 2 is de kolomnaam in het CSV bestand.
+    public EnergyImportMap(Dictionary<string, string> userMapping, string dateFormat) // Wanneer de mapper aangeroepen wordt dient de mapping van de gebruiker meegestuurd te worden. string 1 is de property naam van EnergyImportDTO, string 2 is de kolomnaam in het CSV bestand.
     {
         if (userMapping.TryGetValue(nameof(EnergyImportDTO.Time), out var timeCol)) // Er wordt geprobeerd om een waarde uit de userMapping te halen met als key de naam van de property in EnergyImportDTO. Als dit lukt, wordt de kolomnaam opgeslagen in timeCol.
         {
             Map(m => m.Time).Name(timeCol)
-                .TypeConverterOption.Format("yyyy-MM-dd HH:mm", "M/d/yyyy H:mm", "dd-MM-yyyy HH:mm");  //verschillende time formats zijn hiermee toegestaan.
+                .TypeConverterOption.Format(dateFormat);  //verschillende time formats zijn hiermee toegestaan.
         }
 
         if (userMapping.TryGetValue(nameof(EnergyImportDTO.ImportT1), out var t1ImCol)) // Hetzelfde gebeurt hier voor ImportT1, en de rest van de properties.

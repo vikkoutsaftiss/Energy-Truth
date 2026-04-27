@@ -1,33 +1,46 @@
 ﻿using Energy_Truth.Shared;
+using Energy_Truth.Shared.Providers;
+using Energy_Truth_WEB_API.Calculators;
 
 namespace Energy_Truth_WEB_API.Services
 {
     public class EnergyCalculationService : IEnergyCalculationService
     {
-    public CalculationResultDTO CalculateEnergy(List<EnergyImportDTO> data)
-    {
-        var result = new CalculationResultDTO();
+        private readonly IEnumerable<IEnergyProvider> _energyProvider;
+        private readonly ITotalCumulativeCalculator _totalCumulativeCalculator;
+        private readonly ITotalNonCumulativeCalculator _totalNonCumulativeCalculator;
 
-        if (data == null || data.Count < 2) return result;
+        public EnergyCalculationService(IEnumerable<IEnergyProvider> energyProvider, ITotalCumulativeCalculator totalCumulativeCalculator, ITotalNonCumulativeCalculator totalNonCumulativeCalculator)
+        {
+            _energyProvider = energyProvider;
+            _totalCumulativeCalculator = totalCumulativeCalculator;
+            _totalNonCumulativeCalculator = totalNonCumulativeCalculator;
+        }
 
-        // Sorteer op tijd (ervan uitgaande dat Time in EnergyImportDTO een DateTime is)
-        var sorted = data.Where(d => d.Time.HasValue).OrderBy(d => d.Time).ToList();
+        public CalculationResultDTO CalculateEnergy(List<EnergyImportDTO> data, string providerName)
+        {
+            var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName); // Hier wordt de provider opgezocht op basis van de naam die is meegegeven in de parameters.
+            var result = new CalculationResultDTO();
 
-        if (sorted.Count < 2) return result;
+            if (data == null || data.Count < 2) return result;
 
-        var first = sorted.First();
-        var last = sorted.Last();
+            // Sorteer op tijd (ervan uitgaande dat Time in EnergyImportDTO een DateTime is)
+            var sorted = data.OrderBy(d => d.Time).ToList();
 
-        // Berekening: (Laatste stand T1+T2) - (Eerste stand T1+T2)
-        result.TotalImportKwh = (last.ImportT1.GetValueOrDefault() + last.ImportT2.GetValueOrDefault()) 
-                               - (first.ImportT1.GetValueOrDefault() + first.ImportT2.GetValueOrDefault());
+            if (sorted.Count < 2) return result;
 
-        result.TotalExportKwh = (last.ExportT1.GetValueOrDefault() + last.ExportT2.GetValueOrDefault()) 
-                               - (first.ExportT1.GetValueOrDefault() + first.ExportT2.GetValueOrDefault());
+            if (provider.IsCumulative)
+            {
+                // Als de provider cumulatief is, dan hoeven we alleen maar het verschil te nemen tussen de laatste en eerste waarde.
+                result = _totalCumulativeCalculator.CalculateTotal(sorted);
+            }
+            else
+            {
+                // Als de provider niet cumulatief is, dan moeten we de waarden bij elkaar optellen.
+                result = _totalNonCumulativeCalculator.CalculateTotal(sorted);
+            }
 
-        return result;
-    }
-}
-
-    
+            return result;
+        }
+    }    
 }

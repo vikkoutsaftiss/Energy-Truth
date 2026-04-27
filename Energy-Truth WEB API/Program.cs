@@ -1,4 +1,6 @@
+using Energy_Truth.Shared.Providers;
 using Energy_Truth_WEB_API;
+using Energy_Truth_WEB_API.Calculators;
 using Energy_Truth_WEB_API.Services;
 using Scalar.AspNetCore;
 
@@ -26,6 +28,10 @@ builder.Services.AddCors(policy => policy.AddPolicy("Open", opt => opt.AllowAnyO
 
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<EnergyCalculationService>();
+builder.Services.AddScoped<IEnergyProvider, HomeWizard>();
+builder.Services.AddScoped<IEnergyProvider, UMeter>();
+builder.Services.AddScoped<ITotalCumulativeCalculator, TotalCumulativeCalculator>();
+builder.Services.AddScoped<ITotalNonCumulativeCalculator, TotalNonCumulativeCalculator>();
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 
