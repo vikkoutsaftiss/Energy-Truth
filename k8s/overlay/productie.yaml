@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namespace: energytruth-productie
+namePrefix: prod-
+replicas:
+  - name: energytruth-frontend
+    count: 2
+patches:
+  - path: ingress-patch.yaml
