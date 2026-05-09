@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  annotations:
+    # Voorbeeld voor automatische SSL via Cert-manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/tls-acme: "true"
+spec:
+  rules:
+    - host: energy-truth.nl # Je echte publieke domein
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prod-frontend-service # Kustomize voegt dit voorvoegsel toe
+                port:
+                  number: 80
+  tls: # Sectie voor HTTPS certificaten
+    - hosts:
+        - energytruth.nl
+      secretName: energytruth-prod-tls
