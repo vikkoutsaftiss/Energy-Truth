@@ -4,7 +4,7 @@ metadata:
   name: frontend-ingress
 spec:
   rules:
-    - host: test.energytruth.local
+    - host: test.energy-truth.local
       http:
         paths:
           - path: /
