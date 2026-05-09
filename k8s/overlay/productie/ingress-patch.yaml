@@ -20,5 +20,5 @@ spec:
                   number: 80
   tls: # Sectie voor HTTPS certificaten
     - hosts:
-        - energytruth.nl
+        - energy-truth.nl
       secretName: energytruth-prod-tls
