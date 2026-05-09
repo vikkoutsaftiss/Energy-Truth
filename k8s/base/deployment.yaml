@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: energytruth-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energytruth-frontend
+  template:
+    metadata:
+      labels:
+        app: energytruth-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/vikkoutsaftiss/energytruth:latest
+        ports:
+        - containerPort: 80
