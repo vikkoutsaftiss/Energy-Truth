@@ -5,5 +5,6 @@ namespace Energy_Truth_WEB_API;
 
 public interface IImportService
 {
-    List<EnergyImportDTO> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping, string providerName);
+    Task<List<EnergyImportDTO>> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping, string providerName);
+
 }

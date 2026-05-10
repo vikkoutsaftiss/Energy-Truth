@@ -26,12 +26,15 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddCors(policy => policy.AddPolicy("Open", opt => opt.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-builder.Services.AddScoped<ImportService>();
-builder.Services.AddScoped<EnergyCalculationService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<IEnergyCalculationService, EnergyCalculationService>();
 builder.Services.AddScoped<IEnergyProvider, HomeWizard>();
 builder.Services.AddScoped<IEnergyProvider, UMeter>();
 builder.Services.AddScoped<ITotalCumulativeCalculator, TotalCumulativeCalculator>();
 builder.Services.AddScoped<ITotalNonCumulativeCalculator, TotalNonCumulativeCalculator>();
+builder.Services.AddScoped<IPriceProviderCombineService, PriceProviderCombineService>();
+builder.Services.AddScoped<IProviderService, ProviderService>();
+builder.Services.AddScoped<IPriceService, PriceService>();
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 

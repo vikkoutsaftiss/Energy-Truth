@@ -21,11 +21,17 @@
     </div>
 }
 
-<MudSelect T="IEnergyProvider" Label="Kies je provider" Placeholder="Kies een provider..." @bind-Value="selectedProvider">
-    @foreach (var provider in EnergyProviders)
+@{
+    var providerNames = EnergyProviders.Select(p => p.Name).ToList();
+    providerNames.Add("Handmatige invoer");
+}
+
+<MudSelect T="string" Label="Kies je provider" Placeholder="Kies een provider..." @Value="selectedProvider" ValueChanged="OnProviderSelected">
+    @foreach (var provider in providerNames)
     {
-        <MudSelectItem Value="@provider">@provider.Name</MudSelectItem>
+        <MudSelectItem Value="@provider">@provider</MudSelectItem>
     }
+    
 </MudSelect>
 
 @if (selectedProvider != null)
@@ -175,7 +181,23 @@
     private bool loading = false;
     private CalculationResultDTO? calculatedResult;
     private string? errorMessage;
-    private IEnergyProvider? selectedProvider;
+    private string? selectedProvider;
+    private IEnergyProvider? Provider;
+
+
+    private void OnProviderSelected(string? provider)
+    {
+        if (provider != null && provider != "Handmatige invoer")
+        {
+            Provider = EnergyProviders.FirstOrDefault(p => p.Name == provider);            
+        }
+        else
+        {
+            Provider = null;
+        }
+        selectedProvider = provider;
+
+    }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
@@ -183,49 +205,55 @@
         csvHeaders.Clear();
         energyDataList = null;
 
-        try
+        using var stream = selectedFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10);
+        using var reader = new StreamReader(stream);
+            
+        var headerLine = await reader.ReadLineAsync();
+
+        if (Provider == null)
         {
-            using var stream = selectedFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10);
-            using var reader = new StreamReader(stream);
+            var delimiter = DetectDelimiter(headerLine ?? string.Empty);
 
-            // var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            // {
-            //     Delimiter = selectedProvider.Delimiter,
-            //     Mode = selectedProvider.CsvMode
-            // };
+            csvHeaders = headerLine?.Split(delimiter).ToList() ?? new List<string>();
 
-            var headerLine = await reader.ReadLineAsync();
+            displayNames = typeof(EnergyImportDTO)
+                .GetProperties()
+                .ToDictionary(p => p.Name, p => p.Name);
 
-            if (string.IsNullOrEmpty(headerLine))
-            {
-                errorMessage = "Het CSV-bestand bevat geen headers.";
-                return;
-            }
-
-            if (selectedProvider.StripRowQuotes)
-            {
-                headerLine = headerLine.Trim('"');
-            }
-
-            csvHeaders = headerLine.Split(selectedProvider.Delimiter).ToList();
-
-            // using var stringReader = new StringReader(headerLine);
-            // using var csv = new CsvReader(stringReader, config);
-
-            // await csv.ReadAsync();
-            // csv.ReadHeader();
-            //csvHeaders = csv.HeaderRecord?.ToList() ?? new List<string>();
-
-            displayNames = selectedProvider.DisplayNames;
-
-            userMapping = selectedProvider.CsvMapping.ToDictionary(k => k.Key, k => "");
-
-            AutoMapHeaders();
+            userMapping = typeof(EnergyImportDTO)
+                .GetProperties()
+                .ToDictionary(p => p.Name, p => "");
         }
-        catch (Exception ex)
+        else
         {
-            errorMessage = $"Fout bij lezen headers: {ex.Message}";
+            try
+            {
+                if (string.IsNullOrEmpty(headerLine))
+                {
+                    errorMessage = "Het CSV-bestand bevat geen headers.";
+                    return;
+                }
+
+                if (Provider.StripRowQuotes)
+                {
+                    headerLine = headerLine.Trim('"');
+                }
+
+                csvHeaders = headerLine.Split(Provider.Delimiter).ToList();
+
+                displayNames = Provider.DisplayNames;
+
+                userMapping = Provider.CsvMapping.ToDictionary(k => k.Key, k => "");
+
+                AutoMapHeaders();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Fout bij lezen headers: {ex.Message}";
+            }
         }
+
+        
     }
 
     private async Task ProcessImport()
@@ -242,7 +270,7 @@
             var fileStream = selectedFile.OpenReadStream(1024 * 1024 * 10);
             content.Add(new StreamContent(fileStream), "file", selectedFile.Name);
             content.Add(new StringContent(JsonSerializer.Serialize(userMapping)), "mapping");
-            content.Add(new StringContent(selectedProvider.Name), "provider");
+            content.Add(new StringContent(selectedProvider), "provider");
 
             var response = await Http.PostAsync("api/Import/csv", content);
 
@@ -274,7 +302,7 @@
             var match = csvHeaders.FirstOrDefault(h =>
                 h.Equals(key, StringComparison.OrdinalIgnoreCase) ||
                 (displayNames.ContainsKey(key) && h.Equals(displayNames[key], StringComparison.OrdinalIgnoreCase)) ||
-                (selectedProvider.CsvMapping.ContainsKey(key) && h.Equals(selectedProvider.CsvMapping[key], StringComparison.OrdinalIgnoreCase))
+                (Provider.CsvMapping.ContainsKey(key) && h.Equals(Provider.CsvMapping[key], StringComparison.OrdinalIgnoreCase))
             );
             if (match != null) userMapping[key] = match;
         }
@@ -291,7 +319,7 @@
         try
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var response = await Http.PostAsJsonAsync($"api/Import/calculate/{selectedProvider.Name}", energyDataList);
+            var response = await Http.PostAsJsonAsync($"api/Import/calculate/{selectedProvider}", energyDataList);
 
             if (response.IsSuccessStatusCode)
             {
@@ -312,5 +340,11 @@
             StateHasChanged();
         }
         
+    }
+
+    private char DetectDelimiter(string headerLine)
+    {
+        var delimiters = new[] { ',', ';', '\t' };
+        return delimiters.OrderByDescending(d => headerLine.Count(c => c == d)).FirstOrDefault();
     }
 }

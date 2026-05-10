@@ -9,10 +9,10 @@ using System.Text.Json;
 [Route("api/[controller]")] // Dit zorgt dat de URL /api/import wordt
 public class ImportController : ControllerBase
 {
-    private readonly ImportService _importService; // dit is de service die verantwoordelijk is voor het verwerken van het CSV bestand.
-    private readonly EnergyCalculationService _energyCalculationService; // dit is de service die verantwoordelijk is voor het uitvoeren van de energie berekeningen.
+    private readonly IImportService _importService; // dit is de service die verantwoordelijk is voor het verwerken van het CSV bestand.
+    private readonly IEnergyCalculationService _energyCalculationService; // dit is de service die verantwoordelijk is voor het uitvoeren van de energie berekeningen.
 
-    public ImportController(ImportService importService, EnergyCalculationService energyCalculationService)
+    public ImportController(IImportService importService, IEnergyCalculationService energyCalculationService)
     {
         _importService = importService; 
         _energyCalculationService = energyCalculationService;
@@ -54,7 +54,7 @@ public class ImportController : ControllerBase
         }
         catch (TypeConverterException ex)
         {
-            return BadRequest($"Datafout in de CSV.");
+            return BadRequest($"Datafout in de CSV: {ex.Message}");
         }
         catch (JsonException ex)
         {

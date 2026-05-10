@@ -2,10 +2,11 @@
 
 using CsvHelper;
 using CsvHelper.Configuration;
-using System.Globalization;
 using Energy_Truth.Shared;
 using Energy_Truth.Shared.Providers ;
 using Energy_Truth_WEB_API;
+using System.Globalization;
+using static Supabase.Gotrue.Constants;
 
 public class ImportService : IImportService
 {
@@ -15,31 +16,63 @@ public class ImportService : IImportService
     {
         _energyProvider = energyProvider;
     }
-    public List<EnergyImportDTO> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping, string providerName) // Deze methode verwerkt het CSV-bestand en retourneert een lijst van EnergyImportDTO's
+    public async Task<List<EnergyImportDTO>> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping, string providerName)
     {
-        var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName); // Hier wordt de provider opgezocht op basis van de naam die is meegegeven in de parameters.
-
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture) // Dit regelt de configuratie voor het CSV bestand.
+        if (providerName != "Handmatige invoer")
         {
-            HasHeaderRecord = true, // Er is een header record aanwezig in het CSV bestand
-            Delimiter = provider.Delimiter, //de delimiter wordt opgehaald uit de provider instellingen. Dit is het teken dat gebruikt word om de verschillende velden in het CSV bestand te scheiden.
-            Mode = provider.CsvMode, // De CsvMode wordt opgehaald uit de provider instellingen. Dit bepaalt hoe de CSV parser omgaat met bepaalde situaties, zoals ontbrekende velden of extra velden.
-            HeaderValidated = null, //  Deze instelling zorgt ervoor dat er geen foutmelding wordt gegeven als er een veld in de header ontbreekt dat niet in de mapping is opgenomen
-            MissingFieldFound = null // Deze instelling zorgt ervoor dat er geen foutmelding wordt gegeven als er een veld in de CSV ontbreekt dat niet in de mapping is opgenomen
-        };        
+            var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName);
 
-        using var reader = new StreamReader(fileStream);
-        var rawContent = reader.ReadToEnd();
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = true,
+                Delimiter = provider.Delimiter,
+                Mode = provider.CsvMode,
+                HeaderValidated = null,
+                MissingFieldFound = null
 
-        if (provider.StripRowQuotes)
-            rawContent = rawContent.Replace("\"", "");
+            };
 
-        using var stringReader = new StringReader(rawContent);
-        using var csv = new CsvReader(stringReader, config);
+            using var reader = new StreamReader(fileStream);
+            var rawContent = await reader.ReadToEndAsync();
 
-        csv.Context.RegisterClassMap(new EnergyImportMap(mapping, provider.DateFormat)); //de custom mapping die gemaakt is wordt hier toegepast op de csv data.
+            if (provider.StripRowQuotes)
+                rawContent = rawContent.Replace("\"", "");
 
-        return csv.GetRecords<EnergyImportDTO>().ToList(); // de csv data wordt hier omgezet naar een lijst van EnergyImportDTO's en geretourneerd.
+            using var stringReader = new StringReader(rawContent);
+            using var csv = new CsvReader(stringReader, config);
+
+            csv.Context.RegisterClassMap(new EnergyImportMap(mapping, provider.DateFormat));
+            return csv.GetRecords<EnergyImportDTO>().ToList();
+        }
+
+        // Handmatige invoer
+        using var manualReader = new StreamReader(fileStream, leaveOpen: true);
+        var headerLine = await manualReader.ReadLineAsync();
+        var delimiter = DetectDelimiter(headerLine ?? string.Empty);
+        fileStream.Position = 0;
+
+        var manualConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = true,
+            Delimiter = delimiter.ToString(),
+            Mode = CsvMode.NoEscape,
+            HeaderValidated = null,
+            MissingFieldFound = null
+        };
+
+        using var manualReader2 = new StreamReader(fileStream);
+        var rawManualContent = await manualReader2.ReadToEndAsync();
+        using var manualStringReader = new StringReader(rawManualContent);
+        using var manualCsv = new CsvReader(manualStringReader, manualConfig);
+
+        manualCsv.Context.RegisterClassMap(new EnergyImportMap(mapping, "yyyy-MM-dd HH:mm"));
+        return manualCsv.GetRecords<EnergyImportDTO>().ToList();
+    }
+
+    private char DetectDelimiter(string headerLine)
+    {
+        var delimiters = new[] { ',', ';', '\t' };
+        return delimiters.OrderByDescending(d => headerLine.Count(c => c == d)).FirstOrDefault();
     }
 
 
