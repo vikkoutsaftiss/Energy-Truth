@@ -29,7 +29,7 @@ namespace Energy_Truth_WEB_API.Services
 
             if (sorted.Count < 2) return result;
 
-            if (provider.IsCumulative)
+            if (provider == null || provider.IsCumulative)
             {
                 // Als de provider cumulatief is, dan hoeven we alleen maar het verschil te nemen tussen de laatste en eerste waarde.
                 result = _totalCumulativeCalculator.CalculateTotal(sorted);

@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_theme" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -34,4 +34,14 @@
     {
         _drawerOpen = !_drawerOpen;
     }
+
+    private MudTheme _theme = new MudTheme
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#2E7D32",       // bijv. groen voor "energy"
+            Secondary = "#F9A825",
+            AppbarBackground = "#2E7D32",
+        }
+    };
 }
