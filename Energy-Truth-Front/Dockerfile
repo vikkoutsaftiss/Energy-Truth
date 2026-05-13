@@ -3,18 +3,18 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 # Kopieer eerst alleen de .csproj bestanden voor betere Docker cache
-COPY Energy-Truth-Front/Energy-Truth\ Presentation.csproj Energy-Truth-Front/
+COPY Energy-Truth-Front/Energy-Truth\ Energy-Truth_Presentation.csproj Energy-Truth-Front/
 COPY Energy-Truth.Shared/Energy-Truth.Shared.csproj Energy-Truth.Shared/
 
 # Herstel dependencies
-RUN dotnet restore Energy-Truth-Front/Energy-Truth\ Presentation.csproj
+RUN dotnet restore Energy-Truth-Front/Energy-Truth\ Energy-Truth_Presentation.csproj
 
 # Kopieer daarna de volledige broncode
 COPY Energy-Truth-Front/ Energy-Truth-Front/
 COPY Energy-Truth.Shared/ Energy-Truth.Shared/
 
 # Publiceer de applicatie
-RUN dotnet publish Energy-Truth-Front/Energy-Truth\ Presentation.csproj -c Release -o /app/publish
+RUN dotnet publish Energy-Truth-Front/Energy-Truth\ Energy-Truth_Presentation.csproj -c Release -o /app/publish
 
 # Stage 2: Serveer statische bestanden via nginx
 FROM nginx:stable-alpine
