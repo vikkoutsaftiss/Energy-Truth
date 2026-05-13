@@ -7,12 +7,15 @@ on:
     paths:
         - 'k8s/frontend/**'
         - 'Energy-Truth-Front/**'
+        - 'Energy-Truth.Shared/**'
+        
   pull_request:
     branches:
       - '**'
     paths:
         - 'k8s/frontend/**'
         - 'Energy-Truth-Front/**'
+        - 'Energy-Truth.Shared/**'
 
 jobs:
   build-and-test:
