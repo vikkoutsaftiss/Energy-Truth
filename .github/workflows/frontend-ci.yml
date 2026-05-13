@@ -70,8 +70,8 @@ jobs:
         context: .
         file: ./Energy-Truth-Front/Dockerfile
         push: true
-        tags: 
+        tags: |
           ghcr.io/${{ github.repository_owner }}/energy-truth-frontend:latest
-          ghcr.io/${{ github.repository_owner }}/energy-truth-frontend-${{ steps.datetime.outputs.timestamp }}
+          ghcr.io/${{ github.repository_owner }}/energy-truth-frontend:${{ steps.datetime.outputs.timestamp }}
 
     
