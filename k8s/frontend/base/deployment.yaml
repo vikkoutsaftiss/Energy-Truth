@@ -16,7 +16,7 @@ spec:
       - name: github-registry-secret
       containers:
       - name: frontend
-        image: ghcr.io/vikkoutsaftiss/energytruth:latest
+        image: ghcr.io/vikkoutsaftiss/energy-truth-frontend:latest
         ports:
         - containerPort: 80
         resources:
