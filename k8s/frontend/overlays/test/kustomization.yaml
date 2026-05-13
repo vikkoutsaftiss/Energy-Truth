@@ -5,5 +5,5 @@ resources:
   - ingress-patch.yaml
 namespace: energytruth-test
 namePrefix: test-
-Labels:
+commonLabels:
   env: test
