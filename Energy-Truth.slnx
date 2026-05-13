@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="Energy-Truth WEB API/Energy-Truth WEB API.csproj" />
-  <Project Path="Energy-Truth-Front/Energy-Truth Presentation.csproj" />
+  <Project Path="Energy-Truth-Front/Energy-Truth_Presentation.csproj" />
   <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
 </Solution>
