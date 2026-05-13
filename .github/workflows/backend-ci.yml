@@ -69,7 +69,7 @@ jobs:
         # Context staat op root voor toegang tot de shared folder
         context: .
         # Specifiek pad naar de Dockerfile in de submap
-        file: ./Energy-Truth WEB API/Dockerfile
+        file: ./Energy-Truth-WEB-API/Dockerfile
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/energy-truth-backend:latest
