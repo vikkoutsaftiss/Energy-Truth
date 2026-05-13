@@ -49,6 +49,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name:
+      id: datetime
+      run: echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
@@ -57,11 +61,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and Push
+    - name: Build and Push Frontend
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./Energy-Truth-Front
+        file: ./Energy-Truth-Front/Dockerfile
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest  
+        tags: 
+          ghcr.io/${{ github.repository_owner }}/energy-truth-frontend:latest
+          ghcr.io/${{ github.repository_owner }}/energy-truth-frontend-${{ steps.datetime.outputs.timestamp }}
 
     
