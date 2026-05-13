@@ -12,6 +12,8 @@ spec:
       labels:
         app: energytruth-frontend
     spec:
+      imagePullSecrets:
+      - name: github-registry-secret
       containers:
       - name: frontend
         image: ghcr.io/vikkoutsaftiss/energytruth:latest
