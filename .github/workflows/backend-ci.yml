@@ -73,4 +73,4 @@ jobs:
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/energy-truth-backend:latest
-          ghcr.io/${{ github.repository_owner }}/energy-truth-backend-${{ steps.datetime.outputs.timestamp }}
+          ghcr.io/${{ github.repository_owner }}/energy-truth-backend:${{ steps.datetime.outputs.timestamp }}
