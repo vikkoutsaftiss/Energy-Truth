@@ -12,6 +12,8 @@ spec:
       labels:
         app: energytruth-backend
     spec:
+    imagePullSecrets:
+      - name: github-registry-secret
       containers:
       - name: backend
         image: ghcr.io/jouw-gebruiker/energytruth-backend:latest
