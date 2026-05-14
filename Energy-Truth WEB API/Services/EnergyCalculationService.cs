@@ -27,8 +27,6 @@ namespace Energy_Truth_WEB_API.Services
             // Sorteer op tijd (ervan uitgaande dat Time in EnergyImportDTO een DateTime is)
             var sorted = data.OrderBy(d => d.Time).ToList();
 
-            if (sorted.Count < 2) return result;
-
             if (provider == null || provider.IsCumulative)
             {
                 // Als de provider cumulatief is, dan hoeven we alleen maar het verschil te nemen tussen de laatste en eerste waarde.
