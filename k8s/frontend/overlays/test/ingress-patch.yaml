@@ -11,6 +11,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: test-frontend-service
+                name: test-energytruth-frontend-service
                 port:
                   number: 80
