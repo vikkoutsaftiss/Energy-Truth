@@ -2,11 +2,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
+  namespace: energytruth-productie
   annotations:
-    # Voorbeeld voor automatische SSL via Cert-manager
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
 spec:
+  ingressClassName: nginx
   rules:
     - host: energy-truth.nl # Je echte publieke domein
       http:
@@ -15,10 +18,10 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: prod-frontend-service # Kustomize voegt dit voorvoegsel toe
+                name: energytruth-frontend-service # Kustomize voegt dit voorvoegsel toe
                 port:
                   number: 80
-  tls: # Sectie voor HTTPS certificaten
+  tls:
     - hosts:
         - energy-truth.nl
-      secretName: energytruth-prod-tls
+      secretName: energytruth-tls-secret
