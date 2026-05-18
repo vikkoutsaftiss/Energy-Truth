@@ -13,16 +13,16 @@ spec:
         app: energytruth-frontend
     spec:
       imagePullSecrets:
-      - name: github-registry-secret
+        - name: github-registry-secret
       containers:
-      - name: frontend
-        image: ghcr.io/vikkoutsaftiss/energy-truth-frontend:latest
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
+        - name: frontend
+          image: ghcr.io/vikkoutsaftiss/energy-truth-frontend:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
