@@ -3,11 +3,9 @@ kind: Service
 metadata:
   name: energytruth-frontend-service
 spec:
-  selector:
-    app: energytruth-frontend
+  type: ClusterIP
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
+  - port: 80
+    targetPort: 8080  
   selector:
-    app: energytruth-backend
+    app: energytruth-frontend  # Moet exact matchen met de labels van de frontend deployment
