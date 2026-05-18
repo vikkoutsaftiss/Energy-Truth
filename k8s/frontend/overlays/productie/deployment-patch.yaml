@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: energytruth-frontend
 spec:
+  replicas: 2
   template:
     spec:
       containers:
