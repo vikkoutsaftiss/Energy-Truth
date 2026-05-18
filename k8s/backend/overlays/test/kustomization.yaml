@@ -6,4 +6,4 @@ resources:
   - ingress-patch.yaml
 images:
   - name: ghcr.io/vikkoutsaftiss/energy-truth-backend
-    newTag: test-initieel
+    newTag: latest
