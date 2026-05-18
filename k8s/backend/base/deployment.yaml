@@ -12,17 +12,17 @@ spec:
       labels:
         app: energytruth-backend
     spec:
-    imagePullSecrets:
-      - name: github-registry-secret
+      imagePullSecrets:
+        - name: github-registry-secret
       containers:
-      - name: backend
-        image: ghcr.io/vikkoutsaftiss/energytruth-backend:latest
-        ports:
-        - containerPort: 8080
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "250m"
-          limits:
-            memory: "256Mi"
-            cpu: "500m"
+        - name: backend
+          image: ghcr.io/vikkoutsaftiss/energytruth-backend:latest
+          ports:
+          - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
