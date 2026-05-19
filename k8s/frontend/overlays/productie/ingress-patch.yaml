@@ -6,6 +6,10 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      location /.well-known/acme-challenge/ {
+        allow all;
+      }
 spec:
   ingressClassName: nginx
   rules:
