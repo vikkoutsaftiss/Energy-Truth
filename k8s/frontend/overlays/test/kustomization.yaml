@@ -9,3 +9,7 @@ patches:
     target:
       kind: Deployment
       name: energytruth-frontend
+  - path: service-patch.yaml
+    target:
+      kind: Service
+      name: energytruth-frontend-service
