@@ -6,8 +6,6 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/limit-connections: "10"
-    nginx.ingress.kubernetes.io/limit-rps: "20"
 spec:
   ingressClassName: nginx
   rules:
