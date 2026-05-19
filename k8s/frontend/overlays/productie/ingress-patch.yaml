@@ -31,10 +31,21 @@ spec:
                 name: energytruth-frontend-service
                 port:
                   number: 80
+    - host: www.mierlofirst.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: energytruth-frontend-service
+                port:
+                  number: 80
   tls:
     - hosts:
         - energy-truth.nl
       secretName: energytruth-tls-secret
     - hosts:
         - mierlofirst.org
+        - www.mierlofirst.org
       secretName: mierlofirst-tls-secret
