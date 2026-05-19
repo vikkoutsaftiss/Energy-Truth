@@ -25,7 +25,7 @@ spec:
           service:
             name: energytruth-service
             port:
-              number: 80
+              number: 8080
   - host: mierlofirst.org
     http:
       paths:
@@ -35,7 +35,7 @@ spec:
           service:
             name: energytruth-service
             port:
-              number: 80
+              number: 8080
   - host: www.mierlofirst.org
     http:
       paths:
@@ -45,4 +45,4 @@ spec:
           service:
             name: energytruth-service
             port:
-              number: 80
+              number: 8080
