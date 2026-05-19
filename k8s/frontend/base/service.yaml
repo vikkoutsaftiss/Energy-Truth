@@ -6,6 +6,6 @@ spec:
   type: ClusterIP
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: 8080
   selector:
     app: energytruth-frontend  # Moet exact matchen met de labels van de frontend deployment
