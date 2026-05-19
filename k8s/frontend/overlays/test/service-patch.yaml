@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: energytruth-frontend-service
+  namespace: energytruth-test
+spec:
+  ports:
+  - port: 80
+    targetPort: 80 # Overschrijf de 8080 uit de base naar poort 80
