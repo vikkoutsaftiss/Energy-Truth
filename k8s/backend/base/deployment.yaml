@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: energytruth-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: energytruth-backend
+  template:
+    metadata:
+      labels:
+        app: energytruth-backend
+    spec:
+      imagePullSecrets:
+        - name: github-registry-secret
+      containers:
+        - name: backend
+          image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
+          ports:
+          - containerPort: 8080
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

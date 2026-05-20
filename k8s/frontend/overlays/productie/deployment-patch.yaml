@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: energytruth-frontend
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: frontend
+        env:
+        - name: BACKEND_URL
+          value: "http://prod-energytruth-backend-service:80"
