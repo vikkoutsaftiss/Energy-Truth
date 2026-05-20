@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-config
+  namespace: energytruth-productie
+data:
+  frontend_url: "https://mierlofirst.org"
+  backend_url: "https://mierlofirst.org"
+  algoritme_url: "http://prod-energytruth-algoritme-service.energytruth-productie.svc.cluster.local:80"
