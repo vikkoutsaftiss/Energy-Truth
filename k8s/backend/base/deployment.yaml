@@ -18,7 +18,7 @@ spec:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
             - name: FRONTEND_URL
               valueFrom:
@@ -36,7 +36,9 @@ spec:
                   name: backend-network-config
                   key: algoritme_url
             - name: ASPNETCORE_URLS
-              value: "http://+:80"
+              value: "http://+:8080"
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8080"
             # Database credentials uit het Secret
             - name: DATABASE_IP
               valueFrom:
