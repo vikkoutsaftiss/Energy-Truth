@@ -48,7 +48,7 @@ spec:
             - name: ALGORITME_URL
               valueFrom:
                 configMapKeyRef:
-                  name: network-config
+                  name: backend-network-config
                   key: algoritme_url        
             - name: ASPNETCORE_URLS # Voeg deze exact zo toe daaronder
               value: "http://+:80"  
