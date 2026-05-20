@@ -5,6 +5,7 @@ namePrefix: prod-
 
 resources:
   - ../../base
+  - configmap.yaml
 patches:
   - path: deployment-patch.yaml
     target:
