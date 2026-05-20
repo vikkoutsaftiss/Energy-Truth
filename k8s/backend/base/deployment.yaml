@@ -20,6 +20,24 @@ spec:
           ports:
             - containerPort: 80
           env:
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: frontend_url
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: backend_url
+            - name: ALGORITME_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: algoritme_url
+            - name: ASPNETCORE_URLS
+              value: "http://+:80"
+            # Database credentials uit het Secret
             - name: DATABASE_IP
               valueFrom:
                 secretKeyRef:
@@ -45,13 +63,6 @@ spec:
                 secretKeyRef:
                   name: db-auth
                   key: POSTGRES_PASSWORD
-            - name: ALGORITME_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: backend-network-config
-                  key: algoritme_url        
-            - name: ASPNETCORE_URLS # Voeg deze exact zo toe daaronder
-              value: "http://+:80"  
           resources:
             requests:
               memory: "128Mi"
