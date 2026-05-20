@@ -18,7 +18,7 @@ spec:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
           ports:
-            - containerPort: 8080
+            - containerPort: 80
           env:
             - name: ALGORITME_URL
               valueFrom:
