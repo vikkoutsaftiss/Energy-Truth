@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../../base
   - ingress-patch.yaml
+  - configmap.yaml
 namespace: energytruth-productie
 namePrefix: prod-
 replicas:
