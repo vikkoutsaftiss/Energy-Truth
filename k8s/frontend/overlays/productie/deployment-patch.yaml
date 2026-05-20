@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: energytruth-frontend
-  namespace: energytruth-productie # <<< ZORG DAT DIT OP PRODUCTIE STAAT
+  namespace: energytruth-productie
 spec:
   template:
     spec:
@@ -11,7 +11,7 @@ spec:
           ports:
             - containerPort: 80
           env:
-            $patch: replace # <<< DIT VOORKOMT DE DUPLICATE VALIDATION ERROR
+            $patch: replace
             - name: BACKEND_URL
               valueFrom:
                 configMapKeyRef:
