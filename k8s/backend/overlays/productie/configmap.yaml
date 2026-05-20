@@ -6,3 +6,4 @@ metadata:
 data:
   frontend_url: "https://mierlofirst.org"
   backend_url: "https://mierlofirst.org/api"
+  algoritme_url: ""
