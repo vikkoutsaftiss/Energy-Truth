@@ -18,7 +18,13 @@ spec:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
           ports:
-          - containerPort: 8080
+            - containerPort: 8080
+          env:
+            - name: ALGORITME_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: network-config
+                  key: algoritme_url        
           resources:
             requests:
               memory: "128Mi"
