@@ -25,6 +25,9 @@ spec:
                 configMapKeyRef:
                   name: network-config
                   key: algoritme_url        
+            - name: ASPNETCORE_URLS # Voeg deze exact zo toe daaronder
+              value: "http://+:80"
+                  
           resources:
             requests:
               memory: "128Mi"
