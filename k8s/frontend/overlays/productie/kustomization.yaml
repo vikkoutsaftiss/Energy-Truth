@@ -9,3 +9,5 @@ namePrefix: prod-
 replicas:
   - name: energytruth-frontend
     count: 2
+patches:
+  - path: deployment-patch.yaml
