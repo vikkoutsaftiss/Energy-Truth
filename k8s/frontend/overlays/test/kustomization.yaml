@@ -4,6 +4,7 @@ namespace: energytruth-test
 resources:
   - ../../base
   - ingress-patch.yaml
+  - configmap.yaml
 patches:
   - path: deployment-patch.yaml
     target:
