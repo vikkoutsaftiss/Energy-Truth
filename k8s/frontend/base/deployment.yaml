@@ -19,6 +19,12 @@ spec:
           image: ghcr.io/vikkoutsaftiss/energy-truth-frontend:latest
           ports:
             - containerPort: 8080
+          env:
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: network-config
+                  key: backend_url
           resources:
             requests:
               memory: "64Mi"
