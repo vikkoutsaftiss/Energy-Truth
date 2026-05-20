@@ -5,5 +5,5 @@ metadata:
   namespace: energytruth-test
 data:
   frontend_url: "http://test.energy-truth.local"
-  backend_url: "http://energytruth-backend-service.energytruth-test.svc.cluster.local"
+  backend_url: "http://test.energy-truth.local/api"
   algoritme_url: "http://energytruth-algoritme-service.energytruth-test.svc.cluster.local:80"
