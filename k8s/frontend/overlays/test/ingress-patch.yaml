@@ -5,7 +5,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: test.energy-truth.local
+  - host: test.energy-truth.local
       http:
         paths:
           - path: /
@@ -13,5 +13,12 @@ spec:
             backend:
               service:
                 name: energytruth-frontend-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: energytruth-backend-service
                 port:
                   number: 80
