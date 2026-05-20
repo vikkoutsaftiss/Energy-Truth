@@ -24,3 +24,10 @@ spec:
                 name: prod-energytruth-frontend-service
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: prod-energytruth-backend-service
+                port:
+                  number: 80
