@@ -11,11 +11,5 @@ spec:
           ports:
             - containerPort: 80
           env:
-            $patch: replace # <<< DIT VERNIETIGT DE DUBBELE BASIS-STATE EN DWINGT REPARATIE AF
-            - name: BACKEND_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: network-config
-                  key: backend_url
             - name: ASPNETCORE_URLS
               value: "http://+:80"
