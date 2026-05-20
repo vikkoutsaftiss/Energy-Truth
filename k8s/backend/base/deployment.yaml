@@ -20,14 +20,38 @@ spec:
           ports:
             - containerPort: 80
           env:
+            - name: DATABASE_IP
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_IP
+            - name: DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_PORT
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_PASSWORD
             - name: ALGORITME_URL
               valueFrom:
                 configMapKeyRef:
                   name: network-config
                   key: algoritme_url        
             - name: ASPNETCORE_URLS # Voeg deze exact zo toe daaronder
-              value: "http://+:80"
-                  
+              value: "http://+:80"  
           resources:
             requests:
               memory: "128Mi"
