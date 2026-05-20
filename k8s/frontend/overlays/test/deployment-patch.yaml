@@ -8,10 +8,5 @@ spec:
       containers:
       - name: frontend
         env:
-        - name: BACKEND_URL
-          valueFrom:
-            configMapKeyRef:
-              name: network-config
-                key: backend_url
         - name: ASPNETCORE_URLS
           value: "http://+:80"
