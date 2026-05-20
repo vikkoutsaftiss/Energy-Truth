@@ -5,5 +5,5 @@ metadata:
   namespace: energytruth-productie
 data:
   frontend_url: "https://mierlofirst.org"
-  backend_url: "https://mierlofirst.org"
+  backend_url: "https://mierlofirst.org/api"
   algoritme_url: "http://prod-energytruth-algoritme-service.energytruth-productie.svc.cluster.local:80"
