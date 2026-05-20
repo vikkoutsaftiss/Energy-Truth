@@ -1,30 +1,20 @@
 ﻿@page "/"
-@using Energy_Truth.Shared
-@inject HttpClient Http
+@using Energy_Truth_Presentation.Components
 
-<h1>Mijn Producten</h1>
+<PageTitle>Energy Truth - Dashboard</PageTitle>
 
-@if (producten == null)
-{
-    <p>Laden...</p>
-}
-else
-{
-    <ul>
-        @foreach (var p in producten)
-        {
-            <li>@p.Naam - €@p.Prijs</li>
-        }
-    </ul>
-}
-
-@code {
-    private List<Test>? producten;
-
-    protected override async Task OnInitializedAsync()
-    {
-        // We roepen de API aan.
-        // Let op: "api/producten" komt overeen met de naam van je controller
-        producten = await Http.GetFromJsonAsync<List<Test>>("api/producten");
-    }
-}
+<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 70vh;" Spacing="4">
+    <MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom bij Energy Truth</MudText>
+    <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
+        Hét platform om je energieverbruik in kaart te brengen.
+        Ben jij ook klaar met beloftes welke veel te rooskleurig klinken en wil je eindelijk eens weten welke thuisbatterij echt bij jouw specifieke thuissituatie past?
+        Doe dan nu de test en krijg een go / no-go advies op maat gemaakt op basis van jouw energieverbruik.
+        </MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Href="csvimporter">
+        <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />
+        Start met Importeren
+    </MudButton>
+    <MudCardActions>
+        <ExplanationFileUpload />
+    </MudCardActions>
+</MudStack>

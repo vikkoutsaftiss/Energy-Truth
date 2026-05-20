@@ -1,0 +1,368 @@
+﻿@page "/csvimporter"
+@using Energy_Truth.Shared;
+@using CsvHelper;
+@using System.Globalization;
+@using System.Text.Json;
+@using Energy_Truth_Presentation.Components;
+@using Energy_Truth.Shared.Providers;
+@using CsvHelper.Configuration;
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject IEnumerable<IEnergyProvider> EnergyProviders
+
+<PageTitle>Energie Data Import</PageTitle>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Elevation="1" Dense="true" Class="mb-3"
+              ShowCloseIcon="true" CloseIconClicked="() => errorMessage = null">
+        <strong>Oeps!</strong> @errorMessage
+    </MudAlert>
+}
+
+@{
+    var providerNames = EnergyProviders.Select(p => p.Name).ToList();
+    providerNames.Add("Handmatige invoer");
+}
+
+<MudStack AlignItems="AlignItems.Center" Class="mt-8">
+    <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size: 10rem;" Color="Color.Primary" />
+</MudStack>
+
+<MudSelect T="string" Label="Kies je provider" Placeholder="Kies een provider..." @Value="selectedProvider" ValueChanged="OnProviderSelected">
+    @foreach (var provider in providerNames)
+    {
+        <MudSelectItem Value="@provider">@provider</MudSelectItem>
+    }
+    
+</MudSelect>
+
+
+@if (selectedProvider == null)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="mt-8">
+        <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Dark" Style="max-width: 1000px;">
+            Selecteer hierboven de bron van je CSV bestand. Staat jouw bron er niet tussen? Kies dan "Handmatige invoer" en koppel zelf de kolommen aan de juiste velden of neem contact op met de klantenservice, dan voegen we de provider toe voor automatische koppeling.
+        </MudText>
+    </MudStack>
+}
+
+@if (selectedProvider != null)
+{
+    <MudGrid>
+        <MudItem>
+            <MudCard Elevation="4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5">
+                            <MudIcon Icon="@Icons.Material.Filled.UploadFile" Class="mr-2" />
+                            Upload Energiegegevens
+                        </MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Class="mb-3">Stap 1: Selecteer je CSV-bestand</MudText>
+                    <InputFile OnChange="OnFileSelected" class="form-control" accept=".csv" />
+
+                    @if (loading && !csvHeaders.Any())
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="my-3">
+                            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+                            <MudText>Headers inladen...</MudText>
+                        </MudStack>
+                    }
+                </MudCardContent>
+                @if (selectedFile == null)
+                {
+                    <MudCardActions>
+                        <ExplanationFileUpload />
+                    </MudCardActions>
+                }
+                
+                
+            </MudCard>
+
+            @if (csvHeaders.Any() && energyDataList == null)
+            {
+                <MudCard Elevation="4" Class="mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h5">Stap 2: Koppel de kolommen</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            @foreach (var key in userMapping.Keys.ToList())
+                            {
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect T="string" Label="@displayNames[key]"
+                                                Value="@userMapping[key]"
+                                                ValueChanged="@(val => userMapping[key] = val)">
+                                        @foreach (var header in csvHeaders)
+                                        {
+                                            <MudSelectItem Value="@header">@header</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                    OnClick="ProcessImport" Disabled="@loading">
+                            @if (loading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            }
+                            Inlezen en Verwerken
+                        </MudButton>
+                        <ExplanationCSVImporter />
+                    </MudCardActions>
+                </MudCard>
+            }
+
+            @if (energyDataList != null)
+            {
+                <MudCard Elevation="4" Class="mt-4">
+                    <MudCardContent>
+                        <MudAlert Severity="Severity.Success" Dense="true" Class="mb-3">
+                            Succes! @energyDataList.Count records ingeladen.
+                        </MudAlert>
+                        <MudText Typo="Typo.h6" Class="mb-2">Preview (Eerste 20)</MudText>
+                        <MudTable Items="@energyDataList.Take(20)" Dense="true" Striped="true" Bordered="true" Hover="true" FixedHeader="true" Height="400px">
+                            <HeaderContent>
+                                <MudTh>Tijd</MudTh>
+                                <MudTh>Import kWh normaal tarief</MudTh>
+                                <MudTh>Import kWh dal tarief</MudTh>
+                                <MudTh>Export kWh normaal tarief</MudTh>
+                                <MudTh>Export kWh dal tarief</MudTh>
+                                <MudTh>Fase 1 maximale belasting</MudTh>
+                                <MudTh>Fase 2 maximale belasting</MudTh>
+                                <MudTh>Fase 3 maximale belasting</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@(context.Time?.ToString("dd-MM-yyyy HH:mm") ?? "-")</MudTd>
+                                <MudTd>@context.ImportT1</MudTd>
+                                <MudTd>@context.ImportT2</MudTd>
+                                <MudTd>@context.ExportT1</MudTd>
+                                <MudTd>@context.ExportT2</MudTd>
+                                <MudTd>@context.L1MaxW</MudTd>
+                                <MudTd>@context.L2MaxW</MudTd>
+                                <MudTd>@context.L3MaxW</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudCardContent>
+                    <MudCardActions Class="justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                    OnClick="StartCalculation" Disabled="@loading">
+                            <MudIcon Icon="@Icons.Material.Filled.Calculate" Class="mr-2" />
+                            Start Berekening
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            }
+
+            @if (calculatedResult != null)
+            {
+                <MudGrid Class="mt-4">
+                    <MudItem xs="12" sm="6">
+                        <MudCard Elevation="4" Style="background-color: var(--mud-palette-primary); color: white;">
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h6" Style="color: white;">Totaal Import</MudText>
+                                <MudText Typo="Typo.h4" Style="color: white;">@calculatedResult.TotalImportKwh.ToString("N2") kWh</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCard Elevation="4" Style="background-color: var(--mud-palette-success); color: white;">
+                            <MudCardContent Class="text-center">
+                                <MudText Typo="Typo.h6" Style="color: white;">Totaal Export</MudText>
+                                <MudText Typo="Typo.h4" Style="color: white;">@calculatedResult.TotalExportKwh.ToString("N2") kWh</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            }
+        </MudItem>
+    </MudGrid>
+}
+
+
+    
+
+@code {
+    private List<string> csvHeaders = new();
+    private Dictionary<string, string> userMapping = new();
+    private Dictionary<string, string> displayNames = new();    
+    private IBrowserFile? selectedFile;
+    private List<EnergyImportDTO>? energyDataList;
+    private bool loading = false;
+    private CalculationResultDTO? calculatedResult;
+    private string? errorMessage;
+    private string? selectedProvider;
+    private IEnergyProvider? Provider;
+
+
+    private void OnProviderSelected(string? provider)
+    {
+        if (provider != null && provider != "Handmatige invoer")
+        {
+            Provider = EnergyProviders.FirstOrDefault(p => p.Name == provider);            
+        }
+        else
+        {
+            Provider = null;
+        }
+        selectedProvider = provider;
+
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        csvHeaders.Clear();
+        energyDataList = null;
+
+        using var stream = selectedFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10);
+        using var reader = new StreamReader(stream);
+            
+        var headerLine = await reader.ReadLineAsync();
+
+        if (Provider == null)
+        {
+            var delimiter = DetectDelimiter(headerLine ?? string.Empty);
+
+            csvHeaders = headerLine?.Split(delimiter).ToList() ?? new List<string>();
+
+            displayNames = typeof(EnergyImportDTO)
+                .GetProperties()
+                .ToDictionary(p => p.Name, p => p.Name);
+
+            userMapping = typeof(EnergyImportDTO)
+                .GetProperties()
+                .ToDictionary(p => p.Name, p => "");
+        }
+        else
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(headerLine))
+                {
+                    errorMessage = "Het CSV-bestand bevat geen headers.";
+                    return;
+                }
+
+                if (Provider.StripRowQuotes)
+                {
+                    headerLine = headerLine.Trim('"');
+                }
+
+                csvHeaders = headerLine.Split(Provider.Delimiter).ToList();
+
+                displayNames = Provider.DisplayNames;
+
+                userMapping = Provider.CsvMapping.ToDictionary(k => k.Key, k => "");
+
+                AutoMapHeaders();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Fout bij lezen headers: {ex.Message}";
+            }
+        }
+
+        
+    }
+
+    private async Task ProcessImport()
+    {
+        if (selectedFile == null) return;
+
+        loading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileStream = selectedFile.OpenReadStream(1024 * 1024 * 10);
+            content.Add(new StreamContent(fileStream), "file", selectedFile.Name);
+            content.Add(new StringContent(JsonSerializer.Serialize(userMapping)), "mapping");
+            content.Add(new StringContent(selectedProvider), "provider");
+
+            var response = await Http.PostAsync("api/Import/csv", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                energyDataList = await response.Content.ReadFromJsonAsync<List<EnergyImportDTO>>(options);
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij verwerken: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AutoMapHeaders()
+    {
+        foreach (var key in userMapping.Keys.ToList())
+        {
+            var match = csvHeaders.FirstOrDefault(h =>
+                h.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                (displayNames.ContainsKey(key) && h.Equals(displayNames[key], StringComparison.OrdinalIgnoreCase)) ||
+                (Provider.CsvMapping.ContainsKey(key) && h.Equals(Provider.CsvMapping[key], StringComparison.OrdinalIgnoreCase))
+            );
+            if (match != null) userMapping[key] = match;
+        }
+    }
+
+    private async Task StartCalculation()
+    {
+        if (energyDataList == null || !energyDataList.Any()) return;
+
+        loading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var response = await Http.PostAsJsonAsync($"api/Import/calculate/{selectedProvider}", energyDataList);
+
+            if (response.IsSuccessStatusCode)
+            {
+                calculatedResult = await response.Content.ReadFromJsonAsync<CalculationResultDTO>(options);
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij berekening: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+        
+    }
+
+    private char DetectDelimiter(string headerLine)
+    {
+        var delimiters = new[] { ',', ';', '\t' };
+        return delimiters.OrderByDescending(d => headerLine.Count(c => c == d)).FirstOrDefault();
+    }
+}

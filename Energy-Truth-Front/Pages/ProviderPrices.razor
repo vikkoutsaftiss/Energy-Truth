@@ -1,0 +1,48 @@
+﻿@page "/prijzen"
+@using Energy_Truth.Shared;
+@inject HttpClient Http
+
+
+<h3>Huidige Energieprijzen</h3>
+
+@if (providerPricing == null)
+{
+    <p><em>Prijzen laden...</em></p>
+}
+else
+{
+    <MudTable Items="providerPricing" Hover="true" Striped="true" Loading="@(providerPricing == null)">
+        <HeaderContent>
+            <MudTh>Provider</MudTh>
+            <MudTh>Code</MudTh>
+            <MudTh>Prijs per kWh</MudTh>
+            <MudTh>Geldig vanaf</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.ProviderName</MudTd>
+            <MudTd>@context.ProviderCode</MudTd>
+            <MudTd>€ @context.Price.ToString("F4")</MudTd>
+            <MudTd>@context.ValidFrom.ToString("dd-MM HH:mm")</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>Geen prijzen gevonden.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+}
+
+@code {
+    private List<ProviderPricingDTO>? providerPricing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Verander dit naar het juiste adres van je API controller
+            providerPricing = await Http.GetFromJsonAsync<List<ProviderPricingDTO>>("api/combine");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fout bij ophalen data: {ex.Message}");
+        }
+    }
+}
