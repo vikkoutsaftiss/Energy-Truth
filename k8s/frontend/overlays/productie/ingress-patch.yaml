@@ -7,43 +7,20 @@ metadata:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
     acme.cert-manager.io/http01-edit-in-place: "true"
-
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - energy-truth.nl
-    - mierlofirst.org
-    - www.mierlofirst.org
-    secretName: energytruth-tls-secret
+    - hosts:
+        - mierlofirst.org
+      secretName: energytruth-tls-secret
   rules:
-  - host: energy-truth.nl
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: prod-energytruth-frontend-service
-            port:
-              number: 80
-  - host: mierlofirst.org
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: prod-energytruth-frontend-service
-            port:
-              number: 80
-  - host: www.mierlofirst.org
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: prod-energytruth-frontend-service
-            port:
-              number: 80
+    - host: mierlofirst.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prod-energytruth-frontend-service
+                port:
+                  number: 80
