@@ -7,17 +7,53 @@ resources:
   - ../../base
   - configmap.yaml
 
-configurations:
-  - https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/examples/transformerconfigurations/images.yaml
-
+# We gebruiken een Strategic Merge Patch. Dit zoekt specifiek op naam en negeert indices.
 patches:
   - target:
       kind: Deployment
-      name: energytruth-backend # Moet exact matchen met de name in base/deployment.yaml
-    patch: |-
+      name: energytruth-backend
+    patch: |
       apiVersion: apps/v1
       kind: Deployment
       metadata:
         name: energytruth-backend
       spec:
-        replicas: 2 # <<< DIT DOET DE UPGRADE NAAR 2 PODS OP PRODUCTIE
+        template:
+          spec:
+            containers:
+              - name: backend
+                env:
+                  # Dwing de pod op productie om naar de getransformeerde configmap te kijken
+                  - name: FRONTEND_URL
+                    valueFrom:
+                      configMapKeyRef:
+                        name: prod-backend-network-config
+                  - name: BACKEND_URL
+                    valueFrom:
+                      configMapKeyRef:
+                        name: prod-backend-network-config
+                  - name: ALGORITME_URL
+                    valueFrom:
+                      configMapKeyRef:
+                        name: prod-backend-network-config
+                  # Dwing de pod op productie om naar het bestaande handmatige 'db-auth' secret te kijken
+                  - name: DATABASE_IP
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-auth
+                  - name: DATABASE_PORT
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-auth
+                  - name: POSTGRES_DB
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-auth
+                  - name: POSTGRES_USER
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-auth
+                  - name: POSTGRES_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: db-auth
