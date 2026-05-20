@@ -7,6 +7,9 @@ resources:
   - ../../base
   - configmap.yaml
 
+replicas:
+  - name: energytruth-backend
+    count: 2
 # We gebruiken een Strategic Merge Patch. Dit zoekt specifiek op naam en negeert indices.
 patches:
   - target:
