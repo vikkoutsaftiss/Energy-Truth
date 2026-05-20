@@ -7,10 +7,5 @@ resources:
   - configmap.yaml
 patches:
   - path: deployment-patch.yaml
-    target:
-      kind: Deployment
-      name: energytruth-frontend
   - path: service-patch.yaml
-    target:
-      kind: Service
-      name: energytruth-frontend-service
+    
