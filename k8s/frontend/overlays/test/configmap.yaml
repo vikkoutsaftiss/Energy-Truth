@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-config
+  namespace: energytruth-test
+data:
+  frontend_url: "http://test.energy-truth.local"
+  backend_url: "http://test.energy-truth.local"
+  algoritme_url: "http://energytruth-algoritme-service.energytruth-test.svc.cluster.local:80"
