@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Energy-Truth WEB API\Energy-Truth WEB API.csproj" />
-    <ProjectReference Include="..\Energy-Truth-Front\Energy-Truth Presentation.csproj" />
+    <ProjectReference Include="..\Energy-Truth-WEB-API\Energy-Truth-WEB-API.csproj" />
+    <ProjectReference Include="..\Energy-Truth-Front\Energy-Truth_Presentation.csproj" />
     <ProjectReference Include="..\Energy-Truth.Shared\Energy-Truth.Shared.csproj" />
   </ItemGroup>
 
