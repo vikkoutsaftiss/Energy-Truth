@@ -5,13 +5,22 @@ namePrefix: prod-
 
 resources:
   - ../../base
-  - configmap.yaml
+  - backendconfigmap.yaml
 patches:
   - path: deployment-patch.yaml
     target:
       kind: Deployment
       name: energytruth-backend
-
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/5/valueFrom/configMapKeyRef/name
+        value: backend-network-config
+      - op: replace
+        path: /spec/template/spec/containers/0/env/6/valueFrom/configMapKeyRef/name
+        value: backend-network-config
+      - op: replace
+        path: /spec/template/spec/containers/0/env/7/valueFrom/configMapKeyRef/name
+        value: backend-network-config
 images:
   - name: ghcr.io/vikkoutsaftiss/energy-truth-backend
     newTag: latest
