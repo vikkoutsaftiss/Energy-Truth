@@ -5,22 +5,16 @@ namePrefix: prod-
 
 resources:
   - ../../base
-  - backendconfigmap.yaml
+  - configmap.yaml
+  
 patches:
-  - path: deployment-patch.yaml
-    target:
+  - target:
       kind: Deployment
-      name: energytruth-backend
+      name: energytruth-backend # Moet exact matchen met de name in base/deployment.yaml
     patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/5/valueFrom/configMapKeyRef/name
-        value: backend-network-config
-      - op: replace
-        path: /spec/template/spec/containers/0/env/6/valueFrom/configMapKeyRef/name
-        value: backend-network-config
-      - op: replace
-        path: /spec/template/spec/containers/0/env/7/valueFrom/configMapKeyRef/name
-        value: backend-network-config
-images:
-  - name: ghcr.io/vikkoutsaftiss/energy-truth-backend
-    newTag: latest
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: energytruth-backend
+      spec:
+        replicas: 2 # <<< DIT DOET DE UPGRADE NAAR 2 PODS OP PRODUCTIE
