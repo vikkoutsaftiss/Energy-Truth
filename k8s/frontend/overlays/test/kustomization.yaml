@@ -9,3 +9,20 @@ patches:
   - path: deployment-patch.yaml
   - path: service-patch.yaml
     
+patchesJson6902:
+  - target:
+      version: v1
+      group: apps
+      kind: Deployment
+      name: energytruth-frontend
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: BACKEND_URL
+            valueFrom:
+              configMapKeyRef:
+                name: network-config
+                key: backend_url
+          - name: ASPNETCORE_URLS
+            value: "http://+:80"
