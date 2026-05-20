@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: energytruth-test
 resources:
   - ../../base
-  - ingress-patch.yaml
+
 images:
   - name: ghcr.io/vikkoutsaftiss/energy-truth-backend
     newTag: latest
