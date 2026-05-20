@@ -4,10 +4,10 @@
     <File Path="main.yml" />
   </Folder>
   <Folder Name="/01_Presentation/">
-    <Project Path="Energy-Truth-Front/Energy-Truth Presentation.csproj" />
+    <Project Path="Energy-Truth-Front/Energy-Truth_Presentation.csproj" />
   </Folder>
   <Folder Name="/02_API/">
-    <Project Path="Energy-Truth WEB API/Energy-Truth WEB API.csproj" />
+    <Project Path="Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj" />
   </Folder>
   <Folder Name="/03_Shared/">
     <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
