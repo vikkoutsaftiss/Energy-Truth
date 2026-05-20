@@ -14,6 +14,8 @@ spec:
     spec:
       imagePullSecrets:
         - name: github-registry-secret
+      hostNetwork: true # <<< DIT DWINGT DE POD DIRECT OP HET FYSIEKE IP (10.0.30.11) VAN DE NODE
+      dnsPolicy: ClusterFirstWithHostNet # <<< VEREIST: Behoudt toegang tot CoreDNS!
       containers:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
