@@ -6,7 +6,10 @@ namePrefix: prod-
 resources:
   - ../../base
   - configmap.yaml
-  
+
+configurations:
+  - https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/examples/transformerconfigurations/images.yaml
+
 patches:
   - target:
       kind: Deployment
