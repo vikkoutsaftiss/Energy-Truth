@@ -39,7 +39,7 @@ jobs:
         run: dotnet build Energy-Truth.slnx --no-restore --configuration Release
 
       - name: Run Unit Tests
-        run: dotnet test Energy-Truth.slnx --no-build --verbosity normal
+        run: dotnet test Energy-Truth.slnx --no-build --configuration Release --verbosity normal
 
   build-and-push:
     runs-on: ubuntu-latest
