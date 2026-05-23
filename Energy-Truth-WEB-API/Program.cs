@@ -6,7 +6,13 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
+var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
+var dbPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+var ip = Environment.GetEnvironmentVariable("DATABASE_IP") ?? "localhost";
+var port = Environment.GetEnvironmentVariable("DATABASE_PORT") ?? "5432";
+
+var connectionString = $"Host={ip};Port={port};Database={dbName};Username={dbUser};Password={dbPassword}";
 
 // Program.cs
 builder.Services.AddControllers()
