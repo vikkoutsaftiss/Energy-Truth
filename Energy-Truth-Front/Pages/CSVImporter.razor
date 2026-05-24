@@ -29,13 +29,19 @@
     <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size: 10rem;" Color="Color.Primary" />
 </MudStack>
 
-<MudSelect T="string" Label="Kies je provider" Placeholder="Kies een provider..." @Value="selectedProvider" ValueChanged="OnProviderSelected">
+<div data-testid="provider-select">
+    <MudSelect T="string"
+               Label="Kies je provider"
+               Placeholder="Kies een provider..."
+               Value="selectedProvider"
+               ValueChanged="OnProviderSelected">
     @foreach (var provider in providerNames)
     {
         <MudSelectItem Value="@provider">@provider</MudSelectItem>
     }
     
 </MudSelect>
+</div>
 
 
 @if (selectedProvider == null)
@@ -108,6 +114,7 @@
                         </MudGrid>
                     </MudCardContent>
                     <MudCardActions>
+                        <div data-testid="process-data">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                     OnClick="ProcessImport" Disabled="@loading">
                             @if (loading)
@@ -116,6 +123,7 @@
                             }
                             Inlezen en Verwerken
                         </MudButton>
+                        </div>
                         <ExplanationCSVImporter />
                     </MudCardActions>
                 </MudCard>
@@ -153,11 +161,13 @@
                         </MudTable>
                     </MudCardContent>
                     <MudCardActions Class="justify-end">
+                        <div data-testid="start-calculation">
                         <MudButton Variant="Variant.Filled" Color="Color.Success"
                                     OnClick="StartCalculation" Disabled="@loading">
                             <MudIcon Icon="@Icons.Material.Filled.Calculate" Class="mr-2" />
                             Start Berekening
                         </MudButton>
+                        </div>
                     </MudCardActions>
                 </MudCard>
             }
@@ -166,12 +176,14 @@
             {
                 <MudGrid Class="mt-4">
                     <MudItem xs="12" sm="6">
+                        <div data-testid="total-import">
                         <MudCard Elevation="4" Style="background-color: var(--mud-palette-primary); color: white;">
                             <MudCardContent Class="text-center">
                                 <MudText Typo="Typo.h6" Style="color: white;">Totaal Import</MudText>
                                 <MudText Typo="Typo.h4" Style="color: white;">@calculatedResult.TotalImportKwh.ToString("N2") kWh</MudText>
                             </MudCardContent>
                         </MudCard>
+                        </div>
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudCard Elevation="4" Style="background-color: var(--mud-palette-success); color: white;">
