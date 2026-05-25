@@ -23,5 +23,6 @@ COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 # Kopieer de aangepaste nginx configuratie voor Blazor client-side routing
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+RUN apk add --no-cache gettext
+
+CMD sh -c "echo '{\"ApiBaseUrl\":\"'$API_BASE_URL'\"}' > /usr/share/nginx/html/appsettings.json && exec nginx -g 'daemon off;'"

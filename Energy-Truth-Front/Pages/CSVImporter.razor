@@ -5,10 +5,18 @@
 @using System.Text.Json;
 @using Energy_Truth_Presentation.Components;
 @using Energy_Truth.Shared.Providers;
+@using Energy_Truth_Presentation.Services
 @using CsvHelper.Configuration;
-@inject HttpClient Http
+@inject HttpClient HttpClient
 @inject IDialogService DialogService
 @inject IEnumerable<IEnergyProvider> EnergyProviders
+@inject IAuthenticateService AuthService
+@inject NavigationManager NavigationManager
+
+@if (AuthService.CurrentUser == null)
+{
+    NavigationManager.NavigateTo("/login");
+}
 
 <PageTitle>Energie Data Import</PageTitle>
 
@@ -35,12 +43,12 @@
                Placeholder="Kies een provider..."
                Value="selectedProvider"
                ValueChanged="OnProviderSelected">
-    @foreach (var provider in providerNames)
-    {
-        <MudSelectItem Value="@provider">@provider</MudSelectItem>
-    }
+        @foreach (var provider in providerNames)
+        {
+            <MudSelectItem Value="@provider">@provider</MudSelectItem>
+        }
     
-</MudSelect>
+    </MudSelect>
 </div>
 
 
@@ -115,14 +123,14 @@
                     </MudCardContent>
                     <MudCardActions>
                         <div data-testid="process-data">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                    OnClick="ProcessImport" Disabled="@loading">
-                            @if (loading)
-                            {
-                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            }
-                            Inlezen en Verwerken
-                        </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                        OnClick="ProcessImport" Disabled="@loading">
+                                @if (loading)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                }
+                                Inlezen en Verwerken
+                            </MudButton>
                         </div>
                         <ExplanationCSVImporter />
                     </MudCardActions>
@@ -162,11 +170,11 @@
                     </MudCardContent>
                     <MudCardActions Class="justify-end">
                         <div data-testid="start-calculation">
-                        <MudButton Variant="Variant.Filled" Color="Color.Success"
-                                    OnClick="StartCalculation" Disabled="@loading">
-                            <MudIcon Icon="@Icons.Material.Filled.Calculate" Class="mr-2" />
-                            Start Berekening
-                        </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                        OnClick="StartCalculation" Disabled="@loading">
+                                <MudIcon Icon="@Icons.Material.Filled.Calculate" Class="mr-2" />
+                                Start Berekening
+                            </MudButton>
                         </div>
                     </MudCardActions>
                 </MudCard>
@@ -177,12 +185,12 @@
                 <MudGrid Class="mt-4">
                     <MudItem xs="12" sm="6">
                         <div data-testid="total-import">
-                        <MudCard Elevation="4" Style="background-color: var(--mud-palette-primary); color: white;">
-                            <MudCardContent Class="text-center">
-                                <MudText Typo="Typo.h6" Style="color: white;">Totaal Import</MudText>
-                                <MudText Typo="Typo.h4" Style="color: white;">@calculatedResult.TotalImportKwh.ToString("N2") kWh</MudText>
-                            </MudCardContent>
-                        </MudCard>
+                            <MudCard Elevation="4" Style="background-color: var(--mud-palette-primary); color: white;">
+                                <MudCardContent Class="text-center">
+                                    <MudText Typo="Typo.h6" Style="color: white;">Totaal Import</MudText>
+                                    <MudText Typo="Typo.h4" Style="color: white;">@calculatedResult.TotalImportKwh.ToString("N2") kWh</MudText>
+                                </MudCardContent>
+                            </MudCard>
                         </div>
                     </MudItem>
                     <MudItem xs="12" sm="6">
@@ -302,7 +310,7 @@
             content.Add(new StringContent(JsonSerializer.Serialize(userMapping)), "mapping");
             content.Add(new StringContent(selectedProvider), "provider");
 
-            var response = await Http.PostAsync("api/Import/csv", content);
+            var response = await HttpClient.PostAsync("api/Import/csv", content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -349,7 +357,7 @@
         try
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var response = await Http.PostAsJsonAsync($"api/Import/calculate/{selectedProvider}", energyDataList);
+            var response = await HttpClient.PostAsJsonAsync($"api/Import/calculate/{selectedProvider}", energyDataList);
 
             if (response.IsSuccessStatusCode)
             {
