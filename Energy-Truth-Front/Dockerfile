@@ -25,4 +25,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 RUN apk add --no-cache gettext
 
-CMD sh -c "echo '{\"ApiBaseUrl\":\"'$API_BASE_URL'\"}' > /usr/share/nginx/html/appsettings.json && exec nginx -g 'daemon off;'"
+CMD sh -c "echo '{\"ApiBaseUrl\":\"'$BACKEND_URL'\"}' > /usr/share/nginx/html/appsettings.json && exec nginx -g 'daemon off;'"
