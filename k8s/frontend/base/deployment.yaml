@@ -32,14 +32,3 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "500m"
-           volumeMounts:
-             - name: appsettings-volume
-               mountPath: /usr/share/nginx/html/appsettings.json
-               subPath: appsettings.json
-      volumes:
-        - name: appsettings-volume
-          configMap:
-            name: backend-network-config
-            items:
-              - key: appsettings.json
-                path: appsettings.json         
