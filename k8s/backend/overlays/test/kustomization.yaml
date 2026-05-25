@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: energytruth-test
 resources:
   - ../../base
-  - configmap.yaml
+  - config.yaml
 
 images:
   - name: ghcr.io/vikkoutsaftiss/energy-truth-backend
