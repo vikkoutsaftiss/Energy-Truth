@@ -17,7 +17,6 @@
   </Folder>
   <Folder Name="/10_Tests/">
     <Project Path="Energy-Truth.E2ETests/Energy-Truth.E2ETests.csproj" Id="8fb74b44-2e8f-4822-ae93-fbc9ce11bdf2">
-      <Build Solution="Debug|*" Project="false" />
     </Project>
     <Project Path="Tests/EnergyTruth.tests.csproj" />
   </Folder>
