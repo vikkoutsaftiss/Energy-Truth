@@ -1,4 +1,4 @@
-﻿using Energy_Truth.Shared;
+﻿using Energy_Truth.Shared.Login;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Energy_Truth_WEB_API.Controllers

@@ -2,7 +2,10 @@ using Energy_Truth.Shared.Providers;
 using Energy_Truth_WEB_API;
 using Energy_Truth_WEB_API.Calculators;
 using Energy_Truth_WEB_API.Services;
+using Energy_Truth.Shared.Repositories;
 using Scalar.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Infrastructure.DataAccess;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +44,10 @@ builder.Services.AddScoped<ITotalNonCumulativeCalculator, TotalNonCumulativeCalc
 builder.Services.AddScoped<IPriceProviderCombineService, PriceProviderCombineService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IPriceService, PriceService>();
+builder.Services.AddScoped<IImportBatchRepository, ImportBatchRepository>();
+builder.Services.AddScoped<IUsageDataRepository, UsageDataRepository>();
+builder.Services.AddDbContext<EnergyDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 

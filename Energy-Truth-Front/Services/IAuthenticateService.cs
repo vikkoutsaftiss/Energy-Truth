@@ -1,4 +1,4 @@
-﻿using Energy_Truth.Shared;
+﻿using Energy_Truth.Shared.Login;
 
 namespace Energy_Truth_Presentation.Services
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace Energy_Truth.Shared
+namespace Energy_Truth.Shared.Login
 {
     public class LoginRequest
     {
