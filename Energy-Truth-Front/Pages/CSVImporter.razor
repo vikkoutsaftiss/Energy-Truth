@@ -157,7 +157,7 @@
                                 <MudTh>Fase 3 maximale belasting</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd>@(context.Time?.ToString("dd-MM-yyyy HH:mm") ?? "-")</MudTd>
+                                <MudTd>@(context.Time.ToString("dd-MM-yyyy HH:mm") ?? "-")</MudTd>
                                 <MudTd>@context.ImportT1</MudTd>
                                 <MudTd>@context.ImportT2</MudTd>
                                 <MudTd>@context.ExportT1</MudTd>

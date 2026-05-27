@@ -1,9 +1,12 @@
 ﻿using CsvHelper.TypeConversion;
 using Energy_Truth.Shared;
-using Energy_Truth_WEB_API;
 using Energy_Truth_WEB_API.Services;
+using Energy_Truth_WEB_API.Calculators;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using Energy_Truth.Shared.Repositories;
+using Energy_Truth_WEB_API.Services.Import;
+using Energy_Truth_WEB_API.Services.DateFilter;
 
 [ApiController]
 [Route("api/[controller]")] // Dit zorgt dat de URL /api/import wordt
@@ -11,15 +14,21 @@ public class ImportController : ControllerBase
 {
     private readonly IImportService _importService; // dit is de service die verantwoordelijk is voor het verwerken van het CSV bestand.
     private readonly IEnergyCalculationService _energyCalculationService; // dit is de service die verantwoordelijk is voor het uitvoeren van de energie berekeningen.
+    private readonly IDateFilterService _dateFilterService;
+    private readonly ICumulativeCalculator _cumulativeCalculator;
+    private readonly IUsageDataRepository _usageDataRepository;
 
-    public ImportController(IImportService importService, IEnergyCalculationService energyCalculationService)
+    public ImportController(IImportService importService, IEnergyCalculationService energyCalculationService, IDateFilterService dateFilterService, ICumulativeCalculator cumulativeCalculator, IUsageDataRepository usageDataRepository)
     {
         _importService = importService; 
         _energyCalculationService = energyCalculationService;
+        _dateFilterService = dateFilterService;
+        _cumulativeCalculator = cumulativeCalculator;
+        _usageDataRepository = usageDataRepository;
     }
 
     [HttpPost("csv")] // wanneer de post actie CSV uitgevoerd wordt wordt deze methode aangeroepen. 
-    public async Task<IActionResult> UploadCsv([FromForm] IFormFile file, [FromForm] string mapping, [FromForm] string provider)
+    public async Task<IActionResult> UploadCsv([FromForm] IFormFile file, [FromForm] string mapping, [FromForm] string provider, [FromForm] int buildingId)
     // [FromForm] zorgt ervoor dat de API in het bestand kijkt voor de data. Normaal wordt dit uit een JSON gehaald.
     // IFormFile is een interface die een bestand vertegenwoordigt dat via een HTTP-request is geüpload. In dit geval verwachten we een CSV-bestand.
     // string mapping is een JSON-string die de kolomnaam in het CSV-bestand koppelt aan de property naam in de EnergyImportDTO. Dit maakt het mogelijk om flexibel te zijn in de structuur van het CSV-bestand dat gebruikers kunnen uploaden.
@@ -81,5 +90,30 @@ public class ImportController : ControllerBase
 
         var result = _energyCalculationService.CalculateEnergy(data, provider); 
         return Ok(result);
+    }
+
+    [HttpPost("PostToDatabase/{provider}")]
+    public async Task<IActionResult> PostToDatabase([FromBody] List<EnergyImportDTO> data, string provider, [FromQuery] int buildingId)
+    {
+        if (data == null || !data.Any() || !ModelState.IsValid)
+        {
+            return BadRequest("Geen of ongeldige data ontvangen.");
+        }
+
+        try
+        {
+            var cumulativeValues = _cumulativeCalculator.CalculateCumulativeImport(data, provider);
+
+            var filteredData = await _dateFilterService.FilterExistingDatesAsync(cumulativeValues, buildingId);
+
+            var batchId = await _usageDataRepository.BulkInsertAsync(filteredData, buildingId);
+
+            return Ok(batchId);
+        }
+        catch
+        {
+            return StatusCode(500, "Er is een fout opgetreden tijdens het verwerken van de data.");
+        }
+               
     }
 }

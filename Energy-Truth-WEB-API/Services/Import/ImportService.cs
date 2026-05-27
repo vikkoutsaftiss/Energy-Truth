@@ -1,11 +1,11 @@
-﻿namespace Energy_Truth_WEB_API;
+﻿namespace Energy_Truth_WEB_API.Services.Import;
 
 using CsvHelper;
 using CsvHelper.Configuration;
 using Energy_Truth.Shared;
-using Energy_Truth.Shared.Providers ;
-using Energy_Truth_WEB_API;
+using Energy_Truth.Shared.Providers;
 using System.Globalization;
+using Energy_Truth_WEB_API.Services.Mappers;
 using static Supabase.Gotrue.Constants;
 
 public class ImportService : IImportService

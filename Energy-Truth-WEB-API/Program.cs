@@ -1,11 +1,16 @@
 using Energy_Truth.Shared.Providers;
-using Energy_Truth_WEB_API;
 using Energy_Truth_WEB_API.Calculators;
 using Energy_Truth_WEB_API.Services;
 using Energy_Truth.Shared.Repositories;
 using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.DataAccess;
+using Infrastructure.DataAccess.DBContext;
+using Energy_Truth_WEB_API.Services.Import;
+using Energy_Truth_WEB_API.Services.DateFilter;
+using Energy_Truth_WEB_API.Services.Provider;
+using Energy_Truth_WEB_API.Services.Building;
+using Energy_Truth_WEB_API.Services.Customer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +51,12 @@ builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IPriceService, PriceService>();
 builder.Services.AddScoped<IImportBatchRepository, ImportBatchRepository>();
 builder.Services.AddScoped<IUsageDataRepository, UsageDataRepository>();
+builder.Services.AddScoped<IDateFilterService, DateFilterService>();
+builder.Services.AddScoped<ICumulativeCalculator, CumulativeCalculatorService>();
+builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IBuildingService, BuildingService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddDbContext<EnergyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var supabaseUrl = builder.Configuration["Supabase:Url"];

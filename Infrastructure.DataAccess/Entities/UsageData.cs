@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace Infrastructure.DataAccess
+namespace Infrastructure.DataAccess.Entities
 {
+    [Table("Verbruiksdata")]
     public class UsageData
     {
         [Column("ID")]
         public int Id { get; set; }
+        [Column("ImportBatchID")]
         public int ImportBatchId { get; set; }
         [Column("Gebouw_ID")]
         public int BuildingId { get; set; }
@@ -19,8 +21,5 @@ namespace Infrastructure.DataAccess
         public decimal? KWhBought { get; set; }
         [Column("Stroom_Verkocht_Net_kWh")]
         public decimal? KWhSold { get; set; }
-
-
-
     }
 }

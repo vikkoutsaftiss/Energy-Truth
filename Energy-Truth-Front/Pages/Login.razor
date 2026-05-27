@@ -10,7 +10,7 @@
     NavigationManager.NavigateTo("/csvimporter");
 }
 
-<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom bij Energy Truth</MudText>
+<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Login bij Energy-Truth</MudText>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
 {
@@ -75,7 +75,7 @@
             return;
         }
 
-        LoginRequest loginRequest = new LoginRequest(Username, Password);
+        LoginRegisterRequest loginRequest = new LoginRegisterRequest(Username, Password);
 
         var result = await HttpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
 
@@ -95,10 +95,9 @@
         else
         {
             ErrorMessage = "Ongeldige gebruikersnaam of wachtwoord.";
-        }
-
-        
+        }        
     }
+
 
 }
 

@@ -5,9 +5,9 @@ using System.Text.Json.Serialization;
 
 namespace Energy_Truth.Shared.Login
 {
-    public class LoginRequest
+    public class LoginRegisterRequest
     {
-        public LoginRequest(string username, string password)
+        public LoginRegisterRequest(string username, string password)
         {
             Username = username;
             Password = password;    

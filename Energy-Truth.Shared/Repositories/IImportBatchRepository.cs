@@ -7,6 +7,7 @@ namespace Energy_Truth.Shared.Repositories
     public interface IImportBatchRepository
     {
         Task<int> CreateImportBatchAsync(int buildingId);
+        Task UpdateStatusBatchAsync(int importBatchId);
 
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Energy_Truth.Shared.Repositories;
+using Infrastructure.DataAccess.DBContext;
+using Infrastructure.DataAccess.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,6 +25,16 @@ namespace Infrastructure.DataAccess
             _dbContext.ImportBatches.Add(importBatch);
             await _dbContext.SaveChangesAsync();
             return importBatch.ImportBatchId;
+        }
+
+        public async Task UpdateStatusBatchAsync(int importBatchId)
+        {
+            var batch = await _dbContext.ImportBatches.FindAsync(importBatchId);
+            if (batch != null)
+            {
+                batch.Status = "Ready";
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

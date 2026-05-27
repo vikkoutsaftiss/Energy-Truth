@@ -6,7 +6,7 @@ namespace Energy_Truth.Shared
     public class EnergyImportDTO
     {
         [Name("time")]
-        public DateTime? Time { get; set; }
+        public DateTime Time { get; set; }
 
         [Name("Import T1 kWh")]
         public double? ImportT1 { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace Energy_Truth_WEB_API;
+﻿namespace Energy_Truth_WEB_API.Services.Mappers;
 
 using CsvHelper.Configuration;
 using Energy_Truth.Shared;
