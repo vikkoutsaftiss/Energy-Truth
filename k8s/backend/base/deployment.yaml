@@ -24,6 +24,12 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: DOTNET_EnableDiagnostics
+              value: "1"
+            - name: COMPlus_ZapDisable
+              value: "1" # Schakelt pre-compiled code-optimalisatie uit die vaak 139 maskeert
+            - name: DOTNET_PRINT_TELEMETRY_MESSAGE
+              value: "true"
             - name: FRONTEND_URL
               valueFrom:
                 configMapKeyRef:
