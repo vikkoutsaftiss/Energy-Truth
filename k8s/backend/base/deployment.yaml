@@ -18,8 +18,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: github-registry-secret
-      hostNetwork: true  # <--- HIER MOET HET STAAN
-      dnsPolicy: ClusterFirstWithHostNet # <--- DIT IS CRUCIAAL
       containers:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
