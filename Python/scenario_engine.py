@@ -22,7 +22,6 @@ import numpy as np
 from typing import Optional
 
 from simulation_config import SimulationConfig, BatteryConfig
-from data_ingestion import load_meter_csv, save_to_database
 from reference_data import get_provider_prices, get_net_prices, reconstruct_historical_prices
 from battery_simulator import simulate_battery, get_simulation_summary
 from cost_calculator import (
@@ -208,17 +207,17 @@ def _normalize_timestamps(df: pd.DataFrame, col: str = "timestamp_from") -> pd.D
     return df
 
 
-def _load_meter_data_from_db(klant_id: int, start_date: str, end_date: str) -> pd.DataFrame:
+def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    Laad meterdata rechtstreeks uit de DB (Verbruiksdata tabel).
+    Laad meterdata rechtstreeks uit de DB (Verbruiksdata tabel), strikt
+    voor EEN ImportBatch.
 
-    Werkwijze (schema 26 mei 2026):
-      Verbruiksdata heeft GEEN Gebouw_ID-kolom. De koppeling naar het
-      Gebouw loopt via ImportBatch: Verbruiksdata.ImportBatchID ->
-      ImportBatch.ID, ImportBatch.GebouwID -> Gebouw.ID. We joinen daarom
-      Verbruiksdata -> ImportBatch -> Gebouw en filteren op Klant_ID +
-      datumrange. Dit gebeurt in één SQL-statement via een directe
-      psycopg2-connectie (de .table()-wrapper kent geen JOIN-syntax).
+    Werkwijze (batch-scope, 30 mei 2026):
+      De worker verwerkt precies de batch die hij geclaimd heeft. We
+      filteren daarom op Verbruiksdata.ImportBatchID, niet op Gebouw of
+      Klant. Zo lopen meerdere uploads van dezelfde klant of hetzelfde
+      gebouw nooit door elkaar. De datumrange (rolling year uit
+      period_selector) wordt er bovenop toegepast.
 
       De Yan-stijl kolomnamen worden hernoemd naar de pandas-conventie
       die de rest van de simulator gebruikt (timestamp_from,
@@ -234,9 +233,7 @@ def _load_meter_data_from_db(klant_id: int, start_date: str, end_date: str) -> p
                v."Stroom_Gekocht_Net_kWh"      AS "Stroom_Gekocht_Net_kWh",
                v."Stroom_Verkocht_Net_kWh"     AS "Stroom_Verkocht_Net_kWh"
         FROM "Verbruiksdata" v
-        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
-        JOIN "Gebouw"      g ON b."GebouwID"      = g."ID"
-        WHERE g."Klant_ID" = %s
+        WHERE v."ImportBatchID" = %s
           AND v."MeetDatumTijd" >= %s
           AND v."MeetDatumTijd" <= %s
         ORDER BY v."MeetDatumTijd"
@@ -244,7 +241,7 @@ def _load_meter_data_from_db(klant_id: int, start_date: str, end_date: str) -> p
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, (
-                klant_id,
+                import_batch_id,
                 f"{start_date} 00:00:00",
                 f"{end_date} 23:59:59",
             ))
@@ -268,50 +265,31 @@ def _load_meter_data_from_db(klant_id: int, start_date: str, end_date: str) -> p
 
 def _load_meter_data(config: SimulationConfig) -> pd.DataFrame:
     """
-    Laad meterdata uit Supabase.
-    Indien niet aanwezig: lees CSV in via data_ingestion, sla op in Supabase,
-    en lees daarna alsnog uit Supabase. Geen directe CSV-fallback.
+    Laad meterdata rechtstreeks uit de database (Verbruiksdata).
+
+    Geen CSV-fallback meer: de worker draait puur op serverdata die door
+    de import-pipeline (Vik) in de DB is gezet. Als er voor deze klant en
+    periode niets staat, is dat een fout, geen reden om een CSV in te lezen.
     """
     start = config.simulation.start_date
     end = config.simulation.end_date
 
-    # Stap 1: Probeer Supabase
-    df = _load_meter_data_from_db(config.klant_id, start, end)
-    if not df.empty:
-        logger.info(
-            f"Meterdata uit Supabase: {len(df)} kwartieren "
-            f"({start} t/m {end})"
-        )
-        return df
-
-    # Stap 2: Geen data in Supabase — CSV inlezen en opslaan
-    if not config.csv_file:
+    if config.import_batch_id is None:
         raise ValueError(
-            f"Geen meterdata in de DB voor klant {config.klant_id} "
-            f"en geen csv_file geconfigureerd."
+            "Geen import_batch_id in de config. De worker moet de geclaimde "
+            "ImportBatch doorgeven zodat de meterdata batch-scoped geladen wordt."
         )
 
-    logger.info(
-        "Geen meterdata in Supabase — CSV wordt ingelezen en opgeslagen"
-    )
-    csv_df = load_meter_csv(config.csv_file, klant_id=config.klant_id)
-    result = save_to_database(csv_df, klant_id=config.klant_id)
-    logger.info(
-        f"CSV ingestie voltooid: {result.get('inserted', '?')} records "
-        f"opgeslagen in Supabase"
-    )
-
-    # Stap 3: Opnieuw uit Supabase laden (single source of truth)
-    df = _load_meter_data_from_db(config.klant_id, start, end)
+    df = _load_meter_data_from_db(config.import_batch_id, start, end)
     if df.empty:
         raise ValueError(
-            f"Na CSV-ingestie nog steeds geen meterdata in Supabase "
-            f"voor periode {start} t/m {end}."
+            f"Geen meterdata in de database voor ImportBatch "
+            f"{config.import_batch_id} in periode {start} t/m {end}."
         )
 
     logger.info(
-        f"Meterdata uit Supabase (na ingestie): {len(df)} kwartieren "
-        f"({start} t/m {end})"
+        f"Meterdata uit database (batch {config.import_batch_id}): "
+        f"{len(df)} kwartieren ({start} t/m {end})"
     )
     return df
 

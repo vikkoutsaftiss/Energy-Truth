@@ -5,7 +5,7 @@ Regels (afspraak met Andre, 26 mei 2026):
 
 1. Standaard wordt de simulatie altijd over de laatste 365 dagen
    gedraaid, gerekend vanaf de meest recente MeetDatumTijd in
-   Verbruiksdata voor het betreffende Gebouw.
+   Verbruiksdata van de geclaimde ImportBatch.
 
 2. Als er meer dan 365 dagen aan data zijn: alleen het laatste jaar
    wordt gebruikt. De oudere data blijft in de DB maar telt niet mee.
@@ -54,25 +54,28 @@ class PeriodSelection:
 
 def bepaal_periode(
     conn,
-    gebouw_id: int,
+    import_batch_id: int,
     rolling_days: int = ROLLING_YEAR_DAYS,
 ) -> Optional[PeriodSelection]:
     """
-    Lees MIN en MAX MeetDatumTijd uit Verbruiksdata voor het gegeven
-    Gebouw_ID via een directe SQL-query op een psycopg2-connectie.
+    Lees MIN en MAX MeetDatumTijd uit Verbruiksdata voor EEN ImportBatch
+    via een directe SQL-query op een psycopg2-connectie.
+
+    De rolling year wordt strikt afgeleid van de verbruiksdata van de
+    geclaimde batch (ImportBatchID), niet van het hele gebouw. Meerdere
+    uploads van hetzelfde gebouw lopen zo niet door elkaar.
 
     Returns:
-        PeriodSelection, of None als er geen data is voor dit gebouw.
+        PeriodSelection, of None als er geen data is voor deze batch.
     """
     sql = """
         SELECT MIN("MeetDatumTijd") AS min_dt,
                MAX("MeetDatumTijd") AS max_dt
         FROM "Verbruiksdata" v
-        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
-        WHERE b."GebouwID" = %s
+        WHERE v."ImportBatchID" = %s
     """
     with conn.cursor() as cur:
-        cur.execute(sql, (gebouw_id,))
+        cur.execute(sql, (import_batch_id,))
         row = cur.fetchone()
 
     if not row or row[0] is None or row[1] is None:
@@ -111,14 +114,14 @@ if __name__ == "__main__":
     from db_connection import get_psycopg2_connection  # nog te schrijven
 
     if len(sys.argv) < 2:
-        print("Gebruik: python period_selector.py <gebouw_id>")
+        print("Gebruik: python period_selector.py <import_batch_id>")
         sys.exit(1)
 
-    gebouw_id = int(sys.argv[1])
+    import_batch_id = int(sys.argv[1])
     with get_psycopg2_connection() as conn:
-        period = bepaal_periode(conn, gebouw_id)
+        period = bepaal_periode(conn, import_batch_id)
 
     if period is None:
-        print(f"Geen verbruiksdata gevonden voor Gebouw_ID {gebouw_id}")
+        print(f"Geen verbruiksdata gevonden voor ImportBatchID {import_batch_id}")
     else:
         print(period.summary())

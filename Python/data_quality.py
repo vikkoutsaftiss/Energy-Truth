@@ -15,9 +15,9 @@ Gebruik:
     from data_quality import calculate_quality_from_dataframe
     score = calculate_quality_from_dataframe(df)
 
-    # Vanuit database (met klant_id):
+    # Vanuit database (strikt per ImportBatch):
     from data_quality import calculate_quality_score
-    score = calculate_quality_score(klant_id)
+    score = calculate_quality_score(import_batch_id)
 """
 
 import pandas as pd
@@ -42,19 +42,21 @@ SEASONS = {
     'herfst': {9, 10, 11},
 }
 
-# Score per original_interval type (gebruikt voor input-type én dekkingsgraad)
+# Score per original_interval (gebruikt voor input-type én dekkingsgraad).
+# Sleutels zijn INTEGER-minuten, passend bij de DB-kolom
+# Verbruiksdata.Origineel_Interval_Min (int): 15 = kwartier, 60 = uur, 1440 = dag.
 INTERVAL_SCORES = {
-    '15min': 100,
-    '60min': 60,
-    '1440min': 20,
+    15: 100,
+    60: 60,
+    1440: 20,
 }
 
 # Wegingsfactor per interval voor dekkingsgraad
 # Originele 15-min = 1.0 punt, uurdata = 0.6 punt, dagdata = 0.2 punt
 COVERAGE_WEIGHT = {
-    '15min': 1.0,
-    '60min': 0.6,
-    '1440min': 0.2,
+    15: 1.0,
+    60: 0.6,
+    1440: 0.2,
 }
 
 QUARTERS_PER_HOUR = 4
@@ -212,8 +214,8 @@ def _calculate_input_type(df):
         return 0.0, {'verdeling': {}}
 
     if 'original_interval' not in df.columns:
-        # Geen interval-info → neem aan dat alles 15min is
-        return 100.0, {'verdeling': {'15min': len(df)}}
+        # Geen interval-info → neem aan dat alles 15-min (kwartier) is
+        return 100.0, {'verdeling': {15: len(df)}}
 
     verdeling = df['original_interval'].value_counts().to_dict()
     totaal = len(df)
@@ -328,17 +330,19 @@ def calculate_quality_from_dataframe(df):
     }
 
 
-def calculate_quality_score(klant_id):
+def calculate_quality_score(import_batch_id):
     """
-    Haalt meterdata op uit Verbruiksdata voor een klant_id (via Gebouw)
-    en berekent de score.
+    Haalt meterdata op uit Verbruiksdata voor EEN ImportBatch en berekent
+    de score.
+
+    Strikt batch-scoped (30 mei 2026), net als
+    scenario_engine._load_meter_data_from_db en period_selector. Zo gaan de
+    betrouwbaarheidsscore en het rapport gegarandeerd over precies dezelfde
+    meterdata; meerdere uploads van dezelfde klant lopen niet door elkaar.
 
     Returns:
         dict met 'totaalscore', 'interpretatie', en per component details.
     """
-    # Verbruiksdata heeft geen Gebouw_ID; koppeling loopt via
-    # ImportBatch.GebouwID. Eén directe SQL-JOIN (psycopg2), net als
-    # scenario_engine._load_meter_data_from_db.
     from db_connection import get_connection
     import psycopg2.extras
 
@@ -347,19 +351,17 @@ def calculate_quality_score(klant_id):
                v."Is_Geinterpoleerd"      AS "Is_Geinterpoleerd",
                v."Origineel_Interval_Min" AS "Origineel_Interval_Min"
         FROM "Verbruiksdata" v
-        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
-        JOIN "Gebouw"      g ON b."GebouwID"      = g."ID"
-        WHERE g."Klant_ID" = %s
+        WHERE v."ImportBatchID" = %s
         ORDER BY v."MeetDatumTijd"
     """
-    print(f"Data ophalen voor klant {klant_id} via ImportBatch-koppeling...")
+    print(f"Data ophalen voor ImportBatch {import_batch_id}...")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (klant_id,))
+            cur.execute(sql, (import_batch_id,))
             all_records = [dict(r) for r in cur.fetchall()]
 
     if not all_records:
-        print("⚠️  Geen meterdata gevonden voor deze klant!")
+        print("⚠️  Geen meterdata gevonden voor deze ImportBatch!")
         return {
             'totaalscore': 0,
             'interpretatie': _interpretatie(0),
@@ -430,21 +432,14 @@ def print_quality_report(result):
 # ============================================================
 
 if __name__ == "__main__":
-    import json
-    import os
+    import sys
 
-    # Laad config.json voor klant_id
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    # Standalone test: geef het ImportBatchID als argument mee.
+    #   python data_quality.py <import_batch_id>
+    if len(sys.argv) < 2:
+        print("Gebruik: python data_quality.py <import_batch_id>")
+        sys.exit(1)
 
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-        klant_id = config.get('klant_id')
-
-        if klant_id is not None:
-            result = calculate_quality_score(klant_id)
-            print_quality_report(result)
-        else:
-            print("❌ Geen klant_id in config.json!")
-    else:
-        print("❌ config.json niet gevonden!")
+    import_batch_id = int(sys.argv[1])
+    result = calculate_quality_score(import_batch_id)
+    print_quality_report(result)

@@ -156,12 +156,12 @@ def process_batch(batch: dict) -> None:
     if klant_id is None:
         raise RuntimeError(f"Geen Klant gevonden voor Gebouw {gebouw_id}")
 
-    # 1. Periode bepalen (rolling year, of partial)
+    # 1. Periode bepalen (rolling year, of partial) -- strikt op deze batch
     from period_selector import bepaal_periode
     with get_connection() as conn:
-        period = bepaal_periode(conn, gebouw_id)
+        period = bepaal_periode(conn, batch_id)
     if period is None:
-        raise RuntimeError(f"Geen Verbruiksdata voor Gebouw {gebouw_id}")
+        raise RuntimeError(f"Geen Verbruiksdata voor ImportBatch {batch_id}")
     print(f"[worker] {period.summary()}")
 
     # 2. Dynamische SimulationConfig samenstellen.
@@ -197,6 +197,7 @@ def process_batch(batch: dict) -> None:
             end_date=period.end_date.strftime("%Y-%m-%d"),
         ),
         csv_file=None,
+        import_batch_id=batch_id,
         providers="all",
     )
 

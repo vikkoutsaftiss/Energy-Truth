@@ -6,9 +6,9 @@ Dit is het Python-deel van Energy-Truth. Het neemt de slimme-meterdata van een k
 
 Per klant gebeurt er, in volgorde, het volgende:
 
-1. **Data inlezen.** De meetgegevens van de klant (verbruik en teruglevering per kwartier) worden uit een CSV gehaald en in de database gezet.
-2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0–100) uit.
-3. **Periode bepalen.** We rekenen altijd met het laatst beschikbare jaar aan data (rolling year).
+1. **Data ophalen.** De meetgegevens van de klant (verbruik en teruglevering per kwartier) staan al in de database; de import-pipeline van het team schrijft ze daar weg. De worker leest ze rechtstreeks uit de database, strikt voor de batch die net is aangemeld. Er wordt geen CSV meer ingelezen.
+2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0–100) uit, berekend over diezelfde batch-data.
+3. **Periode bepalen.** We rekenen altijd met het laatst beschikbare jaar aan data van die batch (rolling year).
 4. **Scenario's doorrekenen.** Voor elke combinatie van energieleverancier en batterij-strategie (zelfverbruik, dynamisch handelen, slimme mix, …) berekent het systeem wat de klant in dat jaar zou hebben betaald.
 5. **Beste batterij kiezen.** Uit de catalogus van beschikbare thuisbatterijen wordt gerangschikt welke het beste uitkomt — op basis van terugverdientijd, netto opbrengst en kosten per kWh.
 6. **PDF maken.** De resultaten worden samengevat in een klantvriendelijk rapport.
@@ -38,8 +38,7 @@ Dat is alles. Het script blijft draaien, kijkt steeds of er nieuwe klanten in de
 | Bestand | Waar is het voor? |
 |---|---|
 | `worker.py` | Het startpunt — pakt nieuwe opdrachten op en doorloopt de hele keten. |
-| `data_ingestion.py` | Leest CSV-meetdata in en zet het netjes in de database. |
-| `data_quality.py` | Geeft de meetdata een betrouwbaarheidsscore. |
+| `data_quality.py` | Geeft de meetdata een betrouwbaarheidsscore (per batch). |
 | `period_selector.py` | Bepaalt welk jaar aan data we gebruiken. |
 | `scenario_engine.py` | Rekent alle combinaties van leverancier × batterij-strategie door. |
 | `battery_simulator.py` | Simuleert kwartier voor kwartier hoe een batterij zich gedraagt. |
@@ -50,4 +49,3 @@ Dat is alles. Het script blijft draaien, kijkt steeds of er nieuwe klanten in de
 | `reference_data.py` | Haalt energieprijzen en provider-marges op. |
 | `simulation_config.py` | De instellingen-container voor één klantberekening. |
 | `db_connection.py` | Verbinding met de database. |
-| `window_functions.py` | Hulpfuncties (zoals het detecteren van gaten in tijdreeksen). |

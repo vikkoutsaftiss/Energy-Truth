@@ -83,6 +83,7 @@ class SimulationConfig:
     simulation: SimulationPeriod
     csv_file: Optional[str] = None
     battery_id: Optional[str] = None  # UUID uit catalogus (indien gekozen)
+    import_batch_id: Optional[int] = None  # geclaimde ImportBatch (worker-scope)
     providers: str = "all"            # "all" of lijst van codes
 
     @classmethod
@@ -149,6 +150,7 @@ class SimulationConfig:
             simulation=simulation,
             csv_file=data.get("csv_file"),
             battery_id=data.get("battery_id"),
+            import_batch_id=data.get("import_batch_id"),
             providers=data.get("providers", "all"),
         )
 
