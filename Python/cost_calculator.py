@@ -2,18 +2,14 @@
 cost_calculator.py — Kostenberekening per kwartier voor Energy-Truth.
 
 Berekent energiekosten per 15-minuten interval, zowel zonder als met batterij.
-Gebruikt historische malus per aanbieder (provider_malus_history tabel).
-Zolang die tabel niet bestaat, wordt malus=0 als default gebruikt.
 
-BELANGRIJK: Prijsmodel
-  - Afname (kopen):       all-in prijs (beursprijs + EB + ODE + btw + opslag)
-  - Teruglevering (verkopen): beursprijs (nettoprijzen) − malus
+Prijsmodel:
+  - Afname (kopen):           all-in prijs (beursprijs + EB + ODE + btw + opslag)
+  - Teruglevering (verkopen): kale beursprijs (nettoprijzen)
   - Je krijgt energiebelasting, ODE en btw NIET terug bij teruglevering!
 
-Drie malus-types:
-  - 'full':       feed_in_price = nettoprijzen − malus
-  - 'percentage': feed_in_price = nettoprijzen × (1 − malus)
-  - 'fixed':      feed_in_price = malus (vast bedrag)
+Een leverancier-specifieke teruglever-malus is bewust NIET gemodelleerd; zie de
+hook in calculate_feed_in_price als dat ooit nodig wordt.
 
 Gebruik:
     from cost_calculator import calculate_costs_no_battery, calculate_costs_with_battery
@@ -22,184 +18,29 @@ Gebruik:
 import pandas as pd
 from db_connection import get_client
 
-# Module-level flag: als provider_malus_history niet bestaat (404),
-# niet steeds opnieuw proberen — geeft default malus=0.
-_malus_table_exists = None  # None = nog niet getest, True/False = resultaat
-
-
 # ============================================================
-# 1. MALUS OPHALEN (HISTORISCH)
+# FEED-IN PRIJS BEREKENEN
 # ============================================================
 
-def get_malus_for_date(provider_code, date):
+def calculate_feed_in_price(net_price):
     """
-    Haal de geldige malus op voor een aanbieder op een specifieke datum.
+    Terugleverprijs = de kale beursprijs (nettoprijzen), afgekapt op >= 0.
 
-    Zoekt in provider_malus_history het record waar:
-      valid_from <= date AND (valid_to IS NULL OR valid_to >= date)
+    Bij teruglevering krijg je energiebelasting, ODE en btw NIET terug, dus we
+    rekenen met de kale beursprijs, niet de all-in consumentenprijs.
 
-    Args:
-        provider_code: bijv. 'ANWB'
-        date: datum als string of datetime
-
-    Returns:
-        dict met 'malus' (float) en 'type' (str)
-        Default: {'malus': 0.0, 'type': 'full'} als geen record gevonden
-    """
-    global _malus_table_exists
-    default = {'malus': 0.0, 'type': 'full'}
-
-    # Als we al weten dat de tabel niet bestaat, meteen default teruggeven
-    if _malus_table_exists is False:
-        return default
-
-    try:
-        client = get_client()
-        # Lookup Afkorting → Net_Aanbieder.ID
-        na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider_code).limit(1).execute()
-        if not na.data:
-            return default
-        na_id = na.data[0]['ID']
-
-        # ERD: Net_AanbiederID (zonder underscore), Geldig_tot (kleine t).
-        # Geen .or_() in onze wrapper; we filteren in Python op de OR-conditie.
-        response = (
-            client.table('Net_Aanbieder_Malus_Historie')
-            .select('Feed_In_Malus, Feed_In_Type_Malus, Geldig_tot')
-            .eq('Net_AanbiederID', na_id)
-            .lte('Geldig_Van', str(date))
-            .order('Geldig_Van', desc=True)
-            .execute()
-        )
-        # Pak de eerste rij waar Geldig_tot NULL is OF >= date
-        if response.data:
-            from datetime import date as _date_cls
-            target = date if isinstance(date, _date_cls) else _date_cls.fromisoformat(str(date))
-            filtered = []
-            for rec in response.data:
-                gt = rec.get('Geldig_tot')
-                if gt is None:
-                    filtered.append(rec); continue
-                try:
-                    gt_d = pd.Timestamp(gt).date() if not isinstance(gt, _date_cls) else gt
-                    if gt_d >= target:
-                        filtered.append(rec)
-                except Exception:
-                    pass
-            response.data = filtered[:1]
-        _malus_table_exists = True  # Query lukte → tabel bestaat
-
-        if response.data:
-            record = response.data[0]
-            return {
-                'malus': float(record['Feed_In_Malus']),
-                'type': record['Feed_In_Type_Malus'],
-            }
-    except Exception:
-        # Tabel bestaat nog niet → onthoud dit voor de rest van de sessie
-        _malus_table_exists = False
-
-    return default
-
-
-def _get_malus_map(provider_code, dates):
-    """
-    Bouwt een lookup van datum → malus voor een reeks datums.
-    Optimaliseert door unieke datums te groeperen.
-
-    Args:
-        provider_code: bijv. 'ANWB'
-        dates: iterable van datums
-
-    Returns:
-        dict van date → {'malus': float, 'type': str}
-    """
-    global _malus_table_exists
-    unique_dates = sorted(set(d.date() if hasattr(d, 'date') else d for d in dates))
-    malus_map = {}
-    default = {'malus': 0.0, 'type': 'full'}
-
-    # Als we al weten dat de tabel niet bestaat, meteen defaults teruggeven
-    if _malus_table_exists is False:
-        return {d: default for d in unique_dates}
-
-    # Als er weinig unieke datums zijn, per datum opvragen
-    # Anders: alle malus-records ophalen en lokaal matchen
-    if len(unique_dates) <= 30:
-        for d in unique_dates:
-            malus_map[d] = get_malus_for_date(provider_code, d)
-    else:
-        # Alle malus-records voor deze aanbieder ophalen
-        try:
-            client = get_client()
-            # Lookup Afkorting → Net_Aanbieder.ID
-            na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider_code).limit(1).execute()
-            if not na.data:
-                return {d: default for d in unique_dates}
-            na_id = na.data[0]['ID']
-
-            response = (
-                client.table('Net_Aanbieder_Malus_Historie')
-                .select('Feed_In_Malus, Feed_In_Type_Malus, Geldig_Van, Geldig_tot')
-                .eq('Net_AanbiederID', na_id)
-                .order('Geldig_Van', desc=True)
-                .execute()
-            )
-            records = response.data or []
-            _malus_table_exists = True
-        except Exception:
-            _malus_table_exists = False
-            records = []
-
-        for d in unique_dates:
-            found = False
-            for rec in records:
-                rec_from = pd.Timestamp(rec['Geldig_Van']).date()
-                rec_to = pd.Timestamp(rec['Geldig_tot']).date() if rec.get('Geldig_tot') else None
-
-                if rec_from <= d and (rec_to is None or rec_to >= d):
-                    malus_map[d] = {
-                        'malus': float(rec['Feed_In_Malus']),
-                        'type': rec['Feed_In_Type_Malus'],
-                    }
-                    found = True
-                    break
-            if not found:
-                malus_map[d] = default
-
-    return malus_map
-
-
-# ============================================================
-# 2. FEED-IN PRIJS BEREKENEN
-# ============================================================
-
-def calculate_feed_in_price(net_price, malus, malus_type):
-    """
-    Bereken de terugleverprijs op basis van NETTOPRIJZEN (beursprijs) en malus.
-
-    BELANGRIJK: Gebruik hier de nettoprijzen (kale beursprijs), NIET de all-in
-    consumentenprijs. Bij teruglevering krijg je energiebelasting, ODE en btw
-    niet terug — alleen de beursprijs minus malus.
+    Een leverancier-specifieke teruglever-malus is bewust NIET gemodelleerd
+    (niet voorzien in het datamodel). Mocht dat ooit nodig worden (bijv. na het
+    wegvallen van de saldering), dan is dit de plek: trek de malus hier van
+    net_price af.
 
     Args:
         net_price: kale beursprijs / nettoprijzen (€/kWh), EXCL belastingen
-        malus: malus-waarde
-        malus_type: 'full', 'percentage', of 'fixed'
 
     Returns:
         feed_in_price (€/kWh), minimaal 0
     """
-    if malus_type == 'full':
-        feed_in_price = net_price - malus
-    elif malus_type == 'percentage':
-        feed_in_price = net_price * (1 - malus)
-    elif malus_type == 'fixed':
-        feed_in_price = malus  # vast bedrag
-    else:
-        feed_in_price = net_price  # onbekend type → geen malus
-
-    return max(0.0, feed_in_price)
+    return max(0.0, net_price)
 
 
 # ============================================================
@@ -211,7 +52,7 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
     Bereken energiekosten per kwartier ZONDER batterij.
 
     Formule: kosten = verbruik × all-in prijs − teruglevering × terugleverprijs
-    Terugleverprijs = nettoprijzen (beursprijs) − malus
+    Terugleverprijs = kale beursprijs (nettoprijzen)
 
     Args:
         meter_data: DataFrame met timestamp_from, consumption_kwh, feed_in_kwh
@@ -256,29 +97,16 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
         # Legacy: geen nettoprijzen meegegeven → all-in prijs als terugval
         merged['net_price'] = merged['price']
 
-    # Malus ophalen per datum
-    malus_map = _get_malus_map(provider_code, merged['timestamp_from'])
+    # Terugleverprijs = kale beursprijs (geen teruglever-malus gemodelleerd).
+    # Hook: een eventuele leverancier-malus zou hier op net_price toegepast worden.
+    # Gevectoriseerd (geen iterrows): scheelt fors over ~tienduizenden rijen.
+    merged['feed_in_price'] = merged['net_price'].clip(lower=0)
 
-    # Kosten berekenen per rij
-    costs = []
-    feed_in_prices = []
-
-    for _, row in merged.iterrows():
-        date_key = row['timestamp_from'].date() if hasattr(row['timestamp_from'], 'date') else row['timestamp_from']
-        malus_info = malus_map.get(date_key, {'malus': 0.0, 'type': 'full'})
-
-        # Terugleverprijs op basis van NETTOPRIJZEN (beursprijs), niet all-in!
-        fi_price = calculate_feed_in_price(
-            row['net_price'], malus_info['malus'], malus_info['type']
-        )
-        feed_in_prices.append(fi_price)
-
-        # Kosten = verbruik × all-in prijs − teruglevering × terugleverprijs
-        cost = (row['consumption_kwh'] * row['price']) - (row['feed_in_kwh'] * fi_price)
-        costs.append(cost)
-
-    merged['feed_in_price'] = feed_in_prices
-    merged['cost_no_battery'] = costs
+    # Kosten = verbruik × all-in prijs − teruglevering × terugleverprijs
+    merged['cost_no_battery'] = (
+        merged['consumption_kwh'] * merged['price']
+        - merged['feed_in_kwh'] * merged['feed_in_price']
+    )
 
     return merged
 
@@ -295,7 +123,7 @@ def calculate_costs_with_battery(simulated_data, provider_code, net_prices=None)
     heeft berekend. Deze functie voegt alleen de kostenkolom toe.
 
     Formule: kosten = grid_consumption × all-in prijs − grid_feed_in × terugleverprijs
-    Terugleverprijs = nettoprijzen (beursprijs) − malus
+    Terugleverprijs = kale beursprijs (nettoprijzen)
 
     Args:
         simulated_data: DataFrame met timestamp_from, price,
@@ -327,28 +155,14 @@ def calculate_costs_with_battery(simulated_data, provider_code, net_prices=None)
     elif 'net_price' not in simulated_data.columns:
         simulated_data['net_price'] = simulated_data['price']
 
-    # Malus ophalen per datum
-    malus_map = _get_malus_map(provider_code, simulated_data['timestamp_from'])
+    # Terugleverprijs = kale beursprijs (geen teruglever-malus). Gevectoriseerd.
+    simulated_data['feed_in_price_battery'] = simulated_data['net_price'].clip(lower=0)
 
-    costs = []
-    feed_in_prices = []
-
-    for _, row in simulated_data.iterrows():
-        date_key = row['timestamp_from'].date() if hasattr(row['timestamp_from'], 'date') else row['timestamp_from']
-        malus_info = malus_map.get(date_key, {'malus': 0.0, 'type': 'full'})
-
-        # Terugleverprijs op basis van NETTOPRIJZEN
-        fi_price = calculate_feed_in_price(
-            row['net_price'], malus_info['malus'], malus_info['type']
-        )
-        feed_in_prices.append(fi_price)
-
-        # Kosten = netverbruik × all-in prijs − netto-teruglevering × terugleverprijs
-        cost = (row['grid_consumption'] * row['price']) - (row['grid_feed_in'] * fi_price)
-        costs.append(cost)
-
-    simulated_data['feed_in_price_battery'] = feed_in_prices
-    simulated_data['cost_with_battery'] = costs
+    # Kosten = netverbruik × all-in prijs − netto-teruglevering × terugleverprijs
+    simulated_data['cost_with_battery'] = (
+        simulated_data['grid_consumption'] * simulated_data['price']
+        - simulated_data['grid_feed_in'] * simulated_data['feed_in_price_battery']
+    )
 
     return simulated_data
 
@@ -592,31 +406,15 @@ def run_unit_tests():
     print("  DEEL 1: UNIT TESTS")
     print("=" * 60)
 
-    # Test 1: Malus ophalen (verwacht default omdat tabel niet bestaat)
-    print("\n  Test 1: Malus ophalen")
-    malus = get_malus_for_date('ANWB', '2025-06-15')
-    print(f"    ANWB op 2025-06-15: malus={malus['malus']}, type={malus['type']}")
-    assert malus['malus'] == 0.0, "Default malus moet 0 zijn"
-    assert malus['type'] == 'full', "Default type moet 'full' zijn"
-    print("    ✅ Default malus correct")
+    # Test 1: Feed-in prijs = kale beursprijs, afgekapt op >= 0
+    print("\n  Test 1: Feed-in prijs berekening")
+    fi = calculate_feed_in_price(0.25)
+    assert abs(fi - 0.25) < 0.001
+    print(f"    positief: EUR {fi:.4f} ✅")
 
-    # Test 2: Feed-in prijs berekening
-    print("\n  Test 2: Feed-in prijs berekening")
-    fi = calculate_feed_in_price(0.25, 0.05, 'full')
-    assert abs(fi - 0.20) < 0.001
-    print(f"    full:       0.25 - 0.05 = EUR {fi:.4f} ✅")
-
-    fi = calculate_feed_in_price(0.25, 0.20, 'percentage')
-    assert abs(fi - 0.20) < 0.001
-    print(f"    percentage: 0.25 x 0.80 = EUR {fi:.4f} ✅")
-
-    fi = calculate_feed_in_price(0.25, 0.10, 'fixed')
-    assert abs(fi - 0.10) < 0.001
-    print(f"    fixed:      vast EUR {fi:.4f} ✅")
-
-    fi = calculate_feed_in_price(0.05, 0.10, 'full')
+    fi = calculate_feed_in_price(-0.05)
     assert fi == 0.0
-    print(f"    negatief:   max(0, 0.05-0.10) = EUR {fi:.4f} ✅")
+    print(f"    negatief: max(0, -0.05) = EUR {fi:.4f} ✅")
 
     # Test 3: Kosten zonder batterij (dummy data)
     print("\n  Test 3: Kosten zonder batterij (dummy data)")
@@ -714,7 +512,7 @@ def run_integration_test():
         provider_codes = config.providers if isinstance(config.providers, list) else [config.providers]
 
     print(f"\n  Kosten berekenen voor {len(provider_codes)} aanbieders...")
-    print(f"  Afname: all-in prijs | Teruglevering: beursprijs − malus")
+    print(f"  Afname: all-in prijs | Teruglevering: kale beursprijs")
     print()
 
     # Per aanbieder kosten berekenen
@@ -753,7 +551,7 @@ def run_integration_test():
     print(f"  {len(meter)} kwartieren | {totaal_verbruik:.0f} kWh verbruik | "
           f"{totaal_teruglevering:.0f} kWh teruglevering")
     print(f"  Kosten ZONDER batterij, per aanbieder:")
-    print(f"  (afname=all-in prijs, teruglevering=beursprijs−malus)")
+    print(f"  (afname=all-in prijs, teruglevering=kale beursprijs)")
     print("=" * 60)
 
     for i, r in enumerate(results):

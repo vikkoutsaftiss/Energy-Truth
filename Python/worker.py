@@ -77,7 +77,7 @@ WHERE "ID" = (
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING "ID", "GebouwID", "ImportedAt";
+RETURNING "ID", "GebouwID", "ImportedAt", "Eigen_Batterij";
 """
 
 def claim_next_batch() -> Optional[dict]:
@@ -155,9 +155,89 @@ def store_pdf(batch_id: int, gebouw_id: int, filename: str,
 
 
 # ---------------------------------------------------------------------------
+# Eigen batterij van de gebruiker (optioneel, uit ImportBatch.Eigen_Batterij).
+# ---------------------------------------------------------------------------
+def _parse_eigen_batterij(raw):
+    """Bouwt een BatteryConfig uit het optionele Eigen_Batterij-JSON van de
+    ImportBatch. Geeft None terug bij afwezig of ongeldig (dan rekent de worker
+    gewoon alleen met de catalogus). Contract: Eigen_Batterij_JSON_voor_Vik.md.
+
+    Alleen capaciteit_kwh en aanschafprijs_eur zijn verplicht; de rest krijgt
+    dezelfde defaults als de catalogus. De bruikbare capaciteit wordt vertaald
+    naar een SoC-venster en de round-trip naar laad/ontlaad-efficiency, precies
+    zoals battery_catalog.to_battery_config dat voor de catalogus doet."""
+    import json
+    import math
+    from simulation_config import BatteryConfig
+
+    if not raw:
+        return None
+    data = raw if isinstance(raw, dict) else None
+    if data is None:
+        try:
+            data = json.loads(raw)
+        except Exception:
+            print("[worker] Eigen_Batterij is geen geldige JSON; genegeerd.")
+            return None
+    if not isinstance(data, dict):
+        return None
+
+    try:
+        cap = float(data["capaciteit_kwh"])
+        prijs = float(data["aanschafprijs_eur"])
+    except (KeyError, TypeError, ValueError):
+        print("[worker] Eigen_Batterij mist capaciteit_kwh of aanschafprijs_eur; genegeerd.")
+        return None
+
+    if not (0 < cap <= 200) or not (0 <= prijs <= 1_000_000):
+        print(f"[worker] Eigen_Batterij onwaarschijnlijk (capaciteit={cap}, "
+              f"prijs={prijs}); genegeerd.")
+        return None
+
+    def _num(key, default):
+        v = data.get(key)
+        if v is None:
+            return default
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return default
+
+    # Bruikbare capaciteit -> symmetrisch SoC-venster (zelfde logica als de
+    # catalogus; default 90% DoD als niet opgegeven).
+    bruikbaar = _num("bruikbare_capaciteit_kwh", cap * 0.90)
+    bruikbaar = min(max(bruikbaar, 0.0), cap)
+    dod = bruikbaar / cap if cap else 0.90
+    slack = (1.0 - dod) / 2.0
+    min_soc, max_soc = slack, 1.0 - slack
+
+    # Round-trip -> symmetrisch over laden/ontladen (eta = sqrt(rte)).
+    rte = _num("round_trip_efficiency", 0.90)
+    if not (0.5 <= rte <= 1.0):
+        rte = 0.90
+    eta = math.sqrt(rte)
+
+    return BatteryConfig(
+        capacity_kwh=cap,
+        max_charge_kw=_num("max_laden_kw", 2.5),
+        max_discharge_kw=_num("max_ontladen_kw", 3.68),
+        charge_efficiency=eta,
+        discharge_efficiency=eta,
+        min_soc_pct=min_soc,
+        max_soc_pct=max_soc,
+        battery_price_eur=prijs,
+        productnaam=(data.get("productnaam") or "Mijn batterij"),
+        installatiekosten_eur=_num("installatiekosten_eur", 0.0),
+        garantiejaren=_num("garantiejaren", 10.0),
+        gegarandeerde_laadcycli=_num("gegarandeerde_laadcycli", 6000.0),
+        chemie=data.get("chemie"),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Pipeline per batch -- spiegelt report_generator.__main__ na.
 # ---------------------------------------------------------------------------
-def process_batch(batch: dict) -> None:
+def process_batch(batch: dict) -> Optional[str]:
     batch_id = int(batch["ID"])
     gebouw_id = int(batch["GebouwID"])
 
@@ -182,7 +262,7 @@ def process_batch(batch: dict) -> None:
     #    aan het advies op pagina 1. Voor nu een tijdelijke batterij, alleen om
     #    de meterdata te kunnen laden (die hangt niet van de batterij af).
     from simulation_config import SimulationConfig, SimulationPeriod
-    from battery_catalog import get_battery_catalog, to_battery_config
+    from battery_catalog import get_battery_catalog, to_battery_config, USER_BATTERY_ID
 
     _catalog = get_battery_catalog()
     if not _catalog:
@@ -219,13 +299,20 @@ def process_batch(batch: dict) -> None:
     _provs, _sel = _select_top_bottom_providers(n=3)
     sizing_provider = (_sel.get("cheapest") or ["BE"])[0] if _sel else "BE"
 
+    # Optionele eigen batterij van de gebruiker (uit ImportBatch.Eigen_Batterij).
+    # Telt alleen voor deze berekening, naast de catalogus.
+    eigen_batterij = _parse_eigen_batterij(batch.get("Eigen_Batterij"))
+    if eigen_batterij is not None:
+        print(f"[worker] Eigen batterij van gebruiker meegenomen: "
+              f"{eigen_batterij.productnaam} ({eigen_batterij.capacity_kwh} kWh)")
+
     sizing_results = find_optimal_battery(
         meter_data,
         provider_code=sizing_provider,
         strategies=["A", "B", "C", "D"],  # zelfde set als de scenario's
         start_date=config.simulation.start_date,
         end_date=config.simulation.end_date,
-        own_battery=None,  # tester heeft (nog) geen eigen batterij
+        own_battery=eigen_batterij,  # None als de gebruiker er geen opgaf
     )
 
     # Aanbevolen batterij = exact wat het rapport op pagina 1 kiest
@@ -233,14 +320,20 @@ def process_batch(batch: dict) -> None:
     top3 = _select_top3_batteries(sizing_results)
     if not top3.empty:
         _rec_id = top3.iloc[0].get("battery_id")
-        _rec = next((e for e in _catalog if e.id == _rec_id), None)
-        if _rec is not None:
-            config.battery = to_battery_config(_rec)
-            print(f"[worker] Scenario's op aanbevolen batterij: "
-                  f"{_rec.productnaam} ({_rec.capaciteit_kwh} kWh)")
+        if _rec_id == USER_BATTERY_ID and eigen_batterij is not None:
+            # De eigen batterij van de gebruiker wint: scenario's daarop draaien.
+            config.battery = eigen_batterij
+            print(f"[worker] Scenario's op de eigen batterij van de gebruiker: "
+                  f"{eigen_batterij.productnaam} ({eigen_batterij.capacity_kwh} kWh)")
         else:
-            print("[worker] Aanbevolen batterij niet in catalog; "
-                  "scenario's op referentiebatterij.")
+            _rec = next((e for e in _catalog if e.id == _rec_id), None)
+            if _rec is not None:
+                config.battery = to_battery_config(_rec)
+                print(f"[worker] Scenario's op aanbevolen batterij: "
+                      f"{_rec.productnaam} ({_rec.capaciteit_kwh} kWh)")
+            else:
+                print("[worker] Aanbevolen batterij niet in catalog; "
+                      "scenario's op referentiebatterij.")
     else:
         print("[worker] Geen sizing-resultaten; scenario's op referentiebatterij.")
 
