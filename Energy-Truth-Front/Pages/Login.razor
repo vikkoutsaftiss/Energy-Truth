@@ -7,7 +7,7 @@
 
 @if (AuthService.CurrentUser != null)
 {
-    NavigationManager.NavigateTo("/csvimporter");
+    NavigationManager.NavigateTo("/building");
 }
 
 <MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Login bij Energy-Truth</MudText>
@@ -46,9 +46,16 @@
                FullWidth="true"
                Size="Size.Large"
                Class="mt-4"
-               @onclick="@HandleLogin">
+               @onclick="@HandleUserLogin">
         Aanmelden
     </MudButton>
+</div>
+
+<div data-testid="not-registered?">
+
+    <MudText Align="Align.Center" Class="mt-2">
+        Nog geen account? <MudLink Href="/register">Registreer hier</MudLink>
+    </MudText>
 </div>
 
 @code {
@@ -66,7 +73,7 @@
         PasswordVisibilityIcon = isPasswordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
     }
 
-    private async Task HandleLogin()
+    private async Task HandleUserLogin()
     {
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
         {
@@ -75,26 +82,32 @@
             return;
         }
 
-        LoginRegisterRequest loginRequest = new LoginRegisterRequest(Username, Password);
+        LoginRequestDTO loginRequest = new LoginRequestDTO(Username, Password);
 
         var result = await HttpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
 
         if (result.IsSuccessStatusCode)
         {
-            var response = await result.Content.ReadFromJsonAsync<User>();
+            var response = await result.Content.ReadFromJsonAsync<LoggedInUser>();
             if (response != null)
             {
                 bool success = AuthService.LogIn(response);
-                NavigationManager.NavigateTo("/csvimporter");
+
+                Console.WriteLine($"Id: {response?.Id}, Email: {response?.Email}");
+
+
+                NavigationManager.NavigateTo("/building");
             }
             else
             {
+                string message = await result.Content.ReadAsStringAsync();
                 ErrorMessage = "Er is een fout opgetreden bij het verwerken van de serverrespons.";
             }
         }
         else
         {
-            ErrorMessage = "Ongeldige gebruikersnaam of wachtwoord.";
+            string message = await result.Content.ReadAsStringAsync();
+            ErrorMessage = message;
         }        
     }
 

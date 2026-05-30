@@ -19,6 +19,7 @@ namespace Infrastructure.DataAccess
         {
             var importBatch = new ImportBatch
             {
+                Status = "importing",
                 BuildingId = buildingId,
                 ImportedAt = DateTime.UtcNow
             };
@@ -32,7 +33,7 @@ namespace Infrastructure.DataAccess
             var batch = await _dbContext.ImportBatches.FindAsync(importBatchId);
             if (batch != null)
             {
-                batch.Status = "Ready";
+                batch.Status = "ready";
                 await _dbContext.SaveChangesAsync();
             }
         }

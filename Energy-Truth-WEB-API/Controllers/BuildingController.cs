@@ -34,12 +34,37 @@ namespace Energy_Truth_WEB_API.Controllers
             }
             try
             {
-                var buildingId = await _buildingService.CreateOrGetBuildingAsync(buildingDTO);
+                var buildingId = await _buildingService.CreateBuildingAsync(buildingDTO);
                 return Ok(buildingId);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Er is een fout opgetreden bij het aanmaken van het gebouw: {ex.Message}");
+            }
+        }
+
+        [HttpGet("getbuildingsbycustomerid/{customerId}")]
+        public async Task<IActionResult> GetBuildingByCustomerId(int customerId)
+        {
+            if (customerId <= 0)
+            {
+                return BadRequest("Ongeldige klant ID.");
+            }
+            try
+            {
+                List<BuildingDTO> buildings = await _buildingService.GetBuildingsByCustomerIdAsync(customerId);
+                if (buildings != null)
+                {
+                    return Ok(buildings);
+                }
+                else
+                {
+                    return NotFound("Geen gebouw gevonden voor deze klant en postcode.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Er is een fout opgetreden bij het ophalen van het gebouw: {ex.Message}");
             }
         }
     }

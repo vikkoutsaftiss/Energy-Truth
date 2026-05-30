@@ -1,0 +1,58 @@
+﻿@page "/buildinglist"
+@using Energy_Truth_Presentation.Services
+@using Energy_Truth.Shared.DTO_s
+@inject HttpClient HttpClient
+@inject IAuthenticateService AuthService
+@inject NavigationManager NavigationManager
+
+@if (AuthService.CurrentUser == null)
+{
+    NavigationManager.NavigateTo("/login");
+}
+
+
+<MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Jouw woningoverzicht</MudText>
+<MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Selecteer de juiste woning om door te gaan.</MudText>
+
+@foreach (BuildingDTO building in _buildings)
+{
+    <MudCard Class="mb-3">
+        <MudCardContent>
+            <MudText><strong>Postcode:</strong> @building.PostalCode</MudText>
+            <MudText><strong>Bouwjaar:</strong> @building.ConstructionYear</MudText>
+            <MudText><strong>Energielabel:</strong> @building.ISTEnergyLabel</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@(() => NavigationManager.NavigateTo($"/csvimporter/{building.Id}"))">
+                Selecteer
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+<MudButton Variant="Variant.Filled"
+           Color="Color.Primary"
+           OnClick="@(() => NavigationManager.NavigateTo($"/building"))">
+    Woning toevoegen
+</MudButton>
+
+
+@code {
+
+    private List<BuildingDTO> _buildings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.CurrentUser != null)
+        {
+
+            var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                _buildings = await response.Content.ReadFromJsonAsync<List<BuildingDTO>>();                
+            }
+        }
+    }
+}

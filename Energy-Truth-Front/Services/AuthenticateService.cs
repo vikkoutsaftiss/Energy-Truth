@@ -4,9 +4,9 @@ namespace Energy_Truth_Presentation.Services
 {
     public class AuthenticateService : IAuthenticateService
     {
-        public User CurrentUser { get; private set; }
+        public LoggedInUser CurrentUser { get; private set; }
 
-        public bool LogIn(User user)
+        public bool LogIn(LoggedInUser user)
         {
             if (user == null)
             {

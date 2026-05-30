@@ -12,7 +12,7 @@ namespace Energy_Truth.Shared.Providers
         public string Delimiter => ",";
         public CsvMode CsvMode => CsvMode.RFC4180;
         public bool StripRowQuotes => true;
-        public string DateFormat => "dd/MM/yyyy HH:mm";
+        List<string> IEnergyProvider.DateFormat => new List<string>() { "dd/MM/yyyy HH:mm" };
         public Dictionary<string, string> CsvMapping { get; } = new()
         {
             { nameof(EnergyImportDTO.Time), "time" },
@@ -26,6 +26,5 @@ namespace Energy_Truth.Shared.Providers
             { nameof(EnergyImportDTO.ImportT1), "Levering" },
             { nameof(EnergyImportDTO.ExportT1), "Teruglevering (kWh)" }
         };
-                
     }
 }

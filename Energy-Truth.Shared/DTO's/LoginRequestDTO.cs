@@ -5,15 +5,15 @@ using System.Text.Json.Serialization;
 
 namespace Energy_Truth.Shared.Login
 {
-    public class LoginRegisterRequest
+    public class LoginRequestDTO
     {
-        public LoginRegisterRequest(string username, string password)
+        public LoginRequestDTO(string email, string password)
         {
-            Username = username;
+            Email = email;
             Password = password;    
         }
 
-        public string Username { get; set; }
+        public string Email { get; set; }
         public string Password { get; set; }
     }
 }

@@ -10,9 +10,9 @@ namespace Infrastructure.DataAccess.Entities
         public int Id { get; set; }
         [Column("ImportBatchID")]
         public int ImportBatchId { get; set; }
-        [Column("Gebouw_ID")]
-        public int BuildingId { get; set; }
-        [Column("MeetDatum")]
+        //[Column("Gebouw_ID")]
+        //public int BuildingId { get; set; }
+        [Column("MeetDatumTijd")]
         public DateTime UsageMoment {  get; set; }
         [Column("Bron_Data")]
         [MaxLength(255)]
@@ -21,5 +21,11 @@ namespace Infrastructure.DataAccess.Entities
         public decimal? KWhBought { get; set; }
         [Column("Stroom_Verkocht_Net_kWh")]
         public decimal? KWhSold { get; set; }
+        [Column("Zon_Opwek_kWh")]
+        public decimal? SolarKWhProduction { get; set; }
+        [Column("Is_Geinterpoleerd")]
+        public bool? IsInterpolated { get; set; }
+        [Column("Origineel_Interval_Min")]
+        public int? OriginalIntervalMinutes { get; set; }
     }
 }

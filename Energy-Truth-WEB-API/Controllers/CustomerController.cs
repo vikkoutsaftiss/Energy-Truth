@@ -41,7 +41,16 @@ namespace Energy_Truth_WEB_API.Controllers
 
             try
             {
-                var customerId = await _customerService.CreateOrGetCustomerAsync(customerDTO);
+                var customerId = await _customerService.CreateCustomerAsync(customerDTO);
+
+                if (customerId == null)
+                {
+                    return StatusCode(500, "Er is een fout opgetreden bij het aanmaken van de klant.");
+                }
+                if (customerId == 0)
+                {
+                    return BadRequest("Klant met dit e-mailadres bestaat al.");
+                }
                 return Ok(customerId);
             }
             catch (Exception ex)

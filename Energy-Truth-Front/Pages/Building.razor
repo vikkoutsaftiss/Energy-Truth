@@ -1,0 +1,116 @@
+﻿@page "/building"
+@using Energy_Truth_Presentation.Services
+@using Energy_Truth.Shared.Login
+@using Energy_Truth.Shared.EnergyLabel
+@using Energy_Truth.Shared.DTO_s
+@using Energy_Truth.Shared.Extensions
+@inject IAuthenticateService AuthService
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager 
+
+@if (AuthService.CurrentUser == null)
+{
+    NavigationManager.NavigateTo("/login");
+}
+
+
+<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom @AuthService.CurrentUser?.Email</MudText>
+
+<MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Vul hieronder de gegevens van je woning in.</MudText>
+
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Elevation="1" Dense="true" Class="mb-3"
+              ShowCloseIcon="true" CloseIconClicked="() => ErrorMessage = null">
+        <strong>Oeps!</strong> @ErrorMessage
+    </MudAlert>
+}
+
+<div data-testid="postalcode-field">
+    <MudTextField T="string"
+                  Label="Postcode"
+                  Variant="Variant.Outlined"
+                  @bind-Value="PostalCode"
+                  InputType="InputType.Text" />
+</div>
+
+<div data-testid="buildyear-field">
+    <MudTextField T="int"
+                  Label="Bouwjaar"
+                  Variant="Variant.Outlined"
+                  @bind-Value="ConstructionYear"
+                  InputType="InputType.Number" />
+</div>
+
+<MudSelect T="ISTEnergyLabel" Label="Energielabel" @bind-Value="EnergyLabel">
+    @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
+    {
+        <MudSelectItem Value="label">@label.ToDisplayString()</MudSelectItem>
+    }
+</MudSelect>
+
+<div data-testid="submit-button">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth="true"
+               Size="Size.Large"
+               Class="mt-4"
+               @onclick="@HandleSubmit">
+        Sla gebouw op
+    </MudButton>
+</div>
+
+@code {
+    private string PostalCode { get; set; } = "";
+    private int ConstructionYear { get; set; } = 2000;
+    private ISTEnergyLabel EnergyLabel { get; set; }
+    private int CustomerID;
+    private string ErrorMessage = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.CurrentUser != null)
+        {
+            CustomerID = AuthService.CurrentUser.Id;
+
+            var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var buildings = await response.Content.ReadFromJsonAsync<List<BuildingDTO>>();
+                if (buildings != null && buildings.Any())
+                {
+                    NavigationManager.NavigateTo("/buildinglist");
+                }
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var building = new CreateBuildingDTO
+            {
+                CustomerId = CustomerID,
+                PostalCode = PostalCode,
+                ConstructionYear = ConstructionYear,
+                ISTEnergyLabel = EnergyLabel.ToString()
+            };
+            var response = await HttpClient.PostAsJsonAsync("api/building/createbuilding", building);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/buildinglist");
+            }
+            else
+            {
+                ErrorMessage = "Er is een fout opgetreden bij het opslaan van het gebouw.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Er is een fout opgetreden: {ex.Message}";
+        }
+    }
+}

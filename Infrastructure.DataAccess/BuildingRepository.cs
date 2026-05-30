@@ -3,6 +3,7 @@ using Energy_Truth.Shared.DTO_s;
 using Infrastructure.DataAccess.DBContext;
 using Infrastructure.DataAccess.Entities;
 using Microsoft.EntityFrameworkCore;
+using Energy_Truth.Shared.Extensions;
 
 namespace Infrastructure.DataAccess
 {
@@ -29,12 +30,27 @@ namespace Infrastructure.DataAccess
             return newBuilding.Id;
         }
 
-        public async Task<int> GetBuildingIdAsync(string postalCode, int customerId)
+        public async Task<int> GetBuildingIdByPostalCodeAndCustomerIdAsync(string postalCode, int customerId)
         {
             var buildingId = await _dbContext.Buildings.Where(b => b.PostalCode == postalCode && b.CustomerId == customerId)
                 .Select(b => b.Id).FirstOrDefaultAsync();
 
             return buildingId;
+        }
+
+        public async Task<List<BuildingDTO>> GetBuildingIdsByCustomerIdAsync(int customerId)
+        {
+            List<BuildingDTO> buildings = await _dbContext.Buildings.Where(b => b.CustomerId == customerId)
+                .Select(b => new BuildingDTO
+                {
+                    Id = b.Id,
+                    CustomerId = b.CustomerId,
+                    PostalCode = b.PostalCode,
+                    ConstructionYear = b.ConstructionYear,
+                    ISTEnergyLabel = b.ISTEnergyLabel
+                }).ToListAsync();
+
+            return buildings;
         }
     }
 }

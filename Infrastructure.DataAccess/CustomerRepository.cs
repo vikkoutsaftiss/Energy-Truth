@@ -3,6 +3,7 @@ using Energy_Truth.Shared.Repositories;
 using Infrastructure.DataAccess.Entities;
 using Infrastructure.DataAccess.DBContext;
 using Microsoft.EntityFrameworkCore;
+using Energy_Truth.Shared.Login;
 
 namespace Infrastructure.DataAccess
 {
@@ -21,6 +22,7 @@ namespace Infrastructure.DataAccess
                 Email = customerDTO.Email,
                 //VATNumber = customerDTO.VATNumber,
                 Address = customerDTO.Address,
+                Password = customerDTO.Password,
                 //BusinessName = customerDTO.BusinessName,
                 //CustomerType = customerDTO.CustomerType,
                 //EmailConfirmed = customerDTO.EmailConfirmed
@@ -40,6 +42,17 @@ namespace Infrastructure.DataAccess
                 return customer.Id;
             }
             return 0;
+        }
+
+        public async Task<LoggedInUser> ValidateCredentialsAsync(LoginRequestDTO loginRequestDTO)
+        {
+            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Email == loginRequestDTO.Email && c.Password == loginRequestDTO.Password);
+            
+            if (customer != null)
+            {
+                return new LoggedInUser(customer.Id, customer.Email, customer.Password);                    
+            }
+            return null;
         }
     }
 }

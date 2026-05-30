@@ -4,8 +4,9 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Energy_Truth.Shared;
 using Energy_Truth.Shared.Providers;
-using System.Globalization;
 using Energy_Truth_WEB_API.Services.Mappers;
+using NetTopologySuite.Mathematics;
+using System.Globalization;
 using static Supabase.Gotrue.Constants;
 
 public class ImportService : IImportService
@@ -60,12 +61,14 @@ public class ImportService : IImportService
             MissingFieldFound = null
         };
 
+        var date = new List<string> { "yyyy-MM-dd HH:mm" };
+
         using var manualReader2 = new StreamReader(fileStream);
         var rawManualContent = await manualReader2.ReadToEndAsync();
         using var manualStringReader = new StringReader(rawManualContent);
         using var manualCsv = new CsvReader(manualStringReader, manualConfig);
 
-        manualCsv.Context.RegisterClassMap(new EnergyImportMap(mapping, "yyyy-MM-dd HH:mm"));
+        manualCsv.Context.RegisterClassMap(new EnergyImportMap(mapping, date));
         return manualCsv.GetRecords<EnergyImportDTO>().ToList();
     }
 

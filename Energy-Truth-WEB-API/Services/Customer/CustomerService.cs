@@ -1,5 +1,6 @@
 ﻿using Energy_Truth.Shared.Repositories;
 using Energy_Truth.Shared.DTO_s;
+using Energy_Truth.Shared.Login;
 
 namespace Energy_Truth_WEB_API.Services.Customer
 {
@@ -12,22 +13,34 @@ namespace Energy_Truth_WEB_API.Services.Customer
             _customerRepository = customerRepository;
         }
 
-        public async Task<int> CreateOrGetCustomerAsync(CreateCustomerDTO customerDTO)
+        public async Task<int> CreateCustomerAsync(CreateCustomerDTO customerDTO)
         {
-            var existingCustomerId = await GetCustomerByEmailAsync(customerDTO.Email);
-            if (existingCustomerId != 0)
+            var existingCustomer = await GetCustomerByEmailAsync(customerDTO.Email);
+            if (existingCustomer != 0)
             {
-                return existingCustomerId;
+                throw new InvalidOperationException("Dit e-mailadres is al geregistreerd.");
             }
 
-            var customerId = await _customerRepository.CreateCustomerAsync(customerDTO);
-            return customerId;
+            var customer = await _customerRepository.CreateCustomerAsync(customerDTO);
+            return customer;
         }
 
         public async Task<int> GetCustomerByEmailAsync(string email)
         {
-            var customerId = await _customerRepository.GetCustomerByEmailAsync(email);
-            return customerId;
+            var customer = await _customerRepository.GetCustomerByEmailAsync(email);
+            return customer;
+        }
+
+        public async Task<LoggedInUser> LoginCustomerAsync(LoginRequestDTO loginRequestDTO)
+        {
+            var customer = await _customerRepository.ValidateCredentialsAsync(loginRequestDTO);
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            return customer;
         }
     }
 }

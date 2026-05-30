@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Energy_Truth.Shared.EnergyLabel;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,8 +18,8 @@ namespace Infrastructure.DataAccess.Entities
         [MaxLength(10)]
         public string PostalCode { get; set; }
         [Column("Bouwjaar")]
-        public int? ConstructionYear { get; set; }
-        [Column("ISTEnergyLabel")]
+        public string? ConstructionYear { get; set; }
+        [Column("ISTEnergieLabel")]
         public string? ISTEnergyLabel { get; set; }
     }
 }

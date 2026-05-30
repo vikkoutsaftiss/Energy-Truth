@@ -26,7 +26,6 @@ namespace Infrastructure.DataAccess
 
                 await _dbContext.BulkInsertAsync(usageDataList.Select(u => new UsageData
                 {
-                    BuildingId = buildingId,
                     ImportBatchId = importBatchId,
                     UsageMoment = u.UsageMoment,
                     SourceData = u.SourceData,
@@ -39,17 +38,23 @@ namespace Infrastructure.DataAccess
                 await transaction.CommitAsync();
                 return importBatchId;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 throw;
             }
-
         }
 
         public async Task<HashSet<DateTime>> GetExistingTimestampsAsync(int buildingId)
         {
-            var existingTimestamps = await _dbContext.UsageData.Where(u => u.BuildingId == buildingId).Select(u => u.UsageMoment).ToHashSetAsync();
+            var existingTimestamps = await _dbContext.UsageData
+                .Join(_dbContext.ImportBatches,
+                    u => u.ImportBatchId,
+                    b => b.ImportBatchId,
+                    (u, b) => new { u.UsageMoment, b.BuildingId })
+                .Where(x => x.BuildingId == buildingId)
+                .Select(x => x.UsageMoment)
+                .ToHashSetAsync();
             return existingTimestamps;
         }
 

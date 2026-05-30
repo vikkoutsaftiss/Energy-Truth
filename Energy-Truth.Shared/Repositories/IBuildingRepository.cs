@@ -4,7 +4,8 @@ namespace Energy_Truth.Shared.Repositories
 {
     public interface IBuildingRepository
     {
-        Task<int> GetBuildingIdAsync(string postalCode, int customerId);
+        Task<int> GetBuildingIdByPostalCodeAndCustomerIdAsync(string postalCode, int customerId);
+        Task<List<BuildingDTO>> GetBuildingIdsByCustomerIdAsync(int customerId);
         Task<int> CreateBuildingAsync(BuildingDTO buildingDTO);
     }
 }

@@ -20,19 +20,29 @@ namespace Energy_Truth_WEB_API.Controllers
 
 
         [HttpPost("login")] // wanneer de post actie login uitgevoerd wordt wordt deze methode aangeroepen.
-        public IActionResult Login([FromBody] LoginRegisterRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
         {
             if (request == null)
             {
                 return BadRequest("Ongeldige aanvraag.");
-            }
+            }                   
 
-            if (request.Username == "admin" && request.Password == "password")
+            try
             {
-                return Ok(request);
+                var customer = await _customerService.LoginCustomerAsync(request);
+                if (customer != null)
+                {
+                    return Ok(customer);
+                }
+                else
+                {
+                    return Unauthorized("Ongeldige inloggegevens.");
+                }
             }
-
-            return Unauthorized();
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Er is een fout opgetreden bij het inloggen van de klant: {ex.Message}");
+            }
         }
 
 
@@ -62,8 +72,17 @@ namespace Energy_Truth_WEB_API.Controllers
 
             try
             {
-                var customerId = await _customerService.CreateOrGetCustomerAsync(registerRequest);
-                return Ok("Registratie geslaagd!");
+                var customerId = await _customerService.CreateCustomerAsync(registerRequest);
+
+                if (customerId == null)
+                {
+                    return StatusCode(500, "Er is een fout opgetreden bij het aanmaken van de klant.");
+                }
+                if (customerId == 0)
+                {
+                    return BadRequest("Klant met dit e-mailadres bestaat al.");
+                }
+                return Ok();
             }
             catch (Exception ex)
             {

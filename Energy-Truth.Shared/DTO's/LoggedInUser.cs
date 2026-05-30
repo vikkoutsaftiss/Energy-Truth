@@ -5,21 +5,25 @@ using System.Text.Json.Serialization;
 
 namespace Energy_Truth.Shared.Login
 {
-    public class User
+    public class LoggedInUser
     {
-        public int Id { get; private set; }
-        public string Username { get; set; }
+        public int Id { get; set; }
+        public string Email { get; set; }
         [JsonIgnore]
         public string Password { get; set; }
         public bool IsLoggedIn { get; set; }
 
-        public User(string username, string password)
+        public LoggedInUser(int id, string email, string password)
         {
-            Username = username;
+            Id = id;
+            Email = email;
             Password = password;
             IsLoggedIn = false;
         }
 
-       
+        public LoggedInUser()
+        {
+            
+        }
     }
 }

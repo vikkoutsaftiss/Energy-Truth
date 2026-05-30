@@ -8,13 +8,13 @@ namespace Infrastructure.DataAccess.Entities
     [Table("ImportBatch")]
     public class ImportBatch
     {
-        [Column("ImportBatchID")]
+        [Column("ID")]
         public int ImportBatchId { get; set; }
         [Column("GebouwID")]
         public int BuildingId { get; set; }
         [Column("ImportedAt")]
         public DateTime ImportedAt { get; set; }
         [Column("Status")]
-        public string? Status { get; set; }
+        public string Status { get; set; }
     }
 }

@@ -92,7 +92,7 @@ public class ImportController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("PostToDatabase/{provider}")]
+    [HttpPost("posttodatabase/{provider}")]
     public async Task<IActionResult> PostToDatabase([FromBody] List<EnergyImportDTO> data, string provider, [FromQuery] int buildingId)
     {
         if (data == null || !data.Any() || !ModelState.IsValid)
@@ -108,7 +108,7 @@ public class ImportController : ControllerBase
 
             var batchId = await _usageDataRepository.BulkInsertAsync(filteredData, buildingId);
 
-            return Ok(batchId);
+            return Ok("Data succesvol geupload. Je ontvangt binnen 10 minuten een email met daarin je adviesrapport!");
         }
         catch
         {

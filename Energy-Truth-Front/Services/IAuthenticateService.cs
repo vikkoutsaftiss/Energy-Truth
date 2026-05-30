@@ -4,8 +4,8 @@ namespace Energy_Truth_Presentation.Services
 {
     public interface IAuthenticateService
     {
-        User CurrentUser { get; }
-        bool LogIn(User user);
+        LoggedInUser CurrentUser { get; }
+        bool LogIn(LoggedInUser user);
 
         bool LogOut();
     }

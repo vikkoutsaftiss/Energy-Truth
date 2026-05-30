@@ -6,25 +6,25 @@ using System.Text;
 
 namespace Infrastructure.DataAccess.Entities
 {
-    [Table("klant")]
+    [Table("Klant")]
     public class Customer
     {
-        [Column("id")]
+        [Column("ID")]
         public int Id { get; set; }
-        [Column("email")]
+        [Column("Email")]
         public string Email { get; set; }
-        [Column("wachtwoord")]
+        [Column("Wachtwoord_Hash")]
         public string Password { get; set; }
-        [Column("btw_nummer")]
+        [Column("BTW_Nummer")]
         [MaxLength(20)]
         public string? VATNumber { get; set; }
-        [Column("adres")]
+        [Column("Adres")]
         public string Address { get; set; }
-        [Column("bedrijfsnaam")]
+        [Column("Bedrijfsnaam")]
         public string? BusinessName { get; set; }
-        [Column("klanttype")]
+        [Column("Klanttype")]
         public string? CustomerType { get; set; }
-        [Column("email_verifieerd")]
+        [Column("Email_verifieerd")]
         public bool? EmailConfirmed { get; set; }
     }
 }
