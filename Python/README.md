@@ -7,13 +7,13 @@ Dit is het Python-deel van Energy-Truth. Het neemt de slimme-meterdata van een k
 Per klant gebeurt er, in volgorde, het volgende:
 
 1. **Data ophalen.** De meetgegevens van de klant (verbruik en teruglevering per kwartier) staan al in de database; de import-pipeline van het team schrijft ze daar weg. De worker leest ze rechtstreeks uit de database, strikt voor de batch die net is aangemeld. Er wordt geen CSV meer ingelezen.
-2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0–100) uit, berekend over diezelfde batch-data.
+2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0-100) uit, berekend over diezelfde batch-data. Ontbreekt het interval-label (15/60/1440 min) in de aangeleverde data, dan leidt het systeem het werkelijke interval af uit de tijdstempels en vult het meteen terug in de database, zodat de score klopt.
 3. **Periode bepalen.** We rekenen altijd met het laatst beschikbare jaar aan data van die batch (rolling year).
-4. **Scenario's doorrekenen.** Voor elke combinatie van energieleverancier en batterij-strategie (zelfverbruik, dynamisch handelen, slimme mix, …) berekent het systeem wat de klant in dat jaar zou hebben betaald.
-5. **Beste batterij kiezen.** Uit de catalogus van beschikbare thuisbatterijen wordt gerangschikt welke het beste uitkomt — op basis van terugverdientijd, netto opbrengst en kosten per kWh.
+4. **Beste batterij kiezen.** Uit de catalogus van beschikbare thuisbatterijen wordt gerangschikt welke het beste uitkomt, op basis van terugverdientijd, netto opbrengst en kosten per kWh.
+5. **Scenario's doorrekenen.** Voor die aanbevolen batterij wordt elke combinatie van energieleverancier en strategie (zelfverbruik, dynamisch handelen, slimme mix, ...) doorgerekend. Door de sizing vóór de scenario's te doen, gaan het advies op pagina 1 en de leverancier- en strategievergelijking verderop over precies dezelfde batterij.
 6. **PDF maken.** De resultaten worden samengevat in een klantvriendelijk rapport.
 
-Eén Python-script (`worker.py`) start dit hele proces automatisch zodra er nieuwe data binnenkomt.
+Eén Python-script (`worker.py`) start dit hele proces automatisch zodra er nieuwe data binnenkomt. De energieprijzen en leveranciersmarges worden dagelijks losstaand voorberekend door `refresher.py`; de worker herberekent ze niet zelf (alleen een vangnet als ze ontbreken of ouder dan een week zijn).
 
 ## Wat heb je nodig om het te draaien?
 
@@ -42,10 +42,11 @@ Dat is alles. Het script blijft draaien, kijkt steeds of er nieuwe klanten in de
 | `period_selector.py` | Bepaalt welk jaar aan data we gebruiken. |
 | `scenario_engine.py` | Rekent alle combinaties van leverancier × batterij-strategie door. |
 | `battery_simulator.py` | Simuleert kwartier voor kwartier hoe een batterij zich gedraagt. |
-| `cost_calculator.py` | Rekent uit wat de klant betaalt — met en zonder batterij. |
+| `cost_calculator.py` | Rekent uit wat de klant betaalt, met en zonder batterij. |
 | `battery_catalog.py` | Haalt de lijst beschikbare batterijen uit de database. |
 | `battery_sizing.py` | Kiest welke batterij financieel het slimst is. |
 | `report_generator.py` | Bouwt het uiteindelijke PDF-rapport. |
 | `reference_data.py` | Haalt energieprijzen en provider-marges op. |
+| `refresher.py` | Berekent dagelijks de marges en all-in prijzen voor, los van een klantberekening. |
 | `simulation_config.py` | De instellingen-container voor één klantberekening. |
 | `db_connection.py` | Verbinding met de database. |

@@ -22,7 +22,7 @@ import numpy as np
 from typing import Optional
 
 from simulation_config import SimulationConfig, BatteryConfig
-from reference_data import get_provider_prices, get_net_prices, reconstruct_historical_prices
+from reference_data import get_provider_prices, get_net_prices, reconstruct_historical_prices, get_allin_prices
 from battery_simulator import simulate_battery, get_simulation_summary
 from cost_calculator import (
     calculate_costs_no_battery,
@@ -50,9 +50,12 @@ for _lib in ("httpx", "httpcore", "hpack", "urllib3"):
 
 def _refresh_margins_if_stale(max_age_hours: int = 24) -> None:
     """
-    Herbereken provider_margins als de laatst berekende waarde ouder is
-    dan max_age_hours uur.  Zo blijven margins up-to-date als er dagelijks
-    nieuwe Enever-data binnenkomt via n8n.
+    VANGNET, niet de primaire route. De marges + Plaats worden dagelijks
+    door refresher.py (calculate_margins) voorberekend. Deze functie draait
+    de herberekening alleen nog als de marges ONTBREKEN of ouder zijn dan
+    max_age_hours (standaard een ruime drempel), zodat de worker zelfstandig
+    blijft werken als de refresher (nog) niet gedraaid heeft. In normale
+    dagelijkse werking wordt hier niets herberekend.
     """
     from datetime import datetime, timezone, timedelta
     client = get_client()
@@ -139,7 +142,16 @@ def _select_top_bottom_providers(n: int = 3) -> tuple:
     # Marges ophalen (gekoppeld aan Net_Aanbieder via ID); haal direct ook Afkorting op
     # via een tweede query omdat Supabase-client geen JOIN syntax heeft.
     # ERD-kolomnaam in Marges_Per_Aanbieder is "Net_AanbiederID" (zonder underscore).
-    margins = client.table("Marges_Per_Aanbieder").select("Net_AanbiederID, Gemiddelde_Marge").execute()
+    # Plaats (rang op marge) wordt door refresher.py gezet; gebruik die als
+    # die er is, val anders terug op live sorteren op marge.
+    try:
+        margins = client.table("Marges_Per_Aanbieder").select(
+            "Net_AanbiederID, Gemiddelde_Marge, Plaats"
+        ).execute()
+    except Exception:
+        margins = client.table("Marges_Per_Aanbieder").select(
+            "Net_AanbiederID, Gemiddelde_Marge"
+        ).execute()
     if not margins.data:
         logger.warning("Geen marges beschikbaar -- kan geen selectie maken")
         return [], {}
@@ -154,7 +166,12 @@ def _select_top_bottom_providers(n: int = 3) -> tuple:
     df = pd.DataFrame(margins.data)
     df["Gemiddelde_Marge"] = pd.to_numeric(df["Gemiddelde_Marge"])
     df["provider_code"] = df["Net_AanbiederID"].astype(str).map(id_to_code)
-    df = df.dropna(subset=["provider_code"]).sort_values("Gemiddelde_Marge")
+    df = df.dropna(subset=["provider_code"])
+    # Voorberekende rang (Plaats) gebruiken als die compleet is, anders live op marge.
+    if "Plaats" in df.columns and df["Plaats"].notna().all():
+        df = df.sort_values("Plaats")
+    else:
+        df = df.sort_values("Gemiddelde_Marge")
 
     # Top N goedkoopst + top N duurst (unieke codes)
     cheapest = df.head(n)["provider_code"].tolist()
@@ -298,40 +315,63 @@ def _load_meter_data(config: SimulationConfig) -> pd.DataFrame:
 # Per-aanbieder simulatie
 # ---------------------------------------------------------------------------
 
-def _run_single_with_prices(
+def _prepare_provider_inputs(
     meter_data: pd.DataFrame,
     provider_code: str,
-    battery: BatteryConfig,
     prices: pd.DataFrame,
     net_prices: pd.DataFrame,
-    strategy: str = "A",
 ) -> dict:
     """
-    Interne versie van run_single_provider die al-opgehaalde prijzen accepteert.
-    Voorkomt dat prijzen per strategie opnieuw worden opgehaald.
-    """
-    if prices.empty:
-        return {
-            "provider_code": provider_code,
-            "strategy": strategy,
-            "cost_no_battery": None,
-            "cost_with_battery": None,
-            "savings_eur": None,
-            "savings_pct": None,
-            "quarters": 0,
-            "error": "geen prijsdata",
-        }
+    Strategie-ONAFHANKELIJK voorwerk, één keer per aanbieder.
 
-    # Normaliseer timestamps
+    Prijzen normaliseren, meterdata filteren op de kwartieren waarvoor een
+    prijs bestaat, en de kosten ZONDER batterij berekenen. Die kosten hangen
+    niet van de laadstrategie af, dus het is verspilling om dit voor elke van
+    de vier strategieën opnieuw te doen (zoals voorheen). Resultaat wordt
+    hergebruikt door _run_single_with_prices voor A/B/C/D.
+
+    Returns:
+        dict met 'prices_norm', 'net_prices_norm', 'meter_filtered',
+        'costs_no_bat'. Bij geen data: dict met alleen 'error'.
+    """
+    if prices is None or prices.empty:
+        return {"error": "geen prijsdata"}
+
     prices_norm = _normalize_timestamps(prices.copy(), "valid_from")
     net_prices_norm = _normalize_timestamps(net_prices.copy(), "valid_from") if net_prices is not None else None
 
-    # Filter meterdata op kwartieren waarvoor prijzen beschikbaar zijn
     price_timestamps = set(prices_norm["valid_from"])
     meter_filtered = meter_data[meter_data["timestamp_from"].isin(price_timestamps)].copy()
     meter_filtered = meter_filtered.sort_values("timestamp_from").reset_index(drop=True)
 
     if meter_filtered.empty:
+        return {"error": "geen overlap meterdata/prijzen"}
+
+    costs_no_bat = calculate_costs_no_battery(
+        meter_filtered, prices_norm, provider_code, net_prices=net_prices_norm
+    )
+
+    return {
+        "prices_norm": prices_norm,
+        "net_prices_norm": net_prices_norm,
+        "meter_filtered": meter_filtered,
+        "costs_no_bat": costs_no_bat,
+    }
+
+
+def _run_single_with_prices(
+    prep: dict,
+    provider_code: str,
+    battery: BatteryConfig,
+    strategy: str = "A",
+) -> dict:
+    """
+    Draait één strategie voor één aanbieder bovenop het voorbewerkte,
+    strategie-onafhankelijke materiaal uit _prepare_provider_inputs.
+    Voert dus alleen nog het strategie-afhankelijke deel uit: de
+    batterijsimulatie, de kosten MET batterij, en de samenvatting.
+    """
+    if prep.get("error"):
         return {
             "provider_code": provider_code,
             "strategy": strategy,
@@ -340,13 +380,13 @@ def _run_single_with_prices(
             "savings_eur": None,
             "savings_pct": None,
             "quarters": 0,
-            "error": "geen overlap meterdata/prijzen",
+            "error": prep["error"],
         }
 
-    # Kosten ZONDER batterij
-    costs_no_bat = calculate_costs_no_battery(
-        meter_filtered, prices_norm, provider_code, net_prices=net_prices_norm
-    )
+    prices_norm = prep["prices_norm"]
+    net_prices_norm = prep["net_prices_norm"]
+    meter_filtered = prep["meter_filtered"]
+    costs_no_bat = prep["costs_no_bat"]
 
     # Batterijsimulatie
     simulated = simulate_battery(
@@ -433,22 +473,10 @@ def run_single_provider(
         provider_code, strategy, cost_no_battery, cost_with_battery,
         savings_eur, savings_pct, quarters, sim_summary
     """
-    # 1. Haal all-in prijzen op voor deze aanbieder
-    #    Eerst echte Enever-prijzen proberen, dan reconstructie via margin-methode
-    prices = get_provider_prices(provider_code, start_date=start_date, end_date=end_date)
-    if prices.empty:
-        logger.info(f"Geen Enever-prijzen voor {provider_code} — reconstructie via margin")
-        prices = reconstruct_historical_prices(provider_code, start_date, end_date)
-    elif start_date and end_date:
-        # Check of echte prijzen de hele periode dekken; zo niet, aanvullen
-        expected_days = (pd.Timestamp(end_date) - pd.Timestamp(start_date)).days + 1
-        actual_days = prices["valid_from"].dt.date.nunique()
-        if actual_days < expected_days * 0.9:  # minder dan 90% dekking
-            logger.info(
-                f"{provider_code}: {actual_days}/{expected_days} dagen "
-                f"Enever-data — aanvullen via reconstructie"
-            )
-            prices = reconstruct_historical_prices(provider_code, start_date, end_date)
+    # 1. All-in prijzen voor deze aanbieder uit de voorberekende tabel
+    #    (refresher.py); get_allin_prices valt intern terug op live
+    #    reconstructie als de tabel nog niet gevuld is.
+    prices = get_allin_prices(provider_code, start_date, end_date)
 
     if prices.empty:
         logger.warning(f"Geen prijzen voor {provider_code} (ook niet via reconstructie) — overgeslagen")
@@ -603,19 +631,20 @@ def run_scenarios(
         code = provider["code"]
         name = provider.get("name", code)
 
-        # Prijzen 1× per aanbieder ophalen en cachen
+        # Prijzen 1× per aanbieder uit de voorberekende all-in tabel
+        # (refresher.py). get_allin_prices valt intern terug op live
+        # reconstructie als de tabel voor deze aanbieder nog leeg is.
         if code not in _price_cache:
-            prices = get_provider_prices(code, start_date=start_date, end_date=end_date)
-            if prices.empty:
-                logger.info(f"Geen Enever-prijzen voor {code} — reconstructie via margin")
-                prices = reconstruct_historical_prices(code, start_date, end_date)
-            elif start_date and end_date:
-                expected_days = (pd.Timestamp(end_date) - pd.Timestamp(start_date)).days + 1
-                actual_days = prices["valid_from"].dt.date.nunique() if not prices.empty else 0
-                if actual_days < expected_days * 0.9:
-                    logger.info(f"{code}: {actual_days}/{expected_days} dagen Enever-data — aanvullen via reconstructie")
-                    prices = reconstruct_historical_prices(code, start_date, end_date)
-            _price_cache[code] = prices
+            _price_cache[code] = get_allin_prices(code, start_date, end_date)
+
+        # Strategie-onafhankelijk voorwerk (prijzen normaliseren, meterdata
+        # filteren, kosten-zonder-batterij) één keer per aanbieder.
+        prep = _prepare_provider_inputs(
+            meter_data=meter_data,
+            provider_code=code,
+            prices=_price_cache[code],
+            net_prices=net_prices,
+        )
 
         for strategy in strategies:
             done += 1
@@ -624,11 +653,9 @@ def run_scenarios(
 
             try:
                 result = _run_single_with_prices(
-                    meter_data=meter_data,
+                    prep=prep,
                     provider_code=code,
                     battery=battery,
-                    prices=_price_cache[code],
-                    net_prices=net_prices,
                     strategy=strategy,
                 )
                 result["provider_name"] = name
@@ -709,8 +736,13 @@ def run_all_scenarios(
         logger.error("Geen meterdata gevonden voor de opgegeven periode")
         return pd.DataFrame()
 
-    # 2b. Margins refreshen als ze ouder zijn dan 24 uur
-    _refresh_margins_if_stale(max_age_hours=12)
+    # 2b. Marges + Plaats (rang goedkoopst/duurst) zijn eigendom van
+    #     refresher.py (dagelijkse run); die berekent ze klant-onafhankelijk
+    #     voor. GEEN herberekening per rapport meer. We houden alleen een
+    #     vangnet: heeft de refresher (nog) niet gedraaid -- marges ontbreken
+    #     of zijn > 1 week oud -- dan bootstrapt de worker ze eenmalig, zodat
+    #     hij niet zonder aanbiederselectie komt te zitten.
+    _refresh_margins_if_stale(max_age_hours=168)
 
     # 3. Aanbieders ophalen
     selection_info = {}

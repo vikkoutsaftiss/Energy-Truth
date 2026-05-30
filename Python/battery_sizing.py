@@ -50,6 +50,7 @@ from reference_data import (
     get_net_prices,
     get_provider_prices,
     reconstruct_historical_prices,
+    get_allin_prices,
 )
 from scenario_engine import _normalize_timestamps
 
@@ -372,14 +373,13 @@ def find_optimal_battery(
         print("  Geen batterijen in catalog en geen eigen batterij.")
         return pd.DataFrame()
 
-    # Prijzen ophalen (1x, hergebruiken voor alle batterijen)
-    prices = get_provider_prices(
-        provider_code, start_date=start_date, end_date=end_date
-    )
-    if prices.empty:
-        prices = reconstruct_historical_prices(
-            provider_code, start_date, end_date
-        )
+    # Prijzen ophalen (1x, hergebruiken voor alle batterijen). Zelfde bron als
+    # scenario_engine: de voorberekende 15-min all-in reeks (get_allin_prices),
+    # die intern terugvalt op reconstructie. Zo is de besparing/payback hier
+    # identiek aan de leveranciersvergelijking en rekenen we op 100% van de
+    # kwartieren i.p.v. alleen de uurpunten (de oude get_provider_prices-route
+    # ving maar ~25% van de 15-min meterdata).
+    prices = get_allin_prices(provider_code, start_date, end_date)
     if prices.empty:
         print(f"  Geen prijsdata voor {provider_code}.")
         return pd.DataFrame()

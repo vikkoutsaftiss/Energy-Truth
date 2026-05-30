@@ -63,6 +63,80 @@ QUARTERS_PER_HOUR = 4
 QUARTERS_PER_DAY = 96
 EXPECTED_INTERVAL_MINUTES = 15
 
+# Bekende intervallen (minuten) waarop we een gemeten gat afronden.
+KNOWN_INTERVALS = (15, 60, 1440)
+
+
+# ============================================================
+# INTERVAL-DETECTIE (vangnet voor lege Origineel_Interval_Min)
+# ============================================================
+
+def _detect_interval_from_timestamps(ts_series):
+    """
+    Leidt het werkelijke meetinterval (in minuten) af uit de tijdstempels.
+
+    Bedoeld als VANGNET wanneer de import de kolom Origineel_Interval_Min
+    leeg (NULL) laat: de data zelf bewijst het interval. We nemen het
+    mediane gat tussen opeenvolgende metingen en ronden dat af naar het
+    dichtstbijzijnde bekende interval (15 / 60 / 1440). Dit is meten, geen
+    aanname; bij te weinig of te grillige data geven we None terug en
+    verzinnen we dus niets.
+
+    Returns:
+        int (15, 60 of 1440) of None als het interval niet betrouwbaar
+        bepaald kan worden.
+    """
+    ts = pd.to_datetime(ts_series, utc=True).dropna().sort_values()
+    if len(ts) < 3:
+        return None
+
+    gaps = ts.diff().dt.total_seconds().dropna() / 60.0
+    gaps = gaps[gaps > 0]
+    if gaps.empty:
+        return None
+
+    mediaan = float(gaps.median())
+
+    # Snap naar het dichtstbijzijnde bekende interval, maar alleen als het
+    # redelijk dichtbij ligt (binnen 25% relatieve afwijking). Anders None.
+    dichtstbij = min(KNOWN_INTERVALS, key=lambda k: abs(k - mediaan))
+    if abs(dichtstbij - mediaan) / dichtstbij <= 0.25:
+        return dichtstbij
+    return None
+
+
+def _normalize_interval_column(df):
+    """
+    Zorgt dat de kolom original_interval bruikbaar is voor de scoring.
+
+    Drie gevallen:
+      1. Kolom ontbreekt volledig  -> afleiden uit tijdstempels, anders 15.
+      2. Kolom bestaat maar is (deels) NULL -> de NULL-rijen invullen met het
+         uit de tijdstempels gemeten interval.
+      3. Kolom volledig gevuld -> ongemoeid laten.
+
+    Lost de bug op waarbij een import wel de meetwaarden maar niet het
+    interval-label wegschrijft: NULL leidde tot input-type 0/100 en
+    dekkingsgraad 50/100, terwijl het gewoon kwartierdata was.
+    """
+    df = df.copy()
+    inferred = _detect_interval_from_timestamps(df['timestamp_from'])
+
+    if 'original_interval' not in df.columns:
+        df['original_interval'] = inferred if inferred is not None else 15
+        return df
+
+    null_mask = df['original_interval'].isna()
+    if null_mask.any() and inferred is not None:
+        df.loc[null_mask, 'original_interval'] = inferred
+
+    # Naar hele getallen waar mogelijk (psycopg2 geeft int, maar fillna kan
+    # naar float promoveren); houd niet-invulbare NULLs als NA.
+    df['original_interval'] = pd.to_numeric(
+        df['original_interval'], errors='coerce'
+    ).round().astype('Int64')
+    return df
+
 
 # ============================================================
 # COMPONENT 1: DEKKINGSGRAAD (35%)
@@ -265,6 +339,11 @@ def calculate_quality_from_dataframe(df):
         df = df.copy()
         df['timestamp_from'] = pd.to_datetime(df['timestamp_from'], utc=True)
 
+    # Vangnet: vul een lege/ontbrekende interval-kolom met het werkelijk
+    # gemeten interval, zodat een import die alleen meetwaarden maar geen
+    # interval-label wegschrijft niet onterecht 0/50 scoort.
+    df = _normalize_interval_column(df)
+
     # Bereken alle componenten
     dekking_score, dekking_details = _calculate_dekkingsgraad(df)
     seizoen_score, seizoen_details = _calculate_seizoensspreiding(df)
@@ -330,7 +409,40 @@ def calculate_quality_from_dataframe(df):
     }
 
 
-def calculate_quality_score(import_batch_id):
+def _backfill_interval_in_db(import_batch_id, interval):
+    """
+    Schrijft het gemeten interval terug naar de NULL-rijen van een batch.
+
+    Repareert de bron: imports die wel meetwaarden maar geen
+    Origineel_Interval_Min wegschrijven (bijv. bron 'HomeWizard') laten de
+    kolom NULL. Hier vullen we die NULL-rijen met het uit de tijdstempels
+    gemeten interval, zodat de kolom voortaan in de DB klopt. Idempotent:
+    al gevulde rijen blijven ongemoeid, een volgende run vindt niets meer.
+
+    Returns:
+        Aantal bijgewerkte rijen.
+    """
+    from db_connection import get_connection
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE "Verbruiksdata"
+                SET "Origineel_Interval_Min" = %s
+                WHERE "ImportBatchID" = %s
+                  AND "Origineel_Interval_Min" IS NULL
+            """, (interval, import_batch_id))
+            n = cur.rowcount
+        conn.commit()
+        return n
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def calculate_quality_score(import_batch_id, backfill_nulls=True):
     """
     Haalt meterdata op uit Verbruiksdata voor EEN ImportBatch en berekent
     de score.
@@ -339,6 +451,11 @@ def calculate_quality_score(import_batch_id):
     scenario_engine._load_meter_data_from_db en period_selector. Zo gaan de
     betrouwbaarheidsscore en het rapport gegarandeerd over precies dezelfde
     meterdata; meerdere uploads van dezelfde klant lopen niet door elkaar.
+
+    backfill_nulls (default True): is Origineel_Interval_Min leeg (NULL) en
+    kunnen we het interval eenduidig uit de tijdstempels meten, dan schrijven
+    we die waarde meteen terug naar de DB. Zo heelt de keten zichzelf bij elke
+    run. Zet op False voor een puur lezende berekening.
 
     Returns:
         dict met 'totaalscore', 'interpretatie', en per component details.
@@ -379,6 +496,23 @@ def calculate_quality_score(import_batch_id):
         'Origineel_Interval_Min': 'original_interval',
     })
     df['timestamp_from'] = pd.to_datetime(df['timestamp_from'], utc=True)
+
+    # Bron-reparatie: vul lege Origineel_Interval_Min in de DB met het
+    # gemeten interval. Alleen als er NULL-rijen zijn én het interval
+    # eenduidig bepaald kan worden (anders niets schrijven).
+    if backfill_nulls and df['original_interval'].isna().any():
+        inferred = _detect_interval_from_timestamps(df['timestamp_from'])
+        if inferred is not None:
+            try:
+                n = _backfill_interval_in_db(import_batch_id, inferred)
+                if n:
+                    print(f"  ↻ {n} rijen met lege Origineel_Interval_Min "
+                          f"bijgewerkt naar {inferred} (gemeten interval).")
+            except Exception as e:
+                print(f"  ⚠️  Backfill van Origineel_Interval_Min overgeslagen: {e}")
+        else:
+            print("  ⚠️  Origineel_Interval_Min leeg, maar interval niet "
+                  "eenduidig te meten — niets weggeschreven.")
 
     result = calculate_quality_from_dataframe(df)
     result['records'] = len(all_records)

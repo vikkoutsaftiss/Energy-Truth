@@ -164,34 +164,20 @@ def process_batch(batch: dict) -> None:
         raise RuntimeError(f"Geen Verbruiksdata voor ImportBatch {batch_id}")
     print(f"[worker] {period.summary()}")
 
-    # 2. Dynamische SimulationConfig samenstellen.
-    #    Geen config.json: we bouwen het object in-memory.
-    #    De referentiebatterij voor de AANBIEDER-vergelijking komt uit de
-    #    database (Markt_Product), niet hardcoded. De batterij-sizing
-    #    (find_optimal_battery) vergelijkt daarna alle DB-batterijen los
-    #    hiervan; own_battery blijft None (geen eigen batterij van tester).
-    from simulation_config import SimulationConfig, SimulationPeriod, BatteryConfig
-    from battery_catalog import get_battery_catalog
+    # 2. SimulationConfig opbouwen (periode + batch). De batterij zetten we pas
+    #    definitief in stap 4. De scenario's (pagina 4+5) draaien namelijk op
+    #    de AANBEVOLEN batterij uit de sizing, zodat de besparing daar gelijk is
+    #    aan het advies op pagina 1. Voor nu een tijdelijke batterij, alleen om
+    #    de meterdata te kunnen laden (die hangt niet van de batterij af).
+    from simulation_config import SimulationConfig, SimulationPeriod
+    from battery_catalog import get_battery_catalog, to_battery_config
 
     _catalog = get_battery_catalog()
     if not _catalog:
-        raise RuntimeError("Geen actieve batterijen in Markt_Product -- kan geen referentiebatterij kiezen")
-    _ref = _catalog[len(_catalog) // 2]  # middenbatterij qua capaciteit
-    print(f"[worker] Referentiebatterij uit DB: {_ref.productnaam} ({_ref.capaciteit_kwh} kWh)")
-    reference_battery = BatteryConfig(
-        capacity_kwh=_ref.capaciteit_kwh,
-        max_charge_kw=_ref.max_laden_kw,
-        max_discharge_kw=_ref.max_ontladen_kw,
-        battery_price_eur=_ref.aanschafprijs,
-        productnaam=_ref.productnaam,
-        installatiekosten_eur=_ref.installatiekosten_eur,
-        garantiejaren=_ref.garantiejaren,
-        gegarandeerde_laadcycli=_ref.gegarandeerde_laadcycli,
-        chemie=_ref.chemie,
-    )
+        raise RuntimeError("Geen actieve batterijen in Markt_Product")
     config = SimulationConfig(
         klant_id=klant_id,
-        battery=reference_battery,
+        battery=to_battery_config(_catalog[len(_catalog) // 2]),
         simulation=SimulationPeriod(
             start_date=period.start_date.strftime("%Y-%m-%d"),
             end_date=period.end_date.strftime("%Y-%m-%d"),
@@ -201,31 +187,57 @@ def process_batch(batch: dict) -> None:
         providers="all",
     )
 
-    # 3. Scenarios draaien (alle aanbieders / strategieen).
-    from scenario_engine import run_all_scenarios, _load_meter_data
-
-    results, price_cache, selection_info = run_all_scenarios(config)
-    if results.empty:
-        raise RuntimeError("run_all_scenarios gaf 0 resultaten terug")
-
-    # 4. Sizing: vergelijk alle batterijen uit de catalog.
-    from battery_sizing import find_optimal_battery
-
-    sizing_provider = results.iloc[0].get("provider_code", "BE")
+    # 3. Meterdata 1x laden.
+    from scenario_engine import (
+        run_all_scenarios, _load_meter_data, _select_top_bottom_providers,
+    )
     meter_data = _load_meter_data(config)
     if meter_data.empty:
         raise RuntimeError("Meterdata leeg na laden")
 
+    # 4. Sizing EERST: bepaal de aanbevolen batterij. De goedkoopste aanbieder
+    #    komt uit de marge-ranking (Plaats) en hangt niet van de batterij af.
+    #    Daarna draaien de scenario's op precies die aanbevolen batterij, met
+    #    dezelfde strategieset, zodat de besparing op pagina 1 gelijk wordt aan
+    #    de beste strategie op pagina 5 (eerder liepen die op verschillende
+    #    batterijen uiteen: 5,1 kWh advies vs 10 kWh referentie).
+    from battery_sizing import find_optimal_battery
+    from report_generator import _select_top3_batteries
+
+    _provs, _sel = _select_top_bottom_providers(n=3)
+    sizing_provider = (_sel.get("cheapest") or ["BE"])[0] if _sel else "BE"
+
     sizing_results = find_optimal_battery(
         meter_data,
         provider_code=sizing_provider,
-        strategies=["A", "C", "D"],
+        strategies=["A", "B", "C", "D"],  # zelfde set als de scenario's
         start_date=config.simulation.start_date,
         end_date=config.simulation.end_date,
         own_battery=None,  # tester heeft (nog) geen eigen batterij
     )
 
-    # 5. PDF genereren.
+    # Aanbevolen batterij = exact wat het rapport op pagina 1 kiest
+    # (_select_top3_batteries.iloc[0]: GO eerst, dan laagste payback).
+    top3 = _select_top3_batteries(sizing_results)
+    if not top3.empty:
+        _rec_id = top3.iloc[0].get("battery_id")
+        _rec = next((e for e in _catalog if e.id == _rec_id), None)
+        if _rec is not None:
+            config.battery = to_battery_config(_rec)
+            print(f"[worker] Scenario's op aanbevolen batterij: "
+                  f"{_rec.productnaam} ({_rec.capaciteit_kwh} kWh)")
+        else:
+            print("[worker] Aanbevolen batterij niet in catalog; "
+                  "scenario's op referentiebatterij.")
+    else:
+        print("[worker] Geen sizing-resultaten; scenario's op referentiebatterij.")
+
+    # 5. Scenario's draaien op de aanbevolen batterij.
+    results, price_cache, selection_info = run_all_scenarios(config)
+    if results.empty:
+        raise RuntimeError("run_all_scenarios gaf 0 resultaten terug")
+
+    # 6. PDF genereren.
     from report_generator import generate_report
 
     out_dir = Path(__file__).parent / "outputs"
@@ -242,7 +254,7 @@ def process_batch(batch: dict) -> None:
         sizing_results=sizing_results,
     )
 
-    # 6. Samenvatting voor frontend (handzaam JSON-blok).
+    # 7. Samenvatting voor frontend (handzaam JSON-blok).
     best = results.iloc[0].to_dict() if not results.empty else {}
     samenvatting = {
         "klant_id": klant_id,

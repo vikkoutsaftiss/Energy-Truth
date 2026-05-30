@@ -53,6 +53,10 @@ def get_net_prices(start_date=None, end_date=None):
     df = df.rename(columns={'Geldig_Van': 'valid_from', 'Tarief_Per_kWh': 'price'})
     df['valid_from'] = pd.to_datetime(df['valid_from'], utc=True)
     df['price'] = df['price'].astype(float)
+    # Bescherming tegen dubbele timestamps in de bron (bv. een niet-idempotente
+    # prijs-import). Zonder dedup matcht elk verbruikskwartier met meerdere
+    # prijsrijen in de kostenmerge en wordt het verbruik dubbel geteld.
+    df = df.sort_values('valid_from').drop_duplicates(subset='valid_from', keep='last').reset_index(drop=True)
     return df
 
 
@@ -106,6 +110,8 @@ def get_provider_prices(provider, start_date=None, end_date=None):
     df = df.rename(columns={'Prijs_per_kWh': 'price'})
     df['valid_from'] = pd.to_datetime(df['valid_from'], utc=True)
     df['price'] = df['price'].astype(float)
+    # Zelfde dedup-bescherming als bij get_net_prices: 1 prijs per timestamp.
+    df = df.sort_values('valid_from').drop_duplicates(subset='valid_from', keep='last').reset_index(drop=True)
     return df
 
 
@@ -184,15 +190,22 @@ def calculate_margins():
     now = datetime.now(timezone.utc).isoformat()
 
     df_margins = pd.DataFrame(results)
+    # Plaats = rang op marge, oplopend (1 = laagste marge = goedkoopst voor
+    # de consument). Zo hoeft de top/bottom-selectie niet per rapport opnieuw
+    # gesorteerd te worden; de worker leest gewoon deze kolom.
+    df_margins = df_margins.sort_values('Gemiddelde_Marge').reset_index(drop=True)
+    df_margins['Plaats'] = range(1, len(df_margins) + 1)
+
     for _, row in df_margins.iterrows():
         client.table('Marges_Per_Aanbieder').upsert({
             'Net_AanbiederID': int(row['Net_Aanbieder_ID']),
             'Gemiddelde_Marge': float(row['Gemiddelde_Marge']),
             'Aantal_Samples': int(row['Aantal_Samples']),
+            'Plaats': int(row['Plaats']),
             'Berekend_Op': now,
         }, on_conflict='Net_AanbiederID').execute()
 
-    print(f"\n  ✅ Marges opgeslagen voor {len(df_margins)} aanbieders")
+    print(f"\n  ✅ Marges + Plaats opgeslagen voor {len(df_margins)} aanbieders")
     return df_margins
 
 
@@ -274,6 +287,128 @@ def reconstruct_historical_prices(provider, start_date, end_date):
     print(f"  {echt} echte + {geschat} geschatte = {len(estimated)} totaal")
 
     return estimated[['valid_from', 'price', 'is_estimated', 'Net_Aanbieder_ID']]
+
+
+# ============================================================
+# 4b. ALL-IN PRIJZEN MATERIALISEREN (refresher, 1x per dag)
+# ============================================================
+
+ALLIN_TABLE = 'Aanbieder_Allin_Prijzen_per24u'
+
+
+def _full_price_window():
+    """Min/max Geldig_Van uit Netbeheer_Tarieven -> (start, end) als string."""
+    client = get_client()
+    lo = client.table('Netbeheer_Tarieven').select('Geldig_Van').order('Geldig_Van').limit(1).execute()
+    hi = client.table('Netbeheer_Tarieven').select('Geldig_Van').order('Geldig_Van', desc=True).limit(1).execute()
+    if not lo.data or not hi.data:
+        return None, None
+    return lo.data[0]['Geldig_Van'], hi.data[0]['Geldig_Van']
+
+
+def build_allin_prices():
+    """
+    Bouwt de all-in prijsreeks (netprijs + marge, of de echte prijs waar
+    beschikbaar) per aanbieder over het VOLLEDIGE beschikbare prijsvenster
+    en schrijft die weg in Aanbieder_Allin_Prijzen_per24u (upsert per
+    (aanbieder, tijdstip)).
+
+    Bedoeld om 1x per dag door refresher.py gedraaid te worden. De all-in
+    prijs per tijdstip is klant-onafhankelijk; de worker leest later alleen
+    nog het benodigde venster (rolling year) uit deze tabel.
+
+    Returns:
+        Aantal weggeschreven rijen.
+    """
+    client = get_client()
+    start, end = _full_price_window()
+    if not start:
+        print("⚠️  Geen netprijzen — kan all-in prijzen niet opbouwen")
+        return 0
+
+    aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting, Naam').execute().data or []
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    totaal = 0
+
+    for a in aanbieders:
+        na_id = a['ID']
+        prijzen = reconstruct_historical_prices(na_id, start, end)
+        if prijzen.empty:
+            continue
+
+        rows = []
+        for _, r in prijzen.iterrows():
+            vf = r['valid_from']
+            rows.append({
+                'Net_Aanbieder_ID': int(na_id),
+                'Geldig_Van': vf.isoformat() if hasattr(vf, 'isoformat') else str(vf),
+                'Prijs_per_kWh': float(r['price']),
+                'Is_Geschat': bool(r['is_estimated']),
+                'Berekend_Op': now,
+            })
+
+        # In batches upserten (Supabase-limiet op payloadgrootte).
+        for i in range(0, len(rows), 500):
+            client.table(ALLIN_TABLE).upsert(
+                rows[i:i + 500], on_conflict='Net_Aanbieder_ID,Geldig_Van'
+            ).execute()
+
+        totaal += len(rows)
+        print(f"  {a['Afkorting']}: {len(rows)} all-in prijzen weggeschreven")
+
+    print(f"\n  ✅ All-in prijzen opgeslagen: {totaal} rijen voor {len(aanbieders)} aanbieders")
+    return totaal
+
+
+def get_allin_prices(provider, start_date, end_date):
+    """
+    Leest de voorberekende all-in prijzen uit Aanbieder_Allin_Prijzen_per24u
+    voor het gevraagde venster.
+
+    Valt automatisch terug op reconstruct_historical_prices als er voor deze
+    aanbieder (nog) geen voorberekende rijen zijn, zodat de worker altijd
+    werkt -- ook voordat refresher.py voor het eerst gedraaid heeft.
+
+    Returns:
+        DataFrame met valid_from, price, is_estimated (interne conventie),
+        net als reconstruct_historical_prices.
+    """
+    client = get_client()
+
+    if isinstance(provider, str):
+        na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider).limit(1).execute()
+        if not na.data:
+            return pd.DataFrame(columns=['valid_from', 'price', 'is_estimated'])
+        na_id = na.data[0]['ID']
+    else:
+        na_id = int(provider)
+
+    query = (
+        client.table(ALLIN_TABLE)
+        .select('Geldig_Van, Prijs_per_kWh, Is_Geschat')
+        .eq('Net_Aanbieder_ID', na_id)
+        .order('Geldig_Van')
+    )
+    if start_date:
+        query = query.gte('Geldig_Van', str(start_date))
+    if end_date:
+        query = query.lte('Geldig_Van', str(end_date))
+
+    records = _fetch_paginated(query)
+    if not records:
+        # Nog niet voorberekend -> live reconstrueren (fallback).
+        return reconstruct_historical_prices(na_id, start_date, end_date)
+
+    df = pd.DataFrame(records)
+    df = df.rename(columns={
+        'Geldig_Van': 'valid_from',
+        'Prijs_per_kWh': 'price',
+        'Is_Geschat': 'is_estimated',
+    })
+    df['valid_from'] = pd.to_datetime(df['valid_from'], utc=True)
+    df['price'] = df['price'].astype(float)
+    return df
 
 
 # ============================================================

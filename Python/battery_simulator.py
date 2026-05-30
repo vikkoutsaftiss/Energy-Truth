@@ -454,39 +454,47 @@ def simulate_battery(meter_data, battery, prices=None, strategy='A', start_soc=N
 
     soc = start_soc
 
-    for i in range(n):
-        cons = float(df.at[i, 'consumption_kwh'])
-        feed = float(df.at[i, 'feed_in_kwh'])
+    # Kolommen één keer naar numpy-arrays trekken. Per-cel toegang via
+    # df.at[i, ...] is in pandas erg traag, en deze lus draait ~11.000 keer
+    # per scenario, dus dat tikt hard aan. De simulatie blijft sequentieel
+    # (de SoC van elk kwartier hangt af van het vorige), maar de overhead per
+    # stap verdwijnt. De uitkomst is identiek aan de oude df.at-versie.
+    cons_in = df['consumption_kwh'].to_numpy(dtype=float)
+    feed_in = df['feed_in_kwh'].to_numpy(dtype=float)
 
-        if strategy == 'A':
-            soc, gc, gf, gb = _simulate_quarter_a(cons, feed, soc, battery)
-        else:
-            price = float(df.at[i, 'price'])
-            date_key = df.at[i, 'timestamp_from']
-            if hasattr(date_key, 'date'):
-                date_key = date_key.date()
-            thresh = thresholds.get(date_key, {'low': 0, 'high': 999, 'min_spread_ok': True})
-
+    if strategy == 'A':
+        for i in range(n):
+            soc, gc, gf, gb = _simulate_quarter_a(cons_in[i], feed_in[i], soc, battery)
+            soc_arr[i] = soc
+            grid_cons_arr[i] = gc
+            grid_feed_arr[i] = gf
+            grid_bought_arr[i] = gb
+    else:
+        price_in = df['price'].to_numpy(dtype=float)
+        # Datum per kwartier één keer vooraf bepalen i.p.v. .date() per stap.
+        date_keys = df['timestamp_from'].dt.date.to_numpy()
+        _default_thresh = {'low': 0, 'high': 999, 'min_spread_ok': True}
+        for i in range(n):
+            thresh = thresholds.get(date_keys[i], _default_thresh)
             if strategy == 'B':
                 soc, gc, gf, gb = _simulate_quarter_b(
-                    cons, feed, soc, battery, price,
+                    cons_in[i], feed_in[i], soc, battery, price_in[i],
                     thresh['low'], thresh['high'], thresh['min_spread_ok']
                 )
             elif strategy == 'C':
                 soc, gc, gf, gb = _simulate_quarter_c(
-                    cons, feed, soc, battery, price,
+                    cons_in[i], feed_in[i], soc, battery, price_in[i],
                     thresh['low'], thresh['high'], thresh['min_spread_ok']
                 )
             else:  # D
                 soc, gc, gf, gb = _simulate_quarter_d(
-                    cons, feed, soc, battery, price,
+                    cons_in[i], feed_in[i], soc, battery, price_in[i],
                     thresh['low'], thresh['high']
                 )
-
-        soc_arr[i] = soc
-        grid_cons_arr[i] = gc
-        grid_feed_arr[i] = gf
-        grid_bought_arr[i] = gb
+            soc_arr[i] = soc
+            grid_cons_arr[i] = gc
+            grid_feed_arr[i] = gf
+            grid_bought_arr[i] = gb
 
     df['soc'] = soc_arr
     df['grid_consumption'] = grid_cons_arr
