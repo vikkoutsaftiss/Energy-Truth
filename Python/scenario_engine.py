@@ -43,6 +43,15 @@ logger = logging.getLogger(__name__)
 for _lib in ("httpx", "httpcore", "hpack", "urllib3"):
     logging.getLogger(_lib).setLevel(logging.WARNING)
 
+# Resultaat van de laatste meterdata-validatie (gevuld door
+# _load_meter_data_from_db). De worker leest dit uit om het aantal afgekeurde
+# rijen in de samenvatting/message te zetten.
+LAATSTE_DATA_VALIDATIE: dict = {
+    'rijen_in': 0, 'verwijderd': 0, 'negatief_verbruik': 0,
+    'negatief_teruglevering': 0, 'absurd_hoog': 0,
+    'bericht': 'Nog geen meterdata gevalideerd.',
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -226,34 +235,49 @@ def _normalize_timestamps(df: pd.DataFrame, col: str = "timestamp_from") -> pd.D
 
 def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    Laad meterdata rechtstreeks uit de DB (Verbruiksdata tabel), strikt
-    voor EEN ImportBatch.
+    Laad meterdata rechtstreeks uit de DB (Verbruiksdata tabel).
 
-    Werkwijze (batch-scope, 30 mei 2026):
-      De worker verwerkt precies de batch die hij geclaimd heeft. We
-      filteren daarom op Verbruiksdata.ImportBatchID, niet op Gebouw of
-      Klant. Zo lopen meerdere uploads van dezelfde klant of hetzelfde
-      gebouw nooit door elkaar. De datumrange (rolling year uit
-      period_selector) wordt er bovenop toegepast.
+    Werkwijze (gebouw-scope, 30 mei 2026, herzien):
+      De meegegeven ImportBatch is de TRIGGER. We lezen alle Verbruiksdata van
+      het GEBOUW dat die batch bezit (join op ImportBatch.GebouwID), binnen de
+      rolling-year-periode. Sinds de import incrementeel en ontdubbeld is, vullen
+      meerdere batches van een gebouw elkaar aan; zo mist er geen historie meer.
+      Overlappende tijdstempels worden ontdubbeld met DISTINCT ON: per
+      meetmoment wint de rij uit de hoogste ImportBatchID (nieuwste upload).
+
+      Daarna draait valideer_meterdata: fysiek onmogelijke rijen (negatief of
+      absurd hoog, bijv. een meterstand-reset) worden verwijderd, zodat ze de
+      kosten- en grafiekberekening niet vergiftigen. Het resultaat wordt in
+      LAATSTE_DATA_VALIDATIE gezet zodat de worker het in de samenvatting kan
+      melden.
 
       De Yan-stijl kolomnamen worden hernoemd naar de pandas-conventie
-      die de rest van de simulator gebruikt (timestamp_from,
-      consumption_kwh, feed_in_kwh), zodat battery_simulator +
-      cost_calculator ongewijzigd blijven werken.
+      (timestamp_from, consumption_kwh, feed_in_kwh).
 
     Returns:
         DataFrame met timestamp_from, consumption_kwh, feed_in_kwh (UTC-aware)
         Lege DataFrame als geen data gevonden.
     """
+    global LAATSTE_DATA_VALIDATIE
+    # Bewust NIET in SQL ontdubbelen. We halen ALLE gebouw-rijen op (incl.
+    # ImportBatchID), valideren eerst en ontdubbelen daarna in pandas. Volgorde
+    # = valideren -> ontdubbelen, zodat een corrupte waarde in de nieuwste batch
+    # terugvalt op een geldige waarde uit een oudere batch i.p.v. een gat te
+    # worden. (Andersom zou dedup eerst de corrupte nieuwste kiezen en die daarna
+    # gedropt worden, terwijl er een goede oudere waarde bestond.)
     sql = """
         SELECT v."MeetDatumTijd"               AS "MeetDatumTijd",
+               v."ImportBatchID"               AS "ImportBatchID",
                v."Stroom_Gekocht_Net_kWh"      AS "Stroom_Gekocht_Net_kWh",
                v."Stroom_Verkocht_Net_kWh"     AS "Stroom_Verkocht_Net_kWh"
         FROM "Verbruiksdata" v
-        WHERE v."ImportBatchID" = %s
+        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
+        WHERE b."GebouwID" = (
+            SELECT "GebouwID" FROM "ImportBatch" WHERE "ID" = %s
+        )
           AND v."MeetDatumTijd" >= %s
           AND v."MeetDatumTijd" <= %s
-        ORDER BY v."MeetDatumTijd"
+        ORDER BY v."MeetDatumTijd", v."ImportBatchID" DESC
     """
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -268,15 +292,34 @@ def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: st
         return pd.DataFrame()
 
     df = pd.DataFrame(all_records)
-    # Hernoem naar interne pandas-conventie
+    # Hernoem naar interne pandas-conventie (ImportBatchID tijdelijk bewaren
+    # voor de ontdubbeling).
     df = df.rename(columns={
         "MeetDatumTijd": "timestamp_from",
+        "ImportBatchID": "_batch_id",
         "Stroom_Gekocht_Net_kWh": "consumption_kwh",
         "Stroom_Verkocht_Net_kWh": "feed_in_kwh",
     })
     df["timestamp_from"] = pd.to_datetime(df["timestamp_from"], utc=True)
     df["consumption_kwh"] = pd.to_numeric(df["consumption_kwh"])
     df["feed_in_kwh"] = pd.to_numeric(df["feed_in_kwh"])
+
+    # 1) Eerst valideren: gooi over ALLE batches de fysiek onmogelijke rijen weg.
+    from data_quality import valideer_meterdata
+    df, LAATSTE_DATA_VALIDATIE = valideer_meterdata(df)
+    if LAATSTE_DATA_VALIDATIE.get("verwijderd"):
+        logger.warning("Meterdata-validatie: %s", LAATSTE_DATA_VALIDATIE["bericht"])
+
+    # 2) Dan ontdubbelen: per tijdstempel de nieuwste GELDIGE waarde houden
+    #    (hoogste ImportBatchID wint). Een gedropte corrupte nieuwste-waarde
+    #    valt zo terug op een geldige oudere waarde.
+    if not df.empty:
+        df = (
+            df.sort_values(["timestamp_from", "_batch_id"], ascending=[True, False])
+              .drop_duplicates(subset="timestamp_from", keep="first")
+              .reset_index(drop=True)
+        )
+    df = df.drop(columns=["_batch_id"], errors="ignore")
     return df
 
 

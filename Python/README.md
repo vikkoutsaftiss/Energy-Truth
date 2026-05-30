@@ -6,9 +6,9 @@ Dit is het Python-deel van Energy-Truth. Het neemt de slimme-meterdata van een k
 
 Per klant gebeurt er, in volgorde, het volgende:
 
-1. **Data ophalen.** De meetgegevens van de klant (verbruik en teruglevering per kwartier) staan al in de database; de import-pipeline van het team schrijft ze daar weg. De worker leest ze rechtstreeks uit de database, strikt voor de batch die net is aangemeld. Er wordt geen CSV meer ingelezen.
-2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0-100) uit, berekend over diezelfde batch-data. Ontbreekt het interval-label (15/60/1440 min) in de aangeleverde data, dan leidt het systeem het werkelijke interval af uit de tijdstempels en vult het meteen terug in de database, zodat de score klopt.
-3. **Periode bepalen.** We rekenen altijd met het laatst beschikbare jaar aan data van die batch (rolling year).
+1. **Data ophalen en opschonen.** De meetgegevens (verbruik en teruglevering per kwartier) staan al in de database; de import-pipeline van het team schrijft ze daar weg. De binnenkomende batch is het startsein, maar we lezen alle meetdata van het hele **gebouw** binnen het rekenjaar, over meerdere uploads heen, zodat er geen historie mist. Komt eenzelfde meetmoment in meerdere uploads voor, dan houden we de nieuwste geldige meting aan. Fysiek onmogelijke metingen (negatief, of absurd hoog door bijvoorbeeld een meterstand-reset) gooien we eruit vóór de berekening; hoeveel er zijn afgekeurd leggen we vast in de samenvatting en in de ImportBatch-tabel. Er wordt geen CSV meer ingelezen.
+2. **Datakwaliteit checken.** Klopt de data? Zijn er gaten? Hoe betrouwbaar is wat we hebben? Daar komt een rapportcijfer (0-100) uit, berekend over de gebouw-data van datzelfde rekenjaar. Ontbreekt het interval-label (15/60/1440 min) in de aangeleverde data, dan leidt het systeem het werkelijke interval af uit de tijdstempels en vult het meteen terug in de database, zodat de score klopt.
+3. **Periode bepalen.** We rekenen altijd met het laatst beschikbare jaar aan data van het gebouw (rolling year).
 4. **Beste batterij kiezen.** Uit de catalogus van beschikbare thuisbatterijen wordt gerangschikt welke het beste uitkomt, op basis van terugverdientijd, netto opbrengst en kosten per kWh.
 5. **Scenario's doorrekenen.** Voor die aanbevolen batterij wordt elke combinatie van energieleverancier en strategie (zelfverbruik, dynamisch handelen, slimme mix, ...) doorgerekend. Door de sizing vóór de scenario's te doen, gaan het advies op pagina 1 en de leverancier- en strategievergelijking verderop over precies dezelfde batterij.
 6. **PDF maken.** De resultaten worden samengevat in een klantvriendelijk rapport.
@@ -38,9 +38,9 @@ Dat is alles. Het script blijft draaien, kijkt steeds of er nieuwe klanten in de
 | Bestand | Waar is het voor? |
 |---|---|
 | `worker.py` | Het startpunt — pakt nieuwe opdrachten op en doorloopt de hele keten. |
-| `data_quality.py` | Geeft de meetdata een betrouwbaarheidsscore (per batch). |
-| `period_selector.py` | Bepaalt welk jaar aan data we gebruiken. |
-| `scenario_engine.py` | Rekent alle combinaties van leverancier × batterij-strategie door. |
+| `data_quality.py` | Geeft de meetdata een betrouwbaarheidsscore (per gebouw, rekenjaar) en schoont onmogelijke metingen op. |
+| `period_selector.py` | Bepaalt welk jaar aan data we gebruiken (per gebouw). |
+| `scenario_engine.py` | Laadt en ontdubbelt de meetdata en rekent alle combinaties van leverancier × batterij-strategie door. |
 | `battery_simulator.py` | Simuleert kwartier voor kwartier hoe een batterij zich gedraagt. |
 | `cost_calculator.py` | Rekent uit wat de klant betaalt, met en zonder batterij. |
 | `battery_catalog.py` | Haalt de lijst beschikbare batterijen uit de database. |

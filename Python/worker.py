@@ -89,13 +89,24 @@ def claim_next_batch() -> Optional[dict]:
     return dict(row) if row else None
 
 
-def mark_done(batch_id: int) -> None:
+def mark_done(batch_id: int, note: Optional[str] = None) -> None:
+    """Zet de batch op 'done'. Als we iets aan de data hebben gedaan
+    (bijv. onmogelijke rijen verwijderd), zetten we die notitie in
+    Error_Message zodat het zichtbaar is in de ImportBatch-tabel. Het is geen
+    fout, maar wel een logboek van wat er met de data gebeurd is."""
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                'UPDATE "ImportBatch" SET "Status"=%s, "Processed_At"=%s WHERE "ID"=%s',
-                ("done", datetime.utcnow(), batch_id),
-            )
+            if note:
+                cur.execute(
+                    'UPDATE "ImportBatch" SET "Status"=%s, "Processed_At"=%s, '
+                    '"Error_Message"=%s WHERE "ID"=%s',
+                    ("done", datetime.utcnow(), note[:4000], batch_id),
+                )
+            else:
+                cur.execute(
+                    'UPDATE "ImportBatch" SET "Status"=%s, "Processed_At"=%s WHERE "ID"=%s',
+                    ("done", datetime.utcnow(), batch_id),
+                )
         conn.commit()
 
 
@@ -156,7 +167,8 @@ def process_batch(batch: dict) -> None:
     if klant_id is None:
         raise RuntimeError(f"Geen Klant gevonden voor Gebouw {gebouw_id}")
 
-    # 1. Periode bepalen (rolling year, of partial) -- strikt op deze batch
+    # 1. Periode bepalen (rolling year, of partial). De batch is de trigger;
+    #    de periode dekt alle data van het gebouw (over batches heen).
     from period_selector import bepaal_periode
     with get_connection() as conn:
         period = bepaal_periode(conn, batch_id)
@@ -255,6 +267,11 @@ def process_batch(batch: dict) -> None:
     )
 
     # 7. Samenvatting voor frontend (handzaam JSON-blok).
+    #    Inclusief het meterdata-validatie-rapport (afgekeurde onmogelijke
+    #    rijen), zodat de frontend/team ziet of er met de data iets mis was.
+    import scenario_engine as _se
+    data_validatie = dict(getattr(_se, "LAATSTE_DATA_VALIDATIE", {}) or {})
+
     best = results.iloc[0].to_dict() if not results.empty else {}
     samenvatting = {
         "klant_id": klant_id,
@@ -267,11 +284,19 @@ def process_batch(batch: dict) -> None:
         "beste_strategie": best.get("strategy"),
         "besparing_eur": float(best.get("savings_eur", 0) or 0),
         "besparing_pct": float(best.get("savings_pct", 0) or 0),
+        "data_validatie": data_validatie,
+        "data_bericht": data_validatie.get("bericht"),
     }
+    if data_validatie.get("verwijderd"):
+        print(f"[worker] Datavalidatie: {data_validatie['bericht']}")
 
-    # 7. PDF naar DB.
+    # 8. PDF naar DB.
     rapport_id = store_pdf(batch_id, gebouw_id, pdf_path.name, pdf_path, samenvatting)
     print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id}")
+
+    # Notitie voor ImportBatch.Error_Message: alleen als we iets aan de data
+    # hebben gedaan (onmogelijke rijen verwijderd). Geen fout, maar een logboek.
+    return data_validatie["bericht"] if data_validatie.get("verwijderd") else None
 
 
 # ---------------------------------------------------------------------------
@@ -290,8 +315,8 @@ def main_loop(once: bool = False) -> None:
             continue
 
         try:
-            process_batch(batch)
-            mark_done(int(batch["ID"]))
+            data_note = process_batch(batch)
+            mark_done(int(batch["ID"]), data_note)
             print(f"[worker] Batch {batch['ID']} klaar.")
         except Exception as e:
             print(f"[worker] Batch {batch['ID']} GEFAALD: {e}")

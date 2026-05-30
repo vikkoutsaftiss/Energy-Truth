@@ -409,15 +409,73 @@ def calculate_quality_from_dataframe(df):
     }
 
 
+# Fysiek plafond per kwartier (kWh). Een kleinverbruik-aansluiting (max
+# 3x80A ~ 55 kW) kan hooguit ~14 kWh per kwartier trekken; alles daarboven is
+# bijna zeker een meterstand-artefact. Ruim boven elk realistisch huishouden,
+# zodat EV-laden/warmtepompen NIET worden afgekapt.
+MAX_KWH_PER_KWARTIER = 25.0
+
+
+def valideer_meterdata(df):
+    """
+    Verwijdert fysiek onmogelijke kwartieren uit de meterdata.
+
+    Wat van het net gekocht of eraan teruggeleverd wordt kan nooit negatief
+    zijn, en een huishouden trekt geen tientallen kWh in één kwartier. Zulke
+    waarden zijn meterstand-artefacten (bijv. een teller-reset die als gigantische
+    delta binnenkomt) en zouden de hele kosten- en grafiekberekening vergiftigen.
+    We gooien die rijen weg en rapporteren hoeveel.
+
+    Verwacht kolommen consumption_kwh en feed_in_kwh. Returnt (df_clean, report).
+    """
+    leeg = {
+        'rijen_in': 0, 'verwijderd': 0, 'negatief_verbruik': 0,
+        'negatief_teruglevering': 0, 'absurd_hoog': 0,
+        'bericht': 'Geen meterdata om te valideren.',
+    }
+    if df is None or df.empty:
+        return df, leeg
+
+    cons = pd.to_numeric(df.get('consumption_kwh', 0), errors='coerce')
+    feed = pd.to_numeric(df.get('feed_in_kwh', 0), errors='coerce')
+
+    neg_cons = int((cons < 0).sum())
+    neg_feed = int((feed < 0).sum())
+    absurd = int(((cons > MAX_KWH_PER_KWARTIER) | (feed > MAX_KWH_PER_KWARTIER)).sum())
+
+    ok = (cons >= 0) & (feed >= 0) & (cons <= MAX_KWH_PER_KWARTIER) & (feed <= MAX_KWH_PER_KWARTIER)
+    df_clean = df[ok.fillna(False)].copy()
+    verwijderd = len(df) - len(df_clean)
+
+    if verwijderd:
+        bericht = (
+            f"{verwijderd} onmogelijke meetwaarde(n) verwijderd "
+            f"({neg_cons} negatief verbruik, {neg_feed} negatieve teruglevering, "
+            f"{absurd} absurd hoog > {MAX_KWH_PER_KWARTIER:.0f} kWh/kwartier)."
+        )
+    else:
+        bericht = "Alle meetwaarden plausibel; niets verwijderd."
+
+    report = {
+        'rijen_in': int(len(df)),
+        'verwijderd': int(verwijderd),
+        'negatief_verbruik': neg_cons,
+        'negatief_teruglevering': neg_feed,
+        'absurd_hoog': absurd,
+        'bericht': bericht,
+    }
+    return df_clean, report
+
+
 def _backfill_interval_in_db(import_batch_id, interval):
     """
-    Schrijft het gemeten interval terug naar de NULL-rijen van een batch.
+    Schrijft het gemeten interval terug naar de NULL-rijen van het GEBOUW.
 
     Repareert de bron: imports die wel meetwaarden maar geen
     Origineel_Interval_Min wegschrijven (bijv. bron 'HomeWizard') laten de
-    kolom NULL. Hier vullen we die NULL-rijen met het uit de tijdstempels
-    gemeten interval, zodat de kolom voortaan in de DB klopt. Idempotent:
-    al gevulde rijen blijven ongemoeid, een volgende run vindt niets meer.
+    kolom NULL. We vullen die NULL-rijen voor alle batches van hetzelfde gebouw
+    (dat de meegegeven batch bezit) met het gemeten interval. Idempotent:
+    al gevulde rijen blijven ongemoeid.
 
     Returns:
         Aantal bijgewerkte rijen.
@@ -429,8 +487,13 @@ def _backfill_interval_in_db(import_batch_id, interval):
             cur.execute("""
                 UPDATE "Verbruiksdata"
                 SET "Origineel_Interval_Min" = %s
-                WHERE "ImportBatchID" = %s
-                  AND "Origineel_Interval_Min" IS NULL
+                WHERE "Origineel_Interval_Min" IS NULL
+                  AND "ImportBatchID" IN (
+                      SELECT "ID" FROM "ImportBatch"
+                      WHERE "GebouwID" = (
+                          SELECT "GebouwID" FROM "ImportBatch" WHERE "ID" = %s
+                      )
+                  )
             """, (interval, import_batch_id))
             n = cur.rowcount
         conn.commit()
@@ -442,20 +505,20 @@ def _backfill_interval_in_db(import_batch_id, interval):
         conn.close()
 
 
-def calculate_quality_score(import_batch_id, backfill_nulls=True):
+def calculate_quality_score(import_batch_id, backfill_nulls=True,
+                            start_date=None, end_date=None):
     """
-    Haalt meterdata op uit Verbruiksdata voor EEN ImportBatch en berekent
-    de score.
+    Haalt meterdata op en berekent de betrouwbaarheidsscore.
 
-    Strikt batch-scoped (30 mei 2026), net als
-    scenario_engine._load_meter_data_from_db en period_selector. Zo gaan de
-    betrouwbaarheidsscore en het rapport gegarandeerd over precies dezelfde
-    meterdata; meerdere uploads van dezelfde klant lopen niet door elkaar.
+    Gebouw-scope (30 mei 2026, herzien): de meegegeven ImportBatch is de
+    TRIGGER; we lezen alle Verbruiksdata van het GEBOUW dat die batch bezit,
+    ontdubbeld op tijdstempel (nieuwste batch wint bij overlap). Sinds de import
+    incrementeel en ontdubbeld is, zijn meerdere batches van een gebouw juist
+    aanvullend; zo mist er geen historie meer. Met start_date/end_date beperken
+    we tot dezelfde rolling-year-periode als de simulatie.
 
-    backfill_nulls (default True): is Origineel_Interval_Min leeg (NULL) en
-    kunnen we het interval eenduidig uit de tijdstempels meten, dan schrijven
-    we die waarde meteen terug naar de DB. Zo heelt de keten zichzelf bij elke
-    run. Zet op False voor een puur lezende berekening.
+    backfill_nulls (default True): lege Origineel_Interval_Min wordt uit de
+    tijdstempels afgeleid en teruggeschreven naar de DB (gebouw-breed).
 
     Returns:
         dict met 'totaalscore', 'interpretatie', en per component details.
@@ -463,22 +526,34 @@ def calculate_quality_score(import_batch_id, backfill_nulls=True):
     from db_connection import get_connection
     import psycopg2.extras
 
-    sql = """
-        SELECT v."MeetDatumTijd"          AS "MeetDatumTijd",
+    params = [import_batch_id]
+    date_filter = ""
+    if start_date is not None and end_date is not None:
+        date_filter = ' AND v."MeetDatumTijd" >= %s AND v."MeetDatumTijd" <= %s'
+        params += [f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
+
+    # DISTINCT ON: per tijdstempel de rij uit de hoogste ImportBatchID
+    # (= nieuwste upload) -> ontdubbelt overlappende batches.
+    sql = f"""
+        SELECT DISTINCT ON (v."MeetDatumTijd")
+               v."MeetDatumTijd"          AS "MeetDatumTijd",
                v."Is_Geinterpoleerd"      AS "Is_Geinterpoleerd",
                v."Origineel_Interval_Min" AS "Origineel_Interval_Min"
         FROM "Verbruiksdata" v
-        WHERE v."ImportBatchID" = %s
-        ORDER BY v."MeetDatumTijd"
+        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
+        WHERE b."GebouwID" = (
+            SELECT "GebouwID" FROM "ImportBatch" WHERE "ID" = %s
+        ){date_filter}
+        ORDER BY v."MeetDatumTijd", v."ImportBatchID" DESC
     """
-    print(f"Data ophalen voor ImportBatch {import_batch_id}...")
+    print(f"Data ophalen voor gebouw van ImportBatch {import_batch_id}...")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (import_batch_id,))
+            cur.execute(sql, tuple(params))
             all_records = [dict(r) for r in cur.fetchall()]
 
     if not all_records:
-        print("⚠️  Geen meterdata gevonden voor deze ImportBatch!")
+        print("⚠️  Geen meterdata gevonden voor dit gebouw!")
         return {
             'totaalscore': 0,
             'interpretatie': _interpretatie(0),

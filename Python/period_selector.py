@@ -58,21 +58,26 @@ def bepaal_periode(
     rolling_days: int = ROLLING_YEAR_DAYS,
 ) -> Optional[PeriodSelection]:
     """
-    Lees MIN en MAX MeetDatumTijd uit Verbruiksdata voor EEN ImportBatch
-    via een directe SQL-query op een psycopg2-connectie.
+    Lees MIN en MAX MeetDatumTijd uit Verbruiksdata voor het GEBOUW dat de
+    meegegeven ImportBatch bezit, via een directe SQL-query.
 
-    De rolling year wordt strikt afgeleid van de verbruiksdata van de
-    geclaimde batch (ImportBatchID), niet van het hele gebouw. Meerdere
-    uploads van hetzelfde gebouw lopen zo niet door elkaar.
+    Gebouw-scope (30 mei 2026, herzien): de batch is de trigger; de rolling
+    year wordt afgeleid van alle verbruiksdata van het gebouw (join op
+    ImportBatch.GebouwID). Sinds de import incrementeel en ontdubbeld is, vullen
+    meerdere batches van een gebouw elkaar aan, zodat de periode de volledige
+    beschikbare historie dekt en er geen maanden missen.
 
     Returns:
-        PeriodSelection, of None als er geen data is voor deze batch.
+        PeriodSelection, of None als er geen data is voor dit gebouw.
     """
     sql = """
-        SELECT MIN("MeetDatumTijd") AS min_dt,
-               MAX("MeetDatumTijd") AS max_dt
+        SELECT MIN(v."MeetDatumTijd") AS min_dt,
+               MAX(v."MeetDatumTijd") AS max_dt
         FROM "Verbruiksdata" v
-        WHERE v."ImportBatchID" = %s
+        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
+        WHERE b."GebouwID" = (
+            SELECT "GebouwID" FROM "ImportBatch" WHERE "ID" = %s
+        )
     """
     with conn.cursor() as cur:
         cur.execute(sql, (import_batch_id,))

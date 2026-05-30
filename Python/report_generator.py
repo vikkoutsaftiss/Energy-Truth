@@ -3418,8 +3418,12 @@ def generate_report(
     if quality_score is None:
         try:
             from data_quality import calculate_quality_score
-            quality_score = calculate_quality_score(config.import_batch_id)
-            logger.info(f"Betrouwbaarheidsscore: {quality_score.get('total_score', '?')}")
+            quality_score = calculate_quality_score(
+                config.import_batch_id,
+                start_date=config.simulation.start_date,
+                end_date=config.simulation.end_date,
+            )
+            logger.info(f"Betrouwbaarheidsscore: {quality_score.get('totaalscore', '?')}")
         except Exception as e:
             logger.warning(f"Betrouwbaarheidsscore kon niet worden berekend: {e}")
             quality_score = None
