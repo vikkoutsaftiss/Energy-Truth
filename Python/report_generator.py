@@ -357,31 +357,31 @@ def _footer(canvas_obj, doc):
 # Rapport-secties
 # ---------------------------------------------------------------------------
 
-def _get_user_name(user_id: str) -> Optional[str]:
-    """Haal de gebruikersnaam op uit de users tabel in Supabase."""
-    if not user_id:
-        print("⚠️  Geen user_id — kan naam niet ophalen")
+def _get_user_name(klant_id) -> Optional[str]:
+    """Haal de bedrijfsnaam op uit de Klant tabel."""
+    if klant_id is None:
+        print("⚠️  Geen klant_id — kan naam niet ophalen")
         return None
     try:
         from db_connection import get_client
         client = get_client()
-        print(f"Gebruikersnaam ophalen voor user_id={user_id[:8]}...")
+        print(f"Klantnaam ophalen voor klant_id={klant_id}...")
         resp = (
-            client.table("users")
-            .select("name")
-            .eq("user_id", user_id)
+            client.table("Klant")
+            .select("Bedrijfsnaam")
+            .eq("ID", klant_id)
             .limit(1)
             .execute()
         )
-        print(f"  Users response: {resp.data}")
-        if resp.data and resp.data[0].get("name"):
-            name = resp.data[0]["name"]
-            print(f"  ✅ Gebruikersnaam: {name}")
+        print(f"  Klant response: {resp.data}")
+        if resp.data and resp.data[0].get("Bedrijfsnaam"):
+            name = resp.data[0]["Bedrijfsnaam"]
+            print(f"  ✅ Bedrijfsnaam: {name}")
             return name
         else:
-            print(f"  ⚠️  Geen naam gevonden in users tabel")
+            print(f"  ⚠️  Geen Bedrijfsnaam gevonden in Klant tabel")
     except Exception as e:
-        print(f"  ❌ Gebruikersnaam ophalen mislukt: {e}")
+        print(f"  ❌ Klantnaam ophalen mislukt: {e}")
     return None
 
 
@@ -3418,13 +3418,13 @@ def generate_report(
     if quality_score is None:
         try:
             from data_quality import calculate_quality_score
-            quality_score = calculate_quality_score(config.user_id)
+            quality_score = calculate_quality_score(config.klant_id)
             logger.info(f"Betrouwbaarheidsscore: {quality_score.get('total_score', '?')}")
         except Exception as e:
             logger.warning(f"Betrouwbaarheidsscore kon niet worden berekend: {e}")
             quality_score = None
 
-    user_name = _get_user_name(config.user_id)
+    user_name = _get_user_name(config.klant_id)
     if user_name:
         logger.info(f"Rapport voor: {user_name}")
 

@@ -55,23 +55,45 @@ def get_malus_for_date(provider_code, date):
 
     try:
         client = get_client()
+        # Lookup Afkorting → Net_Aanbieder.ID
+        na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider_code).limit(1).execute()
+        if not na.data:
+            return default
+        na_id = na.data[0]['ID']
+
+        # ERD: Net_AanbiederID (zonder underscore), Geldig_tot (kleine t).
+        # Geen .or_() in onze wrapper; we filteren in Python op de OR-conditie.
         response = (
-            client.table('provider_malus_history')
-            .select('feed_in_malus, feed_in_type_malus')
-            .eq('provider_code', provider_code)
-            .lte('valid_from', str(date))
-            .or_('valid_to.is.null,valid_to.gte.{}'.format(str(date)))
-            .order('valid_from', desc=True)
-            .limit(1)
+            client.table('Net_Aanbieder_Malus_Historie')
+            .select('Feed_In_Malus, Feed_In_Type_Malus, Geldig_tot')
+            .eq('Net_AanbiederID', na_id)
+            .lte('Geldig_Van', str(date))
+            .order('Geldig_Van', desc=True)
             .execute()
         )
+        # Pak de eerste rij waar Geldig_tot NULL is OF >= date
+        if response.data:
+            from datetime import date as _date_cls
+            target = date if isinstance(date, _date_cls) else _date_cls.fromisoformat(str(date))
+            filtered = []
+            for rec in response.data:
+                gt = rec.get('Geldig_tot')
+                if gt is None:
+                    filtered.append(rec); continue
+                try:
+                    gt_d = pd.Timestamp(gt).date() if not isinstance(gt, _date_cls) else gt
+                    if gt_d >= target:
+                        filtered.append(rec)
+                except Exception:
+                    pass
+            response.data = filtered[:1]
         _malus_table_exists = True  # Query lukte → tabel bestaat
 
         if response.data:
             record = response.data[0]
             return {
-                'malus': float(record['feed_in_malus']),
-                'type': record['feed_in_type_malus'],
+                'malus': float(record['Feed_In_Malus']),
+                'type': record['Feed_In_Type_Malus'],
             }
     except Exception:
         # Tabel bestaat nog niet → onthoud dit voor de rest van de sessie
@@ -110,11 +132,17 @@ def _get_malus_map(provider_code, dates):
         # Alle malus-records voor deze aanbieder ophalen
         try:
             client = get_client()
+            # Lookup Afkorting → Net_Aanbieder.ID
+            na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider_code).limit(1).execute()
+            if not na.data:
+                return {d: default for d in unique_dates}
+            na_id = na.data[0]['ID']
+
             response = (
-                client.table('provider_malus_history')
-                .select('feed_in_malus, feed_in_type_malus, valid_from, valid_to')
-                .eq('provider_code', provider_code)
-                .order('valid_from', desc=True)
+                client.table('Net_Aanbieder_Malus_Historie')
+                .select('Feed_In_Malus, Feed_In_Type_Malus, Geldig_Van, Geldig_tot')
+                .eq('Net_AanbiederID', na_id)
+                .order('Geldig_Van', desc=True)
                 .execute()
             )
             records = response.data or []
@@ -126,13 +154,13 @@ def _get_malus_map(provider_code, dates):
         for d in unique_dates:
             found = False
             for rec in records:
-                rec_from = pd.Timestamp(rec['valid_from']).date()
-                rec_to = pd.Timestamp(rec['valid_to']).date() if rec['valid_to'] else None
+                rec_from = pd.Timestamp(rec['Geldig_Van']).date()
+                rec_to = pd.Timestamp(rec['Geldig_tot']).date() if rec.get('Geldig_tot') else None
 
                 if rec_from <= d and (rec_to is None or rec_to >= d):
                     malus_map[d] = {
-                        'malus': float(rec['feed_in_malus']),
-                        'type': rec['feed_in_type_malus'],
+                        'malus': float(rec['Feed_In_Malus']),
+                        'type': rec['Feed_In_Type_Malus'],
                     }
                     found = True
                     break
@@ -520,22 +548,38 @@ def calculate_savings_summary(costs_df):
 # STANDALONE TEST
 # ============================================================
 
-def _fetch_all_meter_data(client, user_id, start_date, end_date):
-    """Haal alle meterdata gepagineerd op."""
+def _fetch_all_meter_data(client, klant_id, start_date, end_date):
+    """Haal alle meterdata gepagineerd op via Gebouw-filter.
+
+    Returns records met pandas-conventie kolomnamen (timestamp_from,
+    consumption_kwh, feed_in_kwh) - intern hernoemd vanaf Yan-stijl.
+    """
+    # Eerst Gebouw-IDs voor deze klant ophalen
+    gebouwen = client.table('Gebouw').select('ID').eq('Klant_ID', klant_id).execute()
+    gebouw_ids = [g['ID'] for g in (gebouwen.data or [])]
+    if not gebouw_ids:
+        return []
+
     all_records = []
     offset = 0
     while True:
         response = (
-            client.table('meter_readings')
-            .select('timestamp_from, consumption_kwh, feed_in_kwh')
-            .eq('user_id', user_id)
-            .gte('timestamp_from', f'{start_date}T00:00:00+00:00')
-            .lte('timestamp_from', f'{end_date}T23:59:59+00:00')
-            .order('timestamp_from')
+            client.table('Verbruiksdata')
+            .select('MeetDatumTijd, Stroom_Gekocht_Net_kWh, Stroom_Verkocht_Net_kWh')
+            .in_('Gebouw_ID', gebouw_ids)
+            .gte('MeetDatumTijd', f'{start_date}T00:00:00+00:00')
+            .lte('MeetDatumTijd', f'{end_date}T23:59:59+00:00')
+            .order('MeetDatumTijd')
             .range(offset, offset + 999)
             .execute()
         )
-        all_records.extend(response.data)
+        # Hernoem keys naar interne pandas-conventie
+        for rec in response.data:
+            all_records.append({
+                'timestamp_from': rec['MeetDatumTijd'],
+                'consumption_kwh': rec['Stroom_Gekocht_Net_kWh'],
+                'feed_in_kwh': rec['Stroom_Verkocht_Net_kWh'],
+            })
         if len(response.data) < 1000:
             break
         offset += 1000
@@ -625,7 +669,7 @@ def run_integration_test():
     # Config laden
     config = SimulationConfig.from_json("config.json")
     print(f"\n  Config geladen:")
-    print(f"    User ID:  {config.user_id}")
+    print(f"    Klant ID:  {config.klant_id}")
     print(f"    Periode:  {config.simulation.start_date} t/m {config.simulation.end_date}")
     print(f"    Providers: {config.providers}")
 
@@ -633,12 +677,12 @@ def run_integration_test():
     client = get_client()
     print(f"\n  Meterdata ophalen...")
     records = _fetch_all_meter_data(
-        client, config.user_id,
+        client, config.klant_id,
         config.simulation.start_date, config.simulation.end_date
     )
 
     if not records:
-        print("  ❌ Geen meterdata gevonden voor deze user!")
+        print("  ❌ Geen meterdata gevonden voor deze klant!")
         return
 
     meter = pd.DataFrame(records)
@@ -657,13 +701,15 @@ def run_integration_test():
     net_prices_df = get_net_prices(config.simulation.start_date, config.simulation.end_date)
     print(f"    {len(net_prices_df)} nettoprijzen geladen")
     if not net_prices_df.empty:
-        gem_net = net_prices_df['price'].mean()
+        gem_net = net_prices_df['Prijs_per_kWh'].mean()
         print(f"    Gem. beursprijs: EUR {gem_net:.4f}/kWh")
 
-    # Aanbieders ophalen
+    # Aanbieders ophalen via Marges_Per_Aanbieder + Net_Aanbieder lookup naar Afkorting
     if config.providers == "all":
-        margins_resp = client.table('provider_margins').select('provider_code').order('provider_code').execute()
-        provider_codes = [m['provider_code'] for m in margins_resp.data]
+        margins_resp = client.table('Marges_Per_Aanbieder').select('Net_AanbiederID').order('Net_AanbiederID').execute()
+        na_ids = [m['Net_AanbiederID'] for m in margins_resp.data]
+        aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting').in_('ID', na_ids).execute()
+        provider_codes = sorted([a['Afkorting'] for a in (aanbieders.data or [])])
     else:
         provider_codes = config.providers if isinstance(config.providers, list) else [config.providers]
 

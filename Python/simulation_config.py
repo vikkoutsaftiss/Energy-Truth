@@ -8,7 +8,7 @@ dus de backend-code verandert niet.
 Gebruik:
     from simulation_config import SimulationConfig
     config = SimulationConfig.from_json("config.json")
-    print(config.user_id)
+    print(config.klant_id)
     print(config.battery.capacity_kwh)
     print(config.csv_file)
 """
@@ -75,10 +75,10 @@ class SimulationConfig:
     """
     Hoofdconfiguratie voor een Energy-Truth simulatie.
 
-    Bevat user_id, batterij-instellingen, simulatieperiode,
+    Bevat klant_id, batterij-instellingen, simulatieperiode,
     CSV-bestand en aanbieder-selectie.
     """
-    user_id: str
+    klant_id: int
     battery: BatteryConfig
     simulation: SimulationPeriod
     csv_file: Optional[str] = None
@@ -144,7 +144,7 @@ class SimulationConfig:
         )
 
         return cls(
-            user_id=data["user_id"],
+            klant_id=int(data["klant_id"]),
             battery=battery,
             simulation=simulation,
             csv_file=data.get("csv_file"),
@@ -156,7 +156,7 @@ class SimulationConfig:
         """Geeft een leesbare samenvatting van de configuratie."""
         lines = [
             "=== Simulatie Configuratie ===",
-            f"User ID:        {self.user_id}",
+            f"Klant ID:       {self.klant_id}",
             f"CSV bestand:    {self.csv_file or '(geen)'}",
             f"Periode:        {self.simulation.start_date} t/m {self.simulation.end_date}",
             f"Aanbieders:     {self.providers}",

@@ -15,9 +15,9 @@ Gebruik:
     from data_quality import calculate_quality_from_dataframe
     score = calculate_quality_from_dataframe(df)
 
-    # Vanuit database (met user_id):
+    # Vanuit database (met klant_id):
     from data_quality import calculate_quality_score
-    score = calculate_quality_score(user_id)
+    score = calculate_quality_score(klant_id)
 """
 
 import pandas as pd
@@ -328,43 +328,38 @@ def calculate_quality_from_dataframe(df):
     }
 
 
-def calculate_quality_score(user_id):
+def calculate_quality_score(klant_id):
     """
-    Haalt meterdata op uit Supabase voor een user_id en berekent de score.
+    Haalt meterdata op uit Verbruiksdata voor een klant_id (via Gebouw)
+    en berekent de score.
 
     Returns:
         dict met 'totaalscore', 'interpretatie', en per component details.
     """
-    client = get_client()
+    # Verbruiksdata heeft geen Gebouw_ID; koppeling loopt via
+    # ImportBatch.GebouwID. Eén directe SQL-JOIN (psycopg2), net als
+    # scenario_engine._load_meter_data_from_db.
+    from db_connection import get_connection
+    import psycopg2.extras
 
-    # Haal alle meter_readings op voor deze user
-    print(f"Data ophalen voor user {user_id}...")
-
-    all_records = []
-    page_size = 1000
-    offset = 0
-
-    while True:
-        response = (
-            client.table('meter_readings')
-            .select('timestamp_from, is_interpolated, original_interval')
-            .eq('user_id', user_id)
-            .order('timestamp_from')
-            .range(offset, offset + page_size - 1)
-            .execute()
-        )
-
-        batch = response.data
-        if not batch:
-            break
-        all_records.extend(batch)
-
-        if len(batch) < page_size:
-            break
-        offset += page_size
+    sql = """
+        SELECT v."MeetDatumTijd"          AS "MeetDatumTijd",
+               v."Is_Geinterpoleerd"      AS "Is_Geinterpoleerd",
+               v."Origineel_Interval_Min" AS "Origineel_Interval_Min"
+        FROM "Verbruiksdata" v
+        JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID"
+        JOIN "Gebouw"      g ON b."GebouwID"      = g."ID"
+        WHERE g."Klant_ID" = %s
+        ORDER BY v."MeetDatumTijd"
+    """
+    print(f"Data ophalen voor klant {klant_id} via ImportBatch-koppeling...")
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, (klant_id,))
+            all_records = [dict(r) for r in cur.fetchall()]
 
     if not all_records:
-        print("⚠️  Geen meterdata gevonden voor deze user!")
+        print("⚠️  Geen meterdata gevonden voor deze klant!")
         return {
             'totaalscore': 0,
             'interpretatie': _interpretatie(0),
@@ -374,8 +369,13 @@ def calculate_quality_score(user_id):
 
     print(f"  {len(all_records)} records opgehaald")
 
-    # Naar DataFrame
+    # Naar DataFrame — hernoem terug naar interne pandas-conventie
     df = pd.DataFrame(all_records)
+    df = df.rename(columns={
+        'MeetDatumTijd': 'timestamp_from',
+        'Is_Geinterpoleerd': 'is_interpolated',
+        'Origineel_Interval_Min': 'original_interval',
+    })
     df['timestamp_from'] = pd.to_datetime(df['timestamp_from'], utc=True)
 
     result = calculate_quality_from_dataframe(df)
@@ -433,18 +433,18 @@ if __name__ == "__main__":
     import json
     import os
 
-    # Laad config.json voor user_id
+    # Laad config.json voor klant_id
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             config = json.load(f)
-        user_id = config.get('user_id')
+        klant_id = config.get('klant_id')
 
-        if user_id:
-            result = calculate_quality_score(user_id)
+        if klant_id is not None:
+            result = calculate_quality_score(klant_id)
             print_quality_report(result)
         else:
-            print("❌ Geen user_id in config.json!")
+            print("❌ Geen klant_id in config.json!")
     else:
         print("❌ config.json niet gevonden!")

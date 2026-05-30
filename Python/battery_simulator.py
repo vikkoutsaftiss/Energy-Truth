@@ -596,22 +596,35 @@ def print_simulation_summary(summary):
 # STANDALONE TEST
 # ============================================================
 
-def _fetch_all_meter_data(client, user_id, start_date, end_date):
-    """Haal alle meterdata gepagineerd op."""
+def _fetch_all_meter_data(client, klant_id, start_date, end_date):
+    """Haal alle meterdata gepagineerd op via Gebouw-filter.
+
+    Returns records met pandas-conventie kolomnamen.
+    """
+    gebouwen = client.table('Gebouw').select('ID').eq('Klant_ID', klant_id).execute()
+    gebouw_ids = [g['ID'] for g in (gebouwen.data or [])]
+    if not gebouw_ids:
+        return []
+
     all_records = []
     offset = 0
     while True:
         response = (
-            client.table('meter_readings')
-            .select('timestamp_from, consumption_kwh, feed_in_kwh')
-            .eq('user_id', user_id)
-            .gte('timestamp_from', f'{start_date}T00:00:00+00:00')
-            .lte('timestamp_from', f'{end_date}T23:59:59+00:00')
-            .order('timestamp_from')
+            client.table('Verbruiksdata')
+            .select('MeetDatumTijd, Stroom_Gekocht_Net_kWh, Stroom_Verkocht_Net_kWh')
+            .in_('Gebouw_ID', gebouw_ids)
+            .gte('MeetDatumTijd', f'{start_date}T00:00:00+00:00')
+            .lte('MeetDatumTijd', f'{end_date}T23:59:59+00:00')
+            .order('MeetDatumTijd')
             .range(offset, offset + 999)
             .execute()
         )
-        all_records.extend(response.data)
+        for rec in response.data:
+            all_records.append({
+                'timestamp_from': rec['MeetDatumTijd'],
+                'consumption_kwh': rec['Stroom_Gekocht_Net_kWh'],
+                'feed_in_kwh': rec['Stroom_Verkocht_Net_kWh'],
+            })
         if len(response.data) < 1000:
             break
         offset += 1000
@@ -806,14 +819,14 @@ def run_integration_test():
     print(f"{'=' * 60}")
 
     config = SimulationConfig.from_json("config.json")
-    print(f"\n  Config: user={config.user_id[:8]}...")
+    print(f"\n  Config: klant={config.klant_id}")
     print(f"  Periode: {config.simulation.start_date} t/m {config.simulation.end_date}")
     print(f"  Batterij: {config.battery.capacity_kwh} kWh")
 
     # Meterdata ophalen
     client = get_client()
     records = _fetch_all_meter_data(
-        client, config.user_id,
+        client, config.klant_id,
         config.simulation.start_date, config.simulation.end_date
     )
     if not records:

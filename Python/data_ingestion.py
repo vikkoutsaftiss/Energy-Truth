@@ -2,12 +2,14 @@
 data_ingestion.py — CSV-inlader voor Energy-Truth.
 
 Leest slimme-meter CSV-bestanden in, verwerkt ze tot schone 15-min data,
-en schrijft ze naar de meter_readings tabel in Supabase.
+en schrijft ze naar de Verbruiksdata tabel.
 
 Werkt altijd via config.json (of een SimulationConfig object):
-    - user_id wordt meegegeven bij elke import
+    - klant_id wordt meegegeven bij elke import; binnen die klant wordt het
+      eerste Gebouw gekozen (of een expliciet meegegeven gebouw_id)
     - duplicaatdetectie voorkomt dubbele records
-    - bestaande data voor dezelfde timestamps wordt overgeslagen
+    - bestaande data voor dezelfde timestamps (binnen hetzelfde Gebouw)
+      wordt overgeslagen
 
 Ondersteunde CSV-formaten:
     Formaat A (Enexis/standaard):  From, To, Levering, Teruglevering (kWh)
@@ -38,7 +40,7 @@ Gebruik:
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from window_functions import detect_gaps, rolling_avg
+from window_functions import detect_gaps
 from simulation_config import SimulationConfig
 from db_connection import get_client
 
@@ -62,11 +64,11 @@ def ingest_csv(config_path: str = "config.json") -> dict:
     if not config.csv_file:
         raise ValueError("Geen csv_file opgegeven in config.json")
 
-    print(f"Config geladen — user_id: {config.user_id}")
+    print(f"Config geladen — klant_id: {config.klant_id}")
     print(f"CSV bestand: {config.csv_file}")
 
     # Stap 1-5: CSV inlezen en verwerken
-    df = load_meter_csv(config.csv_file, user_id=config.user_id)
+    df = load_meter_csv(config.csv_file, klant_id=config.klant_id)
     summary = get_ingestion_summary(df)
 
     print(f"\nVerwerkt: {summary['total_records']} records")
@@ -75,7 +77,7 @@ def ingest_csv(config_path: str = "config.json") -> dict:
     print(f"Gaps gedetecteerd: {summary.get('gaps_detected', 0)}")
 
     # Stap 6-7: Duplicaatdetectie + naar database schrijven
-    db_result = save_to_database(df, config.user_id)
+    db_result = save_to_database(df, config.klant_id)
 
     summary.update(db_result)
     return summary
@@ -84,13 +86,15 @@ def ingest_csv(config_path: str = "config.json") -> dict:
 # ---------------------------------------------------------------------------
 # CSV VERWERKING (stap 1-5)
 # ---------------------------------------------------------------------------
-def load_meter_csv(filepath: str, user_id: str = None) -> pd.DataFrame:
+def load_meter_csv(filepath: str, klant_id: int = None) -> pd.DataFrame:
     """
     Laadt een slimme-meter CSV en retourneert een schoon 15-min DataFrame.
 
     Parameters:
         filepath    Pad naar het CSV-bestand.
-        user_id     UUID van de gebruiker (uit config.json).
+        klant_id    int4 van Klant.ID (uit config.json). Wordt als label
+                    aan de DataFrame toegevoegd; bij save_to_database wordt
+                    op basis hiervan het juiste Gebouw opgezocht.
 
     Returns:
         DataFrame met kolommen:
@@ -100,7 +104,7 @@ def load_meter_csv(filepath: str, user_id: str = None) -> pd.DataFrame:
             - feed_in_kwh (float)
             - is_interpolated (bool)
             - original_interval (str)
-            - user_id (str)
+            - klant_id (int)
     """
     # Stap 1: CSV inlezen
     df = _read_csv(filepath)
@@ -125,9 +129,9 @@ def load_meter_csv(filepath: str, user_id: str = None) -> pd.DataFrame:
     # Gaps worden overgeslagen in de simulatie en verlagen de betrouwbaarheidsscore.
     df = _detect_and_report_gaps(df)
 
-    # User ID toevoegen
-    if user_id:
-        df["user_id"] = user_id
+    # Klant ID toevoegen
+    if klant_id is not None:
+        df["klant_id"] = klant_id
 
     # Sorteren en opschonen
     df = df.sort_values("timestamp_from").reset_index(drop=True)
@@ -138,11 +142,13 @@ def load_meter_csv(filepath: str, user_id: str = None) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # DATABASE SCHRIJVEN (stap 6-7)
 # ---------------------------------------------------------------------------
-def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
+def save_to_database(df: pd.DataFrame, klant_id: int, gebouw_id: int = None) -> dict:
     """
-    Schrijft meterdata naar Supabase met duplicaatdetectie.
+    Schrijft meterdata naar Verbruiksdata met duplicaatdetectie.
 
-    Controleert welke timestamps al bestaan voor deze user_id.
+    Bepaalt op basis van klant_id het juiste Gebouw (default = eerste gebouw
+    van de klant; expliciet meegeven via gebouw_id mogelijk).
+    Controleert welke timestamps al bestaan voor dat Gebouw.
     Schrijft alleen nieuwe records.
 
     Returns:
@@ -150,9 +156,20 @@ def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
     """
     client = get_client()
 
-    # Stap 6: Bestaande timestamps ophalen voor deze user
-    print(f"\nDuplicaatcheck voor user {user_id}...")
-    existing = _get_existing_timestamps(client, user_id)
+    # Bepaal Gebouw_ID voor deze klant
+    if gebouw_id is None:
+        gebouwen = client.table('Gebouw').select('ID').eq('Klant_ID', klant_id).order('ID').limit(1).execute()
+        if not gebouwen.data:
+            raise ValueError(
+                f"Geen Gebouw gevonden voor Klant_ID={klant_id}. "
+                f"Voeg eerst een Gebouw toe of geef gebouw_id expliciet mee."
+            )
+        gebouw_id = gebouwen.data[0]['ID']
+        print(f"\nGebouw_ID afgeleid uit Klant_ID={klant_id}: {gebouw_id}")
+
+    # Stap 6: Bestaande timestamps ophalen voor dit Gebouw
+    print(f"\nDuplicaatcheck voor Gebouw_ID={gebouw_id}...")
+    existing = _get_existing_timestamps(client, gebouw_id)
     print(f"  Bestaande records in database: {len(existing)}")
 
     # Filter: alleen rijen met timestamps die nog niet bestaan
@@ -172,7 +189,7 @@ def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
         }
 
     # Stap 7: Naar database schrijven (in batches van 500)
-    records = _prepare_records(new_rows)
+    records = _prepare_records(new_rows, gebouw_id)
     batch_size = 500
     total_written = 0
 
@@ -180,7 +197,7 @@ def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
     for i in range(0, len(records), batch_size):
         batch = records[i : i + batch_size]
         try:
-            client.table("meter_readings").insert(batch).execute()
+            client.table("Verbruiksdata").insert(batch).execute()
             total_written += len(batch)
             print(f"  Batch {i // batch_size + 1}: {len(batch)} records geschreven")
         except Exception as e:
@@ -188,7 +205,7 @@ def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
             break
 
     total_in_db = len(existing) + total_written
-    print(f"\n✅ Klaar! Totaal in database: {total_in_db} records voor deze user")
+    print(f"\n✅ Klaar! Totaal in database: {total_in_db} records voor Gebouw_ID={gebouw_id}")
 
     return {
         "new_records": total_written,
@@ -197,9 +214,9 @@ def save_to_database(df: pd.DataFrame, user_id: str) -> dict:
     }
 
 
-def _get_existing_timestamps(client, user_id: str) -> set:
+def _get_existing_timestamps(client, gebouw_id: int) -> set:
     """
-    Haalt alle bestaande timestamp_from waarden op voor een user.
+    Haalt alle bestaande MeetDatumTijd waarden op voor een Gebouw.
     Retourneert een set van timestamp-strings voor snelle lookup.
     """
     existing = set()
@@ -208,9 +225,9 @@ def _get_existing_timestamps(client, user_id: str) -> set:
 
     while True:
         result = (
-            client.table("meter_readings")
-            .select("timestamp_from")
-            .eq("user_id", user_id)
+            client.table("Verbruiksdata")
+            .select("MeetDatumTijd")
+            .eq("Gebouw_ID", gebouw_id)
             .range(offset, offset + page_size - 1)
             .execute()
         )
@@ -219,7 +236,7 @@ def _get_existing_timestamps(client, user_id: str) -> set:
 
         for row in result.data:
             # Normaliseer timestamp voor vergelijking
-            ts = row["timestamp_from"]
+            ts = row["MeetDatumTijd"]
             # Verwijder timezone info voor vergelijking
             if "+" in ts:
                 ts = ts.split("+")[0]
@@ -233,18 +250,22 @@ def _get_existing_timestamps(client, user_id: str) -> set:
     return existing
 
 
-def _prepare_records(df: pd.DataFrame) -> list:
-    """Zet DataFrame om naar een lijst van dicts voor Supabase insert."""
+def _prepare_records(df: pd.DataFrame, gebouw_id: int) -> list:
+    """Zet DataFrame om naar een lijst van Yan-stijl dicts voor insert in Verbruiksdata.
+
+    Bron_Data wordt op 'csv-import' gezet; later eventueel uit context af te leiden
+    (P1, n8n, etc.).
+    """
     records = []
     for _, row in df.iterrows():
         records.append({
-            "user_id": row["user_id"],
-            "timestamp_from": row["timestamp_from"].isoformat(),
-            "timestamp_to": row["timestamp_to"].isoformat(),
-            "consumption_kwh": round(float(row["consumption_kwh"]), 6),
-            "feed_in_kwh": round(float(row["feed_in_kwh"]), 6),
-            "is_interpolated": bool(row["is_interpolated"]),
-            "original_interval": row["original_interval"],
+            "Gebouw_ID": gebouw_id,
+            "MeetDatumTijd": row["timestamp_from"].isoformat(),
+            "Bron_Data": "csv-import",
+            "Stroom_Gekocht_Net_kWh": round(float(row["consumption_kwh"]), 6),
+            "Stroom_Verkocht_Net_kWh": round(float(row["feed_in_kwh"]), 6),
+            "Is_Geinterpoleerd": bool(row["is_interpolated"]),
+            "Origineel_Interval_Min": row["original_interval"],
         })
     return records
 

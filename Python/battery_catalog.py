@@ -1,7 +1,7 @@
 """
-battery_catalog.py — Catalog van thuisbatterijen ophalen uit Supabase.
+battery_catalog.py — Catalog van thuisbatterijen ophalen uit de DB.
 
-Werkt op de tabel `markt_product` (categorie = 'Batterij') zoals
+Werkt op de tabel `Markt_Product` (Categorie_Batterij = 'Batterij') zoals
 uitgebreid via sql/migrations/001_uitbreiding_markt_product.sql.
 
 Levert per actieve batterij een BatteryCatalogEntry op met alle
@@ -40,7 +40,7 @@ DEFAULT_CATALOG_ROUND_TRIP_EFFICIENCY = 0.90  # LiFePO4 typische waarde
 
 @dataclass
 class BatteryCatalogEntry:
-    """Eén rij uit markt_product, categorie = 'Batterij'."""
+    """Eén rij uit Markt_Product, Categorie_Batterij = 'Batterij'."""
 
     id: int
     productnaam: str
@@ -90,10 +90,10 @@ def get_battery_catalog(
     max_capacity_kwh: Optional[float] = None,
 ) -> list[BatteryCatalogEntry]:
     """
-    Haal alle actieve thuisbatterijen op uit markt_product.
+    Haal alle actieve thuisbatterijen op uit Markt_Product.
 
     Args:
-        only_active: alleen rijen met actief = TRUE (default True)
+        only_active: alleen rijen met Actief = TRUE (default True)
         min_capacity_kwh: optioneel ondergrens op capaciteit
         max_capacity_kwh: optioneel bovengrens op capaciteit
 
@@ -102,24 +102,24 @@ def get_battery_catalog(
     """
     client = get_client()
     query = (
-        client.table("markt_product")
+        client.table("Markt_Product")
         .select(
-            "id, productnaam, aanschafprijs, capaciteit_kwh, "
-            "bruikbare_capaciteit_kwh, gegarandeerde_laadcycli, "
-            "garantiejaren, max_laden_kw, max_ontladen_kw, "
-            "round_trip_efficiency, installatiekosten_eur, "
-            "chemie, bron_url, foto_url"
+            "ID, ProductNaam, Aanschafprijs, Capaciteit_kWh, "
+            "Bruikbare_CapaciteitkW, Gegarandeerde_laadcycli, "
+            "garantiejaren, Max_Laden_kW, Max_Ontladen_kW, "
+            "Round_Trip_Efficiency, Installatiekosten_EUR, "
+            "Chemie, Bron_URL, Foto_URL"
         )
-        .eq("categorie", "Batterij")
-        .order("capaciteit_kwh")
+        .eq("Categorie_Batterij", "Batterij")
+        .order("Capaciteit_kWh")
     )
 
     if only_active:
-        query = query.eq("actief", True)
+        query = query.eq("Actief", True)
     if min_capacity_kwh is not None:
-        query = query.gte("capaciteit_kwh", min_capacity_kwh)
+        query = query.gte("Capaciteit_kWh", min_capacity_kwh)
     if max_capacity_kwh is not None:
-        query = query.lte("capaciteit_kwh", max_capacity_kwh)
+        query = query.lte("Capaciteit_kWh", max_capacity_kwh)
 
     response = query.execute()
     records = response.data or []
@@ -128,52 +128,54 @@ def get_battery_catalog(
     for r in records:
         # Echt-verplichte specs: zonder deze kan de batterij niet worden gesimuleerd
         hard_required = [
-            "capaciteit_kwh",
-            "max_laden_kw", "max_ontladen_kw",
-            "garantiejaren", "gegarandeerde_laadcycli",
-            "aanschafprijs",
+            "Capaciteit_kWh",
+            "Max_Laden_kW", "Max_Ontladen_kW",
+            "garantiejaren", "Gegarandeerde_laadcycli",
+            "Aanschafprijs",
         ]
         missing = [k for k in hard_required if r.get(k) is None]
         if missing:
-            naam = r.get("productnaam") or f"Product {r.get('id')}"
-            print(f"  ⚠️  Batterij '{naam}' overgeslagen: ontbrekende velden {missing}")
+            naam = r.get("ProductNaam") or f"Product {r.get('ID')}"
+            print(f"  Batterij '{naam}' overgeslagen: ontbrekende velden {missing}")
             continue
 
-        # Optionele specs met sensible defaults — geen reden om te skippen
-        bruikbaar = r.get("bruikbare_capaciteit_kwh")
+        # Optionele specs met sensible defaults: geen reden om te skippen.
+        # ERD-kolom is "Bruikbare_CapaciteitkW" (zonder underscore, met kW).
+        # In Python en in de simulator blijven we het correct "kwh" noemen.
+        bruikbaar = r.get("Bruikbare_CapaciteitkW")
         if bruikbaar is None:
-            bruikbaar = float(r["capaciteit_kwh"]) * DEFAULT_CATALOG_DOD_PCT
-            naam = r.get("productnaam") or f"Product {r.get('id')}"
+            bruikbaar = float(r["Capaciteit_kWh"]) * DEFAULT_CATALOG_DOD_PCT
+            naam = r.get("ProductNaam") or f"Product {r.get('ID')}"
             print(
-                f"  ℹ️  '{naam}': bruikbare_capaciteit_kwh ontbreekt — "
-                f"default toegepast ({DEFAULT_CATALOG_DOD_PCT*100:.0f}% van "
-                f"{float(r['capaciteit_kwh']):.1f} kWh = {bruikbaar:.2f} kWh)"
+                f"  '{naam}': Bruikbare_CapaciteitkW ontbreekt, default toegepast "
+                f"({DEFAULT_CATALOG_DOD_PCT*100:.0f}% van "
+                f"{float(r['Capaciteit_kWh']):.1f} kWh = {bruikbaar:.2f} kWh)"
             )
 
-        rte = r.get("round_trip_efficiency")
+        rte = r.get("Round_Trip_Efficiency")
         if rte is None:
             rte = DEFAULT_CATALOG_ROUND_TRIP_EFFICIENCY
-            naam = r.get("productnaam") or f"Product {r.get('id')}"
+            naam = r.get("ProductNaam") or f"Product {r.get('ID')}"
             print(
-                f"  ℹ️  '{naam}': round_trip_efficiency ontbreekt — "
-                f"default toegepast ({DEFAULT_CATALOG_ROUND_TRIP_EFFICIENCY:.2f})"
+                f"  '{naam}': Round_Trip_Efficiency ontbreekt, default toegepast "
+                f"({DEFAULT_CATALOG_ROUND_TRIP_EFFICIENCY:.2f})"
             )
 
         catalog.append(BatteryCatalogEntry(
-            id=int(r["id"]),
-            productnaam=r.get("productnaam") or f"Product {r['id']}",
-            aanschafprijs=float(r["aanschafprijs"]),
-            capaciteit_kwh=float(r["capaciteit_kwh"]),
+            id=int(r["ID"]),
+            productnaam=r.get("ProductNaam") or f"Product {r['ID']}",
+            aanschafprijs=float(r["Aanschafprijs"]),
+            capaciteit_kwh=float(r["Capaciteit_kWh"]),
             bruikbare_capaciteit_kwh=float(bruikbaar),
-            gegarandeerde_laadcycli=float(r["gegarandeerde_laadcycli"]),
+            gegarandeerde_laadcycli=float(r["Gegarandeerde_laadcycli"]),
             garantiejaren=float(r["garantiejaren"]),
-            max_laden_kw=float(r["max_laden_kw"]),
-            max_ontladen_kw=float(r["max_ontladen_kw"]),
+            max_laden_kw=float(r["Max_Laden_kW"]),
+            max_ontladen_kw=float(r["Max_Ontladen_kW"]),
             round_trip_efficiency=float(rte),
-            installatiekosten_eur=float(r.get("installatiekosten_eur") or 0),
-            chemie=r.get("chemie"),
-            bron_url=r.get("bron_url"),
-            foto_url=r.get("foto_url"),
+            installatiekosten_eur=float(r.get("Installatiekosten_EUR") or 0),
+            chemie=r.get("Chemie"),
+            bron_url=r.get("Bron_URL"),
+            foto_url=r.get("Foto_URL"),
         ))
 
     return catalog
@@ -307,7 +309,7 @@ if __name__ == "__main__":
 
     catalog = get_battery_catalog()
     if not catalog:
-        print("  Geen actieve batterijen gevonden in markt_product.")
+        print("  Geen actieve batterijen gevonden in Markt_Product.")
         print("  Run eerst de SQL migraties + seed.")
         raise SystemExit(1)
 
