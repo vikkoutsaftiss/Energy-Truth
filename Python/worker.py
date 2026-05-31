@@ -157,6 +157,23 @@ def store_pdf(batch_id: int, gebouw_id: int, filename: str,
 # ---------------------------------------------------------------------------
 # Eigen batterij van de gebruiker (optioneel, uit ImportBatch.Eigen_Batterij).
 # ---------------------------------------------------------------------------
+def _veilige_tekst(s, maxlen=80):
+    """Maakt door de gebruiker opgegeven tekst veilig voor de PDF.
+
+    ReportLab Paragraph leest een soort mini-HTML (tags als <font>, <img>).
+    Door de tekst te XML-escapen (< > & -> entities) kan een opgegeven
+    productnaam/chemie geen tags injecteren; de tekst wordt letterlijk getoond.
+    Witruimte wordt genormaliseerd en de lengte begrensd tegen layout-breken.
+    Returnt None voor lege/ontbrekende invoer.
+    """
+    if s is None:
+        return None
+    import re
+    from xml.sax.saxutils import escape
+    s = re.sub(r"\s+", " ", str(s).strip())[:maxlen]
+    return escape(s) if s else None
+
+
 def _parse_eigen_batterij(raw):
     """Bouwt een BatteryConfig uit het optionele Eigen_Batterij-JSON van de
     ImportBatch. Geeft None terug bij afwezig of ongeldig (dan rekent de worker
@@ -226,11 +243,11 @@ def _parse_eigen_batterij(raw):
         min_soc_pct=min_soc,
         max_soc_pct=max_soc,
         battery_price_eur=prijs,
-        productnaam=(data.get("productnaam") or "Mijn batterij"),
+        productnaam=(_veilige_tekst(data.get("productnaam")) or "Mijn batterij"),
         installatiekosten_eur=_num("installatiekosten_eur", 0.0),
         garantiejaren=_num("garantiejaren", 10.0),
         gegarandeerde_laadcycli=_num("gegarandeerde_laadcycli", 6000.0),
-        chemie=data.get("chemie"),
+        chemie=_veilige_tekst(data.get("chemie")),
     )
 
 

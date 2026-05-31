@@ -65,12 +65,20 @@ def _read_db_env() -> dict:
         print(f"Vul ze in {_env_path} (lokaal) of in het db-auth Secret (cluster).",
               file=sys.stderr)
         sys.exit(1)
+    # SSL-modus instelbaar via env (DB_SSLMODE). Standaard 'prefer':
+    # versleutelt als de server SSL aanbiedt, valt anders terug op plat
+    # verkeer. Daarmee breekt de huidige verbinding met app_test niet
+    # (die heeft per mei 2026 nog geen SSL aan). Zodra de Postgres-server
+    # SSL aan heeft (self-signed cert volstaat) -> zet DB_SSLMODE=require
+    # voor gegarandeerde versleuteling, of verify-full met CA-cert.
+    # Zie Security_bevinding_DB-versleuteling.md voor de afweging.
     return {
         "host": os.environ["DATABASE_IP"],
         "port": int(os.environ["DATABASE_PORT"]),
         "dbname": os.environ["POSTGRES_DB"],
         "user": os.environ["POSTGRES_USER"],
         "password": os.environ["POSTGRES_PASSWORD"],
+        "sslmode": os.environ.get("DB_SSLMODE", "prefer"),
     }
 
 
