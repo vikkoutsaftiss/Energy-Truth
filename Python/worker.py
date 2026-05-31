@@ -42,26 +42,12 @@ POLL_INTERVAL_SECONDS = int(os.environ.get("POLL_INTERVAL_SECONDS", "30"))
 
 
 # ---------------------------------------------------------------------------
-# Bootstrap: tabel voor PDF-resultaten aanmaken als die nog niet bestaat.
-# Lokaal handig zodat we niet eerst op Vik hoeven te wachten.
+# De tabel "SimulatieRapport_PDF" wordt BEWUST NIET door de worker aangemaakt.
+# Least privilege: het worker-account hoort alleen lees/schrijf-rechten te
+# hebben (SELECT/INSERT/UPDATE), geen DDL. De tabel staat in het schema
+# (sql-actueel/schema.sql) en wordt via de database-migraties van het team
+# aangemaakt. Bestaat de tabel niet, dan faalt store_pdf met een nette fout.
 # ---------------------------------------------------------------------------
-DDL_RAPPORT_PDF = """
-CREATE TABLE IF NOT EXISTS "SimulatieRapport_PDF" (
-    "ID"               serial PRIMARY KEY,
-    "ImportBatch_ID"   int NOT NULL,
-    "Gebouw_ID"        int NOT NULL,
-    "Bestandsnaam"     varchar(255) NOT NULL,
-    "PDF_Bytes"        bytea NOT NULL,
-    "Samenvatting"     jsonb,
-    "Gegenereerd_Op"   timestamp NOT NULL DEFAULT now()
-);
-"""
-
-def ensure_result_table() -> None:
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(DDL_RAPPORT_PDF)
-        conn.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -359,26 +345,8 @@ def process_batch(batch: dict) -> Optional[str]:
     if results.empty:
         raise RuntimeError("run_all_scenarios gaf 0 resultaten terug")
 
-    # 6. PDF genereren.
-    from report_generator import generate_report
-
-    out_dir = Path(__file__).parent / "outputs"
-    out_dir.mkdir(exist_ok=True)
-    pdf_path = out_dir / f"rapport_batch_{batch_id}.pdf"
-
-    generate_report(
-        results=results,
-        config=config,
-        output_path=str(pdf_path),
-        top_n=30,
-        price_cache=price_cache,
-        selection_info=selection_info,
-        sizing_results=sizing_results,
-    )
-
-    # 7. Samenvatting voor frontend (handzaam JSON-blok).
-    #    Inclusief het meterdata-validatie-rapport (afgekeurde onmogelijke
-    #    rijen), zodat de frontend/team ziet of er met de data iets mis was.
+    # 6. Samenvatting voor frontend (handzaam JSON-blok), inclusief het
+    #    meterdata-validatie-rapport (afgekeurde onmogelijke rijen).
     import scenario_engine as _se
     data_validatie = dict(getattr(_se, "LAATSTE_DATA_VALIDATIE", {}) or {})
 
@@ -400,9 +368,26 @@ def process_batch(batch: dict) -> Optional[str]:
     if data_validatie.get("verwijderd"):
         print(f"[worker] Datavalidatie: {data_validatie['bericht']}")
 
-    # 8. PDF naar DB.
-    rapport_id = store_pdf(batch_id, gebouw_id, pdf_path.name, pdf_path, samenvatting)
-    print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id}")
+    # 7. PDF genereren naar een TIJDELIJKE map en als bytea in de DB opslaan.
+    #    AVG: een klant-PDF (meterdata = persoonsgegeven) blijft niet als bestand
+    #    achter in de projectmap; de tijdelijke map wordt direct opgeruimd. Het
+    #    rapport leeft in SimulatieRapport_PDF.PDF_Bytes.
+    from report_generator import generate_report
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as _tmp:
+        pdf_path = Path(_tmp) / f"rapport_batch_{batch_id}.pdf"
+        generate_report(
+            results=results,
+            config=config,
+            output_path=str(pdf_path),
+            top_n=30,
+            price_cache=price_cache,
+            selection_info=selection_info,
+            sizing_results=sizing_results,
+        )
+        rapport_id = store_pdf(batch_id, gebouw_id, pdf_path.name, pdf_path, samenvatting)
+    print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id} (geen lokale kopie)")
 
     # Notitie voor ImportBatch.Error_Message: alleen als we iets aan de data
     # hebben gedaan (onmogelijke rijen verwijderd). Geen fout, maar een logboek.
@@ -413,7 +398,6 @@ def process_batch(batch: dict) -> Optional[str]:
 # Hoofdlus
 # ---------------------------------------------------------------------------
 def main_loop(once: bool = False) -> None:
-    ensure_result_table()
     print(f"[worker] Start. Polling elke {POLL_INTERVAL_SECONDS}s. (--once om 1 batch te doen)")
     while True:
         batch = claim_next_batch()
