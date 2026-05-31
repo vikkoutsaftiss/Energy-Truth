@@ -14,9 +14,9 @@ Gebruik:
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 
 
 @dataclass
@@ -162,8 +162,8 @@ class SimulationConfig:
             f"CSV bestand:    {self.csv_file or '(geen)'}",
             f"Periode:        {self.simulation.start_date} t/m {self.simulation.end_date}",
             f"Aanbieders:     {self.providers}",
-            f"",
-            f"--- Batterij ---",
+            "",
+            "--- Batterij ---",
             f"Capaciteit:     {self.battery.capacity_kwh} kWh (bruikbaar: {self.battery.usable_capacity_kwh} kWh)",
             f"Laden:          {self.battery.max_charge_kw} kW ({self.battery.max_charge_per_quarter_kwh:.3f} kWh/kwartier)",
             f"Ontladen:       {self.battery.max_discharge_kw} kW ({self.battery.max_discharge_per_quarter_kwh:.3f} kWh/kwartier)",

@@ -43,7 +43,6 @@ Gebruik:
 
 import pandas as pd
 import numpy as np
-from simulation_config import BatteryConfig
 
 
 # ============================================================
@@ -410,7 +409,7 @@ def simulate_battery(meter_data, battery, prices=None, strategy='A', start_soc=N
             how='inner'
         )
         if df.empty:
-            print(f"  Geen overlap tussen meterdata en prijzen!")
+            print("  Geen overlap tussen meterdata en prijzen!")
             return df
 
         # Dynamische drempels berekenen op basis van batterijcapaciteit

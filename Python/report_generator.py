@@ -376,7 +376,7 @@ def _get_user_name(klant_id) -> Optional[str]:
             print(f"  Bedrijfsnaam: {name}")
             return name
         else:
-            print(f"  Let op: geen Bedrijfsnaam gevonden in Klant tabel")
+            print("  Let op: geen Bedrijfsnaam gevonden in Klant tabel")
     except Exception as e:
         print(f"  Klantnaam ophalen mislukt: {e}")
     return None

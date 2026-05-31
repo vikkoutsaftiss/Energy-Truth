@@ -35,7 +35,6 @@ import pandas as pd
 
 from battery_catalog import (
     BatteryCatalogEntry,
-    USER_BATTERY_ID,
     entry_from_battery_config,
     get_battery_catalog,
     to_battery_config,
@@ -48,8 +47,6 @@ from cost_calculator import (
 )
 from reference_data import (
     get_net_prices,
-    get_provider_prices,
-    reconstruct_historical_prices,
     get_allin_prices,
 )
 from scenario_engine import _normalize_timestamps
@@ -365,8 +362,8 @@ def find_optimal_battery(
         else:
             print(f"  Eigen batterij toegevoegd: {own_entry.label}")
             if own_battery.garantiejaren is None or own_battery.gegarandeerde_laadcycli is None:
-                print(f"    LET OP: garantiejaren en/of cycli ontbreken in config.json - "
-                      f"defaults gebruikt (10j, 6000 cycli)")
+                print("    LET OP: garantiejaren en/of cycli ontbreken in config.json - "
+                      "defaults gebruikt (10j, 6000 cycli)")
             catalog = catalog + [own_entry]
 
     if not catalog:

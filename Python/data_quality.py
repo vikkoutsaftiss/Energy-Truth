@@ -21,7 +21,6 @@ Gebruik:
 """
 
 import pandas as pd
-from db_connection import get_client
 
 # ============================================================
 # CONSTANTEN
