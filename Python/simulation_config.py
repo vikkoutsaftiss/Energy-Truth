@@ -1,5 +1,5 @@
 """
-simulation_config.py — Configuratieklasse voor Energy-Truth.
+simulation_config.py - Configuratieklasse voor Energy-Truth.
 
 Leest config.json in en biedt alle instellingen als object aan.
 Dezelfde JSON-structuur wordt later door het FastAPI-endpoint gestuurd,
@@ -22,7 +22,7 @@ from typing import Optional, List
 @dataclass
 class BatteryConfig:
     """
-    Batterijconfiguratie — uit catalogus of handmatig.
+    Batterijconfiguratie - uit catalogus of handmatig.
 
     De extra sizing-velden (productnaam, garantiejaren, etc.) zijn
     optioneel en alleen relevant voor battery_sizing.py. Worden ze
@@ -36,7 +36,7 @@ class BatteryConfig:
     discharge_efficiency: float = 0.95
     min_soc_pct: float = 0.20
     max_soc_pct: float = 0.80
-    battery_price_eur: Optional[float] = None  # aanschafprijs batterij (€)
+    battery_price_eur: Optional[float] = None  # aanschafprijs batterij (EUR)
 
     # --- Sizing-velden (optioneel) ---
     productnaam: Optional[str] = None
@@ -52,13 +52,13 @@ class BatteryConfig:
 
     @property
     def max_charge_per_quarter_kwh(self) -> float:
-        """Max laden per kwartier (kW × 0.25 uur). Efficiency wordt APART
+        """Max laden per kwartier (kW * 0.25 uur). Efficiency wordt APART
         toegepast in battery_simulator bij de SoC-update."""
         return self.max_charge_kw * 0.25
 
     @property
     def max_discharge_per_quarter_kwh(self) -> float:
-        """Max ontladen per kwartier (kW × 0.25 uur). Efficiency wordt APART
+        """Max ontladen per kwartier (kW * 0.25 uur). Efficiency wordt APART
         toegepast in battery_simulator bij de SoC-update."""
         return self.max_discharge_kw * 0.25
 
@@ -169,19 +169,6 @@ class SimulationConfig:
             f"Ontladen:       {self.battery.max_discharge_kw} kW ({self.battery.max_discharge_per_quarter_kwh:.3f} kWh/kwartier)",
             f"Efficiency:     laden {self.battery.charge_efficiency}, ontladen {self.battery.discharge_efficiency}",
             f"SoC bereik:     {self.battery.min_soc_pct*100:.0f}% - {self.battery.max_soc_pct*100:.0f}%",
-            f"Aanschafprijs:  {'€ ' + f'{self.battery.battery_price_eur:,.2f}' if self.battery.battery_price_eur else '(niet opgegeven)'}",
+            f"Aanschafprijs:  {'EUR ' + f'{self.battery.battery_price_eur:,.2f}' if self.battery.battery_price_eur else '(niet opgegeven)'}",
         ]
         return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# MAIN — Direct uitvoeren voor testen
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    import sys
-
-    filepath = sys.argv[1] if len(sys.argv) > 1 else "config.json"
-    print(f"Config laden uit: {filepath}\n")
-
-    config = SimulationConfig.from_json(filepath)
-    print(config.summary())

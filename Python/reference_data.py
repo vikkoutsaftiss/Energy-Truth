@@ -1,8 +1,8 @@
 """
-reference_data.py — Prijsdata ophalen en marges berekenen voor Energy-Truth.
+reference_data.py - Prijsdata ophalen en marges berekenen voor Energy-Truth.
 
 Werkt uitsluitend met data in de DB:
-  - Nettoprijzen uit Net_Prijzen (geïmporteerd via import_net_prices.py)
+  - Nettoprijzen uit Net_Prijzen (geimporteerd via import_net_prices.py)
   - Aanbiederprijzen uit Uurprijzen (Enever via n8n)
   - Marges berekenen en opslaan in Marges_per_Aanbieder
   - Historische aanbiederprijzen reconstrueren via marges
@@ -70,7 +70,7 @@ def get_provider_prices(provider, start_date=None, end_date=None):
 
     Args:
         provider: int4 (Net_Aanbieder.ID) OF varchar (Net_Aanbieder.Afkorting)
-                  Bij string-waarde wordt eerst de Afkorting → ID lookup gedaan.
+                  Bij string-waarde wordt eerst de Afkorting -> ID lookup gedaan.
         start_date: optioneel startdatum
         end_date: optioneel einddatum
 
@@ -123,7 +123,7 @@ def calculate_margins():
     """
     Berekent de gemiddelde marge per aanbieder.
 
-    Marge = aanbiederprijzen − nettoprijzen op overlappende timestamps.
+    Marge = aanbiederprijzen - nettoprijzen op overlappende timestamps.
     Slaat resultaat op in Marges_per_Aanbieder tabel.
 
     Returns:
@@ -134,13 +134,13 @@ def calculate_margins():
     # Alle aanbieders ophalen
     aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting, Naam').execute().data
     if not aanbieders:
-        print("⚠️  Geen aanbieders gevonden in database")
+        print("Let op: geen aanbieders gevonden in database")
         return pd.DataFrame()
 
     # Nettoprijzen ophalen
     net_prices = get_net_prices()
     if net_prices.empty:
-        print("⚠️  Geen nettoprijzen — draai eerst: python import_net_prices.py <csv>")
+        print("Let op: geen nettoprijzen - draai eerst: python import_net_prices.py <csv>")
         return pd.DataFrame()
 
     print(f"Marges berekenen voor {len(aanbieders)} aanbieders...")
@@ -179,10 +179,10 @@ def calculate_margins():
             'Aantal_Samples': sample_count,
         })
 
-        print(f"  {afkorting} ({naam}): €{avg_margin:.4f}/kWh (n={sample_count})")
+        print(f"  {afkorting} ({naam}): EUR {avg_margin:.4f}/kWh (n={sample_count})")
 
     if not results:
-        print("⚠️  Geen marges berekend — geen overlap tussen prijzen")
+        print("Let op: geen marges berekend - geen overlap tussen prijzen")
         return pd.DataFrame()
 
     # Opslaan (upsert) met expliciete timestamp
@@ -205,7 +205,7 @@ def calculate_margins():
             'Berekend_Op': now,
         }, on_conflict='Net_AanbiederID').execute()
 
-    print(f"\n  ✅ Marges + Plaats opgeslagen voor {len(df_margins)} aanbieders")
+    print(f"\n  Klaar: marges + Plaats opgeslagen voor {len(df_margins)} aanbieders")
     return df_margins
 
 
@@ -234,7 +234,7 @@ def reconstruct_historical_prices(provider, start_date, end_date):
     if isinstance(provider, str):
         na = client.table('Net_Aanbieder').select('ID').eq('Afkorting', provider).limit(1).execute()
         if not na.data:
-            print(f"⚠️  Onbekende Afkorting '{provider}'")
+            print(f"Let op: onbekende Afkorting '{provider}'")
             return pd.DataFrame()
         net_aanbieder_id = na.data[0]['ID']
     else:
@@ -249,21 +249,21 @@ def reconstruct_historical_prices(provider, start_date, end_date):
     )
 
     if not margin_response.data:
-        print(f"⚠️  Geen marge voor Net_Aanbieder_ID={net_aanbieder_id} — draai eerst calculate_margins()")
+        print(f"Let op: geen marge voor Net_Aanbieder_ID={net_aanbieder_id} - draai eerst calculate_margins()")
         return pd.DataFrame()
 
     margin = margin_response.data[0]
     avg_margin = float(margin['Gemiddelde_Marge'])
 
     print(f"Prijzen reconstrueren voor Net_Aanbieder_ID={net_aanbieder_id}:")
-    print(f"  Marge: €{avg_margin:.4f}/kWh (n={margin['Aantal_Samples']})")
+    print(f"  Marge: EUR {avg_margin:.4f}/kWh (n={margin['Aantal_Samples']})")
 
     # Nettoprijzen + echte aanbiederprijzen ophalen
     net_prices = get_net_prices(start_date, end_date)
     real_prices = get_provider_prices(net_aanbieder_id, start_date, end_date)
 
     if net_prices.empty:
-        print(f"⚠️  Geen nettoprijzen voor {start_date} t/m {end_date}")
+        print(f"Let op: geen nettoprijzen voor {start_date} t/m {end_date}")
         return pd.DataFrame()
 
     # Schatting: nettoprijzen + marge
@@ -323,7 +323,7 @@ def build_allin_prices():
     client = get_client()
     start, end = _full_price_window()
     if not start:
-        print("⚠️  Geen netprijzen — kan all-in prijzen niet opbouwen")
+        print("Let op: geen netprijzen - kan all-in prijzen niet opbouwen")
         return 0
 
     aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting, Naam').execute().data or []
@@ -348,7 +348,7 @@ def build_allin_prices():
                 'Berekend_Op': now,
             })
 
-        # In batches upserten (Supabase-limiet op payloadgrootte).
+        # In batches upserten (begrenst payload/geheugen per call).
         for i in range(0, len(rows), 500):
             client.table(ALLIN_TABLE).upsert(
                 rows[i:i + 500], on_conflict='Net_Aanbieder_ID,Geldig_Van'
@@ -357,7 +357,7 @@ def build_allin_prices():
         totaal += len(rows)
         print(f"  {a['Afkorting']}: {len(rows)} all-in prijzen weggeschreven")
 
-    print(f"\n  ✅ All-in prijzen opgeslagen: {totaal} rijen voor {len(aanbieders)} aanbieders")
+    print(f"\n  Klaar: all-in prijzen opgeslagen: {totaal} rijen voor {len(aanbieders)} aanbieders")
     return totaal
 
 
@@ -412,58 +412,6 @@ def get_allin_prices(provider, start_date, end_date):
 
 
 # ============================================================
-# 5. OVERZICHT
-# ============================================================
-
-def print_price_summary():
-    """Print een overzicht van beschikbare prijsdata."""
-    client = get_client()
-
-    print("\n" + "=" * 55)
-    print("  PRIJSDATA OVERZICHT")
-    print("=" * 55)
-
-    # Netbeheer-tarieven (voorheen Net_Prijzen)
-    net_count = client.table('Netbeheer_Tarieven').select('Geldig_Van', count='exact').execute()
-    if net_count.count and net_count.count > 0:
-        net_first = client.table('Netbeheer_Tarieven').select('Geldig_Van').order('Geldig_Van').limit(1).execute()
-        net_last = client.table('Netbeheer_Tarieven').select('Geldig_Van').order('Geldig_Van', desc=True).limit(1).execute()
-        print(f"\n  NETBEHEER TARIEVEN")
-        print(f"    Records: {net_count.count}")
-        print(f"    Van: {net_first.data[0]['Geldig_Van']}")
-        print(f"    Tot: {net_last.data[0]['Geldig_Van']}")
-    else:
-        print(f"\n  NETTOPRIJZEN: geen data — draai: python import_net_prices.py <csv>")
-
-    # Aanbiederprijzen (eerste 5)
-    aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting, Naam').execute()
-    if aanbieders.data:
-        print(f"\n  AANBIEDERPRIJZEN ({len(aanbieders.data)} aanbieders)")
-        for p in aanbieders.data[:5]:
-            count = (
-                client.table('Uurprijzen')
-                .select('valid_from', count='exact')
-                .eq('Net_Aanbieder_ID', p['ID'])
-                .execute()
-            )
-            print(f"    {p['Afkorting']} ({p['Naam']}): {count.count or 0} records")
-        if len(aanbieders.data) > 5:
-            print(f"    ... en {len(aanbieders.data) - 5} meer")
-
-    # Marges
-    margins = client.table('Marges_Per_Aanbieder').select('*').execute()
-    if margins.data:
-        print(f"\n  MARGES ({len(margins.data)} aanbieders)")
-        for m in margins.data[:5]:
-            print(f"    Net_AanbiederID={m['Net_AanbiederID']}: €{float(m['Gemiddelde_Marge']):.4f}/kWh "
-                  f"(n={m['Aantal_Samples']})")
-    else:
-        print(f"\n  MARGES: nog niet berekend")
-
-    print("\n" + "=" * 55)
-
-
-# ============================================================
 # HELPER
 # ============================================================
 
@@ -483,11 +431,3 @@ def _fetch_paginated(query, page_size=1000):
         offset += page_size
 
     return all_records
-
-
-# ============================================================
-# STANDALONE
-# ============================================================
-
-if __name__ == "__main__":
-    print_price_summary()

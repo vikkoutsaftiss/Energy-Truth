@@ -151,7 +151,6 @@ class _Query:
         self._order: list[tuple[str, bool]] = []
         self._limit: Optional[int] = None
         self._offset: int = 0
-        self._or_filter: Optional[str] = None
         self._payload: Any = None
         self._on_conflict: Optional[str] = None
         self._update_set: Optional[dict] = None
@@ -187,26 +186,14 @@ class _Query:
     def eq(self, col: str, val: Any) -> "_Query":
         self._filters.append((col, "=", val)); return self
 
-    def neq(self, col: str, val: Any) -> "_Query":
-        self._filters.append((col, "<>", val)); return self
-
-    def gt(self, col: str, val: Any) -> "_Query":
-        self._filters.append((col, ">", val)); return self
-
     def gte(self, col: str, val: Any) -> "_Query":
         self._filters.append((col, ">=", val)); return self
-
-    def lt(self, col: str, val: Any) -> "_Query":
-        self._filters.append((col, "<", val)); return self
 
     def lte(self, col: str, val: Any) -> "_Query":
         self._filters.append((col, "<=", val)); return self
 
     def in_(self, col: str, vals: Iterable) -> "_Query":
         self._filters.append((col, "IN", tuple(vals))); return self
-
-    def is_(self, col: str, val) -> "_Query":
-        self._filters.append((col, "IS", val)); return self
 
     # ---- ordering / paging ----
     def order(self, col: str, desc: bool = False) -> "_Query":
@@ -219,12 +206,6 @@ class _Query:
         """PostgREST-stijl: inclusive range, dus offset=start, limit=end-start+1."""
         self._offset = int(start)
         self._limit = int(end) - int(start) + 1
-        return self
-
-    def or_(self, expr: str) -> "_Query":
-        """Niet ondersteund in deze wrapper. Doe de OR-filter in Python na .execute().
-        We slaan de expressie op zodat callers eventueel een waarschuwing zien."""
-        self._or_filter = expr
         return self
 
     # ---- execute ----
@@ -240,13 +221,6 @@ class _Query:
                     placeholders = ", ".join(["%s"] * len(val))
                     parts.append(f"{_quote_ident(col)} IN ({placeholders})")
                     params.extend(val)
-            elif op == "IS":
-                # IS NULL / IS NOT NULL
-                if val is None:
-                    parts.append(f"{_quote_ident(col)} IS NULL")
-                else:
-                    parts.append(f"{_quote_ident(col)} IS %s")
-                    params.append(val)
             else:
                 parts.append(f"{_quote_ident(col)} {op} %s")
                 params.append(val)
@@ -387,31 +361,3 @@ class Client:
 def get_client() -> Client:
     """Backwards-compatibel: bestaande modules blijven get_client() roepen."""
     return Client()
-
-
-# ---------------------------------------------------------------------------
-# MAIN -- Verbinding testen
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    print("PostgreSQL-verbinding testen via VPN...")
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT version()")
-                version = cur.fetchone()[0]
-                print(f"OK: {version}")
-                cur.execute('SELECT COUNT(*) FROM "Net_Aanbieder"')
-                n = cur.fetchone()[0]
-                print(f"Net_Aanbieder: {n} rijen")
-                cur.execute('SELECT COUNT(*) FROM "Markt_Product"')
-                n = cur.fetchone()[0]
-                print(f"Markt_Product: {n} rijen")
-                cur.execute('SELECT COUNT(*) FROM "ImportBatch"')
-                n = cur.fetchone()[0]
-                print(f"ImportBatch: {n} rijen")
-                cur.execute('SELECT COUNT(*) FROM "Netbeheer_Tarieven"')
-                n = cur.fetchone()[0]
-                print(f"Netbeheer_Tarieven: {n} rijen")
-    except Exception as e:
-        print(f"FOUT: {e}")
-        sys.exit(1)

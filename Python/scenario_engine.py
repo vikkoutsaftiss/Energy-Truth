@@ -1,28 +1,24 @@
 """
-scenario_engine.py — Orchestratie over alle aanbieders en strategieën.
+scenario_engine.py - Orchestratie over alle aanbieders en strategieen.
 
-Itereert over elke combinatie van aanbieder × strategie, roept
+Itereert over elke combinatie van aanbieder x strategie, roept
 battery_simulator en cost_calculator aan, en levert een ranking-DataFrame.
 
 Gebruik:
-    from scenario_engine import run_scenarios, run_all_scenarios
-    results = run_all_scenarios("config.json")
+    from scenario_engine import run_all_scenarios
+    results, price_cache, selection_info = run_all_scenarios("config.json")
     print(results.to_string())
-
-Of per aanbieder:
-    from scenario_engine import run_single_provider
-    result = run_single_provider(meter_data, "ANWB", battery, net_prices, strategy="D")
 """
 from __future__ import annotations  # maakt list[dict] etc. bruikbaar op Python 3.8+
 
+import os
 import time
 import logging
 import pandas as pd
-import numpy as np
 from typing import Optional
 
 from simulation_config import SimulationConfig, BatteryConfig
-from reference_data import get_provider_prices, get_net_prices, reconstruct_historical_prices, get_allin_prices
+from reference_data import get_net_prices, get_allin_prices
 from battery_simulator import simulate_battery, get_simulation_summary
 from cost_calculator import (
     calculate_costs_no_battery,
@@ -36,23 +32,19 @@ from db_connection import get_client, get_connection
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
-
-# HTTP-libraries stil zetten (Supabase/httpx spam onderdrukken)
-for _lib in ("httpx", "httpcore", "hpack", "urllib3"):
-    logging.getLogger(_lib).setLevel(logging.WARNING)
 
 # Resultaat van de laatste meterdata-validatie (gevuld door
 # _load_meter_data_from_db). De worker leest dit uit om het aantal afgekeurde
 # rijen in de samenvatting/message te zetten.
 LAATSTE_DATA_VALIDATIE: dict = {
-    'rijen_in': 0, 'verwijderd': 0, 'negatief_verbruik': 0,
+    'rijen_in': 0, 'bijgesteld': 0, 'negatief_verbruik': 0,
     'negatief_teruglevering': 0, 'absurd_hoog': 0,
     'bericht': 'Nog geen meterdata gevalideerd.',
 }
 
-# DoS-vangnet: bovengrens op het aantal meetrijen dat één run laadt. Een
+# DoS-vangnet: bovengrens op het aantal meetrijen dat een run laadt. Een
 # gebouw-rolling-jaar is normaal ~35.000 kwartieren; deze grens trekt alleen
 # bij een opgeblazen of dubbele import. De harde geheugen-/CPU-grens hoort
 # daarnaast in de Kubernetes resources.limits te staan (zie infra).
@@ -93,18 +85,18 @@ def _refresh_margins_if_stale(max_age_hours: int = 24) -> None:
             age_hours = age.total_seconds() / 3600
             print(f"  Laatste berekening: {last_update} ({age_hours:.1f}u geleden)")
             if age < timedelta(hours=max_age_hours):
-                print(f"  ✅ Margins zijn actueel (< {max_age_hours}u) — overgeslagen")
+                print(f"  Margins zijn actueel (< {max_age_hours}u) - overgeslagen")
                 return
-            print(f"  ⏳ Margins zijn verouderd (> {max_age_hours}u) — herberekening gestart")
+            print(f"  Margins zijn verouderd (> {max_age_hours}u) - herberekening gestart")
         else:
-            print("  ⚠️  Geen margins of timestamp gevonden — herberekening")
+            print("  Geen margins of timestamp gevonden - herberekening")
 
         from reference_data import calculate_margins
         calculate_margins()
-        print("  ✅ Margins succesvol herberekend")
+        print("  Margins succesvol herberekend")
 
     except Exception as e:
-        print(f"  ❌ Margin-refresh mislukt: {e}")
+        print(f"  Margin-refresh mislukt: {e}")
         logger.warning(f"Margin-refresh mislukt (simulatie gaat door met bestaande data): {e}")
 
 
@@ -148,14 +140,14 @@ def _select_top_bottom_providers(n: int = 3) -> tuple:
 
     Returns:
         tuple(list[dict], dict):
-            - list[dict] met {"code": ..., "name": ...} voor 2×N aanbieders
+            - list[dict] met {"code": ..., "name": ...} voor 2xN aanbieders
             - dict met selectie-info voor rapportage:
               {"cheapest": [...], "expensive": [...], "margins": {code: margin}}
     """
     client = get_client()
 
     # Marges ophalen (gekoppeld aan Net_Aanbieder via ID); haal direct ook Afkorting op
-    # via een tweede query omdat Supabase-client geen JOIN syntax heeft.
+    # via een tweede query omdat de DB-client geen JOIN syntax heeft.
     # ERD-kolomnaam in Marges_Per_Aanbieder is "Net_AanbiederID" (zonder underscore).
     # Plaats (rang op marge) wordt door refresher.py gezet; gebruik die als
     # die er is, val anders terug op live sorteren op marge.
@@ -176,7 +168,6 @@ def _select_top_bottom_providers(n: int = 3) -> tuple:
     # Sleutels als string zodat de koppeling werkt of Net_AanbiederID nu
     # int of text is (schema.sql zegt int, sommige servers hebben text).
     id_to_code = {str(a["ID"]): a["Afkorting"] for a in aanbieders}
-    id_to_name = {str(a["ID"]): a["Naam"] for a in aanbieders}
 
     df = pd.DataFrame(margins.data)
     df["Gemiddelde_Marge"] = pd.to_numeric(df["Gemiddelde_Marge"])
@@ -224,7 +215,7 @@ def _select_top_bottom_providers(n: int = 3) -> tuple:
 def _normalize_timestamps(df: pd.DataFrame, col: str = "timestamp_from") -> pd.DataFrame:
     """
     Zorg dat timestamps UTC-aware zijn.
-    Supabase-prijzen zijn UTC-aware, meterdata kan tz-naive zijn.
+    DB-prijzen zijn UTC-aware, meterdata kan tz-naive zijn.
     Door alles naar UTC te brengen, matchen de merges correct.
     """
     if col not in df.columns:
@@ -266,11 +257,8 @@ def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: st
     """
     global LAATSTE_DATA_VALIDATIE
     # Bewust NIET in SQL ontdubbelen. We halen ALLE gebouw-rijen op (incl.
-    # ImportBatchID), valideren eerst en ontdubbelen daarna in pandas. Volgorde
-    # = valideren -> ontdubbelen, zodat een corrupte waarde in de nieuwste batch
-    # terugvalt op een geldige waarde uit een oudere batch i.p.v. een gat te
-    # worden. (Andersom zou dedup eerst de corrupte nieuwste kiezen en die daarna
-    # gedropt worden, terwijl er een goede oudere waarde bestond.)
+    # ImportBatchID), zetten onmogelijke meetwaarden bij naar 0 (valideren) en
+    # ontdubbelen daarna in pandas op tijdstempel (nieuwste batch wint).
     sql = """
         SELECT v."MeetDatumTijd"               AS "MeetDatumTijd",
                v."ImportBatchID"               AS "ImportBatchID",
@@ -330,15 +318,15 @@ def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: st
     df["consumption_kwh"] = pd.to_numeric(df["consumption_kwh"])
     df["feed_in_kwh"] = pd.to_numeric(df["feed_in_kwh"])
 
-    # 1) Eerst valideren: gooi over ALLE batches de fysiek onmogelijke rijen weg.
+    # 1) Valideren: zet fysiek onmogelijke meetwaarden bij naar 0 (negatieve
+    #    ruis/reset of absurd hoog). Rijen blijven behouden.
     from data_quality import valideer_meterdata
     df, LAATSTE_DATA_VALIDATIE = valideer_meterdata(df)
-    if LAATSTE_DATA_VALIDATIE.get("verwijderd"):
+    if LAATSTE_DATA_VALIDATIE.get("bijgesteld"):
         logger.warning("Meterdata-validatie: %s", LAATSTE_DATA_VALIDATIE["bericht"])
 
-    # 2) Dan ontdubbelen: per tijdstempel de nieuwste GELDIGE waarde houden
-    #    (hoogste ImportBatchID wint). Een gedropte corrupte nieuwste-waarde
-    #    valt zo terug op een geldige oudere waarde.
+    # 2) Ontdubbelen: per tijdstempel de nieuwste meting houden (hoogste
+    #    ImportBatchID wint bij overlappende batches).
     if not df.empty:
         df = (
             df.sort_values(["timestamp_from", "_batch_id"], ascending=[True, False])
@@ -391,12 +379,12 @@ def _prepare_provider_inputs(
     net_prices: pd.DataFrame,
 ) -> dict:
     """
-    Strategie-ONAFHANKELIJK voorwerk, één keer per aanbieder.
+    Strategie-ONAFHANKELIJK voorwerk, een keer per aanbieder.
 
     Prijzen normaliseren, meterdata filteren op de kwartieren waarvoor een
     prijs bestaat, en de kosten ZONDER batterij berekenen. Die kosten hangen
     niet van de laadstrategie af, dus het is verspilling om dit voor elke van
-    de vier strategieën opnieuw te doen (zoals voorheen). Resultaat wordt
+    de vier strategieen opnieuw te doen (zoals voorheen). Resultaat wordt
     hergebruikt door _run_single_with_prices voor A/B/C/D.
 
     Returns:
@@ -435,7 +423,7 @@ def _run_single_with_prices(
     strategy: str = "A",
 ) -> dict:
     """
-    Draait één strategie voor één aanbieder bovenop het voorbewerkte,
+    Draait een strategie voor een aanbieder bovenop het voorbewerkte,
     strategie-onafhankelijke materiaal uit _prepare_provider_inputs.
     Voert dus alleen nog het strategie-afhankelijke deel uit: de
     batterijsimulatie, de kosten MET batterij, en de samenvatting.
@@ -509,145 +497,6 @@ def _run_single_with_prices(
     }
 
 
-def run_single_provider(
-    meter_data: pd.DataFrame,
-    provider_code: str,
-    battery: BatteryConfig,
-    net_prices: pd.DataFrame,
-    strategy: str = "A",
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-) -> dict:
-    """
-    Draai een volledige simulatie voor één aanbieder + één strategie.
-
-    Parameters
-    ----------
-    meter_data : DataFrame
-        Kwartierdata met timestamp_from, consumption_kwh, feed_in_kwh.
-    provider_code : str
-        Bijv. 'ANWB', 'TI', 'EN'.
-    battery : BatteryConfig
-        Batterijconfiguratie.
-    net_prices : DataFrame
-        Kale beursprijzen (valid_from, price).
-    strategy : str
-        'A', 'B', 'C' of 'D'.
-    start_date, end_date : str, optional
-        Optionele datumfilters voor prijsdata.
-
-    Returns
-    -------
-    dict met keys:
-        provider_code, strategy, cost_no_battery, cost_with_battery,
-        savings_eur, savings_pct, quarters, sim_summary
-    """
-    # 1. All-in prijzen voor deze aanbieder uit de voorberekende tabel
-    #    (refresher.py); get_allin_prices valt intern terug op live
-    #    reconstructie als de tabel nog niet gevuld is.
-    prices = get_allin_prices(provider_code, start_date, end_date)
-
-    if prices.empty:
-        logger.warning(f"Geen prijzen voor {provider_code} (ook niet via reconstructie) — overgeslagen")
-        return {
-            "provider_code": provider_code,
-            "strategy": strategy,
-            "cost_no_battery": None,
-            "cost_with_battery": None,
-            "savings_eur": None,
-            "savings_pct": None,
-            "quarters": 0,
-            "error": "geen prijsdata",
-        }
-
-    # 1b. Normaliseer timestamps zodat meterdata en prijzen matchen
-    prices = _normalize_timestamps(prices, "valid_from")
-    net_prices_norm = _normalize_timestamps(net_prices.copy(), "valid_from") if net_prices is not None else None
-
-    # 1c. Filter meterdata op kwartieren waarvoor prijzen beschikbaar zijn.
-    #     Zo hebben costs_no_battery, simulate_battery en costs_with_battery
-    #     allemaal dezelfde rijen (voorkomt length mismatch).
-    price_timestamps = set(prices["valid_from"])
-    meter_filtered = meter_data[meter_data["timestamp_from"].isin(price_timestamps)].copy()
-    meter_filtered = meter_filtered.sort_values("timestamp_from").reset_index(drop=True)
-
-    if meter_filtered.empty:
-        logger.warning(f"Geen overlap meterdata ↔ prijzen voor {provider_code}")
-        return {
-            "provider_code": provider_code,
-            "strategy": strategy,
-            "cost_no_battery": None,
-            "cost_with_battery": None,
-            "savings_eur": None,
-            "savings_pct": None,
-            "quarters": 0,
-            "error": "geen overlap meterdata/prijzen",
-        }
-
-    dropped = len(meter_data) - len(meter_filtered)
-    if dropped > 0:
-        logger.debug(f"{provider_code}: {dropped} kwartieren zonder prijs overgeslagen")
-
-    # 2. Kosten ZONDER batterij
-    costs_no_bat = calculate_costs_no_battery(
-        meter_filtered, prices, provider_code, net_prices=net_prices_norm
-    )
-
-    # 3. Batterijsimulatie (op dezelfde gefilterde meterdata)
-    simulated = simulate_battery(
-        meter_filtered, battery, prices=prices, strategy=strategy
-    )
-
-    # 4. Merge prijzen in gesimuleerde data (cost_calculator verwacht 'price' kolom)
-    if "price" not in simulated.columns:
-        simulated = simulated.merge(
-            prices[["valid_from", "price"]],
-            left_on="timestamp_from",
-            right_on="valid_from",
-            how="left",
-        )
-
-    # 5. Kosten MET batterij
-    costs_with_bat = calculate_costs_with_battery(
-        simulated, provider_code, net_prices=net_prices_norm
-    )
-
-    # 6. Combineer de twee kostenkolommen (nu gegarandeerd zelfde lengte)
-    combined = costs_no_bat.copy()
-    if "cost_with_battery" in costs_with_bat.columns:
-        combined = combined.reset_index(drop=True)
-        costs_with_bat = costs_with_bat.reset_index(drop=True)
-        combined["cost_with_battery"] = costs_with_bat["cost_with_battery"]
-
-    # 7. Besparingssamenvatting
-    summary = calculate_savings_summary(combined)
-
-    # 8. Simulatie-samenvatting (SoC, cycli, etc.)
-    sim_summary = get_simulation_summary(simulated, battery, strategy=strategy)
-    seasonal_info = summary.get("seasonal_info", {})
-
-    return {
-        "provider_code": provider_code,
-        "strategy": strategy,
-        # Jaarbasis (seizoensgewogen, met opvulling voor ontbrekende seizoenen)
-        "cost_no_battery": summary.get("total_cost_no_battery", 0),
-        "cost_with_battery": summary.get("total_cost_with_battery", 0),
-        "savings_eur": summary.get("total_savings", 0),
-        "savings_pct": summary.get("savings_percentage", 0),
-        # Ruwe som over aangeleverde data
-        "cost_no_battery_raw": summary.get("total_cost_no_battery_raw", 0),
-        "cost_with_battery_raw": summary.get("total_cost_with_battery_raw", 0),
-        "savings_eur_raw": summary.get("total_savings_raw", 0),
-        # Seizoensmetadata
-        "year_coverage": seasonal_info.get("year_coverage", 0),
-        "seasons_present": seasonal_info.get("seasons_present", []),
-        "seasons_estimated": seasonal_info.get("seasons_estimated", []),
-        "seasonal_info": seasonal_info,
-        "quarters": summary.get("quarters_calculated", 0),
-        "sim_summary": sim_summary,
-    }
-
-
 # ---------------------------------------------------------------------------
 # Multi-aanbieder, multi-strategie
 # ---------------------------------------------------------------------------
@@ -662,7 +511,7 @@ def run_scenarios(
     end_date: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Draai simulaties voor meerdere aanbieders × meerdere strategieën.
+    Draai simulaties voor meerdere aanbieders x meerdere strategieen.
 
     Parameters
     ----------
@@ -675,7 +524,7 @@ def run_scenarios(
     net_prices : DataFrame
         Kale beursprijzen.
     strategies : list[str]
-        Welke strategieën te draaien. Standaard ["A", "B", "C", "D"].
+        Welke strategieen te draaien. Standaard ["A", "B", "C", "D"].
     start_date, end_date : str, optional
         Datumfilters.
 
@@ -700,14 +549,14 @@ def run_scenarios(
         code = provider["code"]
         name = provider.get("name", code)
 
-        # Prijzen 1× per aanbieder uit de voorberekende all-in tabel
+        # Prijzen 1x per aanbieder uit de voorberekende all-in tabel
         # (refresher.py). get_allin_prices valt intern terug op live
         # reconstructie als de tabel voor deze aanbieder nog leeg is.
         if code not in _price_cache:
             _price_cache[code] = get_allin_prices(code, start_date, end_date)
 
         # Strategie-onafhankelijk voorwerk (prijzen normaliseren, meterdata
-        # filteren, kosten-zonder-batterij) één keer per aanbieder.
+        # filteren, kosten-zonder-batterij) een keer per aanbieder.
         prep = _prepare_provider_inputs(
             meter_data=meter_data,
             provider_code=code,
@@ -717,7 +566,7 @@ def run_scenarios(
 
         for strategy in strategies:
             done += 1
-            logger.info(f"[{done}/{total}] {name} ({code}) — Strategie {strategy}")
+            logger.info(f"[{done}/{total}] {name} ({code}) - Strategie {strategy}")
             t0 = time.time()
 
             try:
@@ -776,18 +625,18 @@ def run_all_scenarios(
     config_path : str
         Pad naar config.json.
     strategies : list[str]
-        Strategieën om te testen. Standaard alle vier: ["A", "B", "C", "D"].
+        Strategieen om te testen. Standaard alle vier: ["A", "B", "C", "D"].
     smart_select : int
         Selecteer de N goedkoopste + N duurste aanbieders op basis van margin.
-        Standaard 3 (= 6 aanbieders × 4 strategieën = 24 runs).
+        Standaard 3 (= 6 aanbieders x 4 strategieen = 24 runs).
         Zet op 0 om alle aanbieders te draaien (uit config).
 
     Returns
     -------
-    DataFrame met ranking per aanbieder × strategie.
+    DataFrame met ranking per aanbieder x strategie.
     """
     logger.info("=" * 60)
-    logger.info("ENERGY-TRUTH SCENARIO ENGINE — START")
+    logger.info("ENERGY-TRUTH SCENARIO ENGINE - START")
     logger.info("=" * 60)
     t_start = time.time()
 
@@ -843,143 +692,7 @@ def run_all_scenarios(
 
     elapsed = round(time.time() - t_start, 1)
     logger.info("=" * 60)
-    logger.info(f"KLAAR — {len(results)} scenario's in {elapsed}s")
+    logger.info(f"KLAAR - {len(results)} scenario's in {elapsed}s")
     logger.info("=" * 60)
 
     return results, price_cache, selection_info
-
-
-# ---------------------------------------------------------------------------
-# Resultaat-helpers
-# ---------------------------------------------------------------------------
-
-def print_ranking(results: pd.DataFrame, top_n: int = 10) -> None:
-    """Print een leesbare ranking-tabel."""
-    if results.empty:
-        print("Geen resultaten.")
-        return
-
-    display_cols = [
-        "provider_name", "strategy", "cost_no_battery",
-        "cost_with_battery", "savings_eur", "savings_pct",
-    ]
-    # Alleen kolommen die bestaan
-    display_cols = [c for c in display_cols if c in results.columns]
-
-    print("\n" + "=" * 80)
-    print("ENERGY-TRUTH — SCENARIO RANKING")
-    print("=" * 80)
-
-    df = results.head(top_n).copy()
-    if "cost_no_battery" in df.columns:
-        df["cost_no_battery"] = df["cost_no_battery"].apply(
-            lambda x: f"€{x:,.2f}" if pd.notna(x) else "—"
-        )
-    if "cost_with_battery" in df.columns:
-        df["cost_with_battery"] = df["cost_with_battery"].apply(
-            lambda x: f"€{x:,.2f}" if pd.notna(x) else "—"
-        )
-    if "savings_eur" in df.columns:
-        df["savings_eur"] = df["savings_eur"].apply(
-            lambda x: f"€{x:,.2f}" if pd.notna(x) else "—"
-        )
-    if "savings_pct" in df.columns:
-        df["savings_pct"] = df["savings_pct"].apply(
-            lambda x: f"{x:.1f}%" if pd.notna(x) else "—"
-        )
-
-    # Hernoem voor leesbaarheid
-    rename = {
-        "provider_name": "Aanbieder",
-        "strategy": "Strat.",
-        "cost_no_battery": "Zonder batterij",
-        "cost_with_battery": "Met batterij",
-        "savings_eur": "Besparing",
-        "savings_pct": "%",
-    }
-    df = df[display_cols].rename(columns=rename)
-    print(df.to_string())
-    print()
-
-
-def get_best_scenario(results: pd.DataFrame) -> dict:
-    """
-    Retourneer het scenario met de hoogste besparing.
-
-    Returns
-    -------
-    dict met alle kolommen van het beste scenario, of lege dict.
-    """
-    if results.empty:
-        return {}
-
-    valid = results.dropna(subset=["savings_eur"])
-    if valid.empty:
-        return {}
-
-    best = valid.iloc[0]  # Al gesorteerd op savings_eur desc
-    return best.to_dict()
-
-
-def compare_strategies(results: pd.DataFrame) -> pd.DataFrame:
-    """
-    Vergelijk strategieën per aanbieder: draaitabel met
-    strategieën als kolommen en besparing als waarden.
-
-    Returns
-    -------
-    DataFrame met aanbieders als rijen, strategieën als kolommen.
-    """
-    if results.empty:
-        return pd.DataFrame()
-
-    pivot = results.pivot_table(
-        index=["provider_code", "provider_name"],
-        columns="strategy",
-        values="savings_eur",
-        aggfunc="first",
-    )
-    pivot.columns = [f"Strategie {c}" for c in pivot.columns]
-    pivot = pivot.reset_index()
-    pivot = pivot.sort_values(
-        pivot.columns[-1], ascending=False, na_position="last"
-    )
-    return pivot
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    import sys
-
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.json"
-
-    # Optioneel: strategieën opgeven (standaard alle vier)
-    strategies = None  # = ["A", "B", "C", "D"]
-    if len(sys.argv) > 2:
-        strategies = [s.strip().upper() for s in sys.argv[2].split(",")]
-
-    # Optioneel: smart_select=0 voor alle aanbieders, anders top/bottom N
-    smart_select = 3
-    if len(sys.argv) > 3:
-        smart_select = int(sys.argv[3])
-
-    results = run_all_scenarios(
-        config_path, strategies=strategies, smart_select=smart_select
-    )
-    print_ranking(results, top_n=30)
-
-    print("\n--- VERGELIJKING PER AANBIEDER ---")
-    comp = compare_strategies(results)
-    if not comp.empty:
-        print(comp.to_string())
-
-    best = get_best_scenario(results)
-    if best:
-        print(f"\nBeste scenario: {best.get('provider_name')} "
-              f"Strategie {best.get('strategy')} "
-              f"-- besparing EUR {best.get('savings_eur', 0):.2f} "
-              f"({best.get('savings_pct', 0):.1f}%)")
-

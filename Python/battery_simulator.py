@@ -1,32 +1,32 @@
 """
-battery_simulator.py — Batterijsimulatie per kwartier voor Energy-Truth.
+battery_simulator.py - Batterijsimulatie per kwartier voor Energy-Truth.
 
-Vier laadstrategieën:
-  A. Zelfverbruik       — overschot opslaan, tekort uit batterij dekken (geen prijsinfo)
-  B. Arbitrage          — puur prijsgestuurd, batterij ONAFHANKELIJK van huishouden
-  C. Hybride (A+B)      — eigen verbruik ALTIJD voor, daarna slim bij-/verkopen van net
-  D. Slim Zelfverbruik  — alleen eigen zon, maar PRIJSBEWUST opslaan/ontladen
+Vier laadstrategieen:
+  A. Zelfverbruik       - overschot opslaan, tekort uit batterij dekken (geen prijsinfo)
+  B. Arbitrage          - puur prijsgestuurd, batterij ONAFHANKELIJK van huishouden
+  C. Hybride (A+B)      - eigen verbruik ALTIJD voor, daarna slim bij-/verkopen van net
+  D. Slim Zelfverbruik  - alleen eigen zon, maar PRIJSBEWUST opslaan/ontladen
 
 Strategie B (puur arbitrage):
-  - Huishouden → altijd via net (geen zelfverbruik-optimalisatie)
-  - Lage prijs → kopen van net en batterij laden
-  - Hoge prijs → ontladen: eerst eigen verbruik dekken, overschot naar net
-  - Normaal → batterij doet niets
-  - Zon-overschot → altijd naar net (niet opgeslagen)
+  - Huishouden -> altijd via net (geen zelfverbruik-optimalisatie)
+  - Lage prijs -> kopen van net en batterij laden
+  - Hoge prijs -> ontladen: eerst eigen verbruik dekken, overschot naar net
+  - Normaal -> batterij doet niets
+  - Zon-overschot -> altijd naar net (niet opgeslagen)
 
 Strategie C (hybride):
-  Stap 1: eigen overschot → batterij laden / eigen tekort → batterij ontladen
-  Stap 2: prijs laag + nog ruimte in batterij → bijkopen van net
-  Stap 3: prijs hoog + nog energie in batterij → extra ontladen en terugleveren
+  Stap 1: eigen overschot -> batterij laden / eigen tekort -> batterij ontladen
+  Stap 2: prijs laag + nog ruimte in batterij -> bijkopen van net
+  Stap 3: prijs hoog + nog energie in batterij -> extra ontladen en terugleveren
 
 Strategie D (slim zelfverbruik):
-  Alleen eigen zon-energie, GEEN bijkopen van net → opgeslagen kWh is BELASTINGVRIJ.
+  Alleen eigen zon-energie, GEEN bijkopen van net -> opgeslagen kWh is BELASTINGVRIJ.
   Zon-overschot:
-    - Prijs HOOG → verkopen aan net (goede prijs pakken)
-    - Prijs normaal/laag → opslaan in batterij (bewaren voor dure uren)
+    - Prijs HOOG -> verkopen aan net (goede prijs pakken)
+    - Prijs normaal/laag -> opslaan in batterij (bewaren voor dure uren)
   Eigen tekort:
-    - Prijs HOOG → ontladen uit batterij (vermijd dure stroom + belasting kopen)
-    - Prijs LAAG → kopen van net (goedkoop, zelfs met belasting), batterij bewaren
+    - Prijs HOOG -> ontladen uit batterij (vermijd dure stroom + belasting kopen)
+    - Prijs LAAG -> kopen van net (goedkoop, zelfs met belasting), batterij bewaren
 
   Belastingvoordeel: elke kWh uit eigen zon die je zelf verbruikt bespaart de volle
   all-in prijs (incl. EB+ODE+btw), terwijl verkopen alleen de beursprijs oplevert.
@@ -34,7 +34,7 @@ Strategie D (slim zelfverbruik):
 Dynamische drempels:
   - Laaddrempel = percentiel gebaseerd op laadtijd (capacity / charge_rate)
   - Ontlaaddrempel = percentiel gebaseerd op ontlaadtijd (capacity / discharge_rate)
-  - Minimum spread check: arbitrage alleen als spread > round-trip efficiëntieverlies
+  - Minimum spread check: arbitrage alleen als spread > round-trip efficientieverlies
 
 Gebruik:
     from battery_simulator import simulate_battery
@@ -57,17 +57,17 @@ def calculate_dynamic_thresholds(prices_df, battery):
 
     Logica:
       - charge_quarters = bruikbare capaciteit / laden per kwartier
-        → hoeveel goedkope kwartieren heb je nodig om vol te laden?
+        -> hoeveel goedkope kwartieren heb je nodig om vol te laden?
       - discharge_quarters = bruikbare capaciteit / ontladen per kwartier
-        → hoeveel dure kwartieren heb je nodig om leeg te ontladen?
-      - low_pct = charge_quarters / 96 × 100
-      - high_pct = 100 − discharge_quarters / 96 × 100
+        -> hoeveel dure kwartieren heb je nodig om leeg te ontladen?
+      - low_pct = charge_quarters / 96 * 100
+      - high_pct = 100 - discharge_quarters / 96 * 100
       - min_spread_ok: alleen arbitrage als spread > round-trip verlies
 
     Voorbeeld (10 kWh, 20-80%, 2.5 kW laden, 3.68 kW ontladen):
       bruikbaar = 6.0 kWh
-      charge_quarters = 6.0 / 0.594 ≈ 10 → low_pct ≈ 10.4%
-      discharge_quarters = 6.0 / 0.874 ≈ 7 → high_pct ≈ 92.8%
+      charge_quarters = 6.0 / 0.594 ~ 10 -> low_pct ~ 10.4%
+      discharge_quarters = 6.0 / 0.874 ~ 7 -> high_pct ~ 92.8%
 
     Args:
         prices_df: DataFrame met valid_from en price
@@ -75,7 +75,7 @@ def calculate_dynamic_thresholds(prices_df, battery):
 
     Returns:
         tuple: (thresholds_dict, low_pct, high_pct)
-        thresholds_dict: date → {'low': float, 'high': float, 'min_spread_ok': bool}
+        thresholds_dict: date -> {'low': float, 'high': float, 'min_spread_ok': bool}
     """
     # Hoeveel kwartieren nodig om batterij vol te laden / leeg te ontladen
     charge_quarters = battery.usable_capacity_kwh / battery.max_charge_per_quarter_kwh
@@ -98,11 +98,11 @@ def calculate_dynamic_thresholds(prices_df, battery):
         high = float(np.percentile(prices, high_pct))
 
         # Spread moet groter zijn dan round-trip verlies
-        # high_price > low_price / round_trip_eff  →  spread > ~10.8%
+        # high_price > low_price / round_trip_eff  ->  spread > ~10.8%
         if low > 0:
             min_spread_ok = high > low / round_trip_eff
         else:
-            min_spread_ok = high > 0  # negatieve/gratis stroom → altijd laden
+            min_spread_ok = high > 0  # negatieve/gratis stroom -> altijd laden
 
         thresholds[date] = {
             'low': low,
@@ -113,40 +113,21 @@ def calculate_dynamic_thresholds(prices_df, battery):
     return thresholds, low_pct, high_pct
 
 
-def calculate_daily_thresholds(prices_df, low_pct=25, high_pct=75):
-    """
-    LEGACY: Vaste percentielen. Gebruik calculate_dynamic_thresholds() voor
-    dynamische drempels op basis van batterijcapaciteit.
-    """
-    df = prices_df.copy()
-    df['date'] = df['valid_from'].dt.date
-
-    thresholds = {}
-    for date, group in df.groupby('date'):
-        thresholds[date] = {
-            'low': float(np.percentile(group['price'], low_pct)),
-            'high': float(np.percentile(group['price'], high_pct)),
-            'min_spread_ok': True,  # legacy: geen check
-        }
-
-    return thresholds
-
-
 # ============================================================
-# 2. SIMULATIE PER KWARTIER — STRATEGIE A (ZELFVERBRUIK)
+# 2. SIMULATIE PER KWARTIER - STRATEGIE A (ZELFVERBRUIK)
 # ============================================================
 
 def _simulate_quarter_a(consumption, feed_in, soc, battery):
     """
     Strategie A: Zelfverbruik.
-    Overschot → laden, tekort → ontladen. Geen prijsinformatie nodig.
+    Overschot -> laden, tekort -> ontladen. Geen prijsinformatie nodig.
     """
     net = consumption - feed_in
 
     if net > 0:
-        # Tekort → ontladen
+        # Tekort -> ontladen
         available_stored = soc - battery.min_soc_pct * battery.capacity_kwh
-        # Correctie: beschikbare OUTPUT rekening houdend met efficiëntieverlies
+        # Correctie: beschikbare OUTPUT rekening houdend met efficientieverlies
         available_output = max(0, available_stored) * battery.discharge_efficiency
         discharge = min(net, available_output, battery.max_discharge_per_quarter_kwh)
         discharge = max(0, discharge)
@@ -156,7 +137,7 @@ def _simulate_quarter_a(consumption, feed_in, soc, battery):
         grid_feed_in = 0.0
         grid_bought = 0.0
     else:
-        # Overschot → laden
+        # Overschot -> laden
         surplus = abs(net)
         room = battery.max_soc_pct * battery.capacity_kwh - soc
         # room = hoeveel kWh er nog in de batterij past (in SoC-termen)
@@ -174,7 +155,7 @@ def _simulate_quarter_a(consumption, feed_in, soc, battery):
 
 
 # ============================================================
-# 3. SIMULATIE PER KWARTIER — STRATEGIE B (PUUR ARBITRAGE)
+# 3. SIMULATIE PER KWARTIER - STRATEGIE B (PUUR ARBITRAGE)
 # ============================================================
 
 def _simulate_quarter_b(consumption, feed_in, soc, battery, price,
@@ -184,15 +165,15 @@ def _simulate_quarter_b(consumption, feed_in, soc, battery, price,
 
     De batterij opereert ONAFHANKELIJK van het huishouden.
     Het huishouden gaat standaard volledig via het net:
-      - Verbruik → kopen van net
-      - Zon-overschot → terugleveren aan net (NIET opslaan)
+      - Verbruik -> kopen van net
+      - Zon-overschot -> terugleveren aan net (NIET opslaan)
 
     De batterij reageert alleen op prijs:
-      - Lage prijs → kopen van net en laden
-      - Hoge prijs → ontladen: eerst eigen verbruik dekken (bespaart dure
+      - Lage prijs -> kopen van net en laden
+      - Hoge prijs -> ontladen: eerst eigen verbruik dekken (bespaart dure
         stroom), overschot terugleveren aan net
-      - Normale prijs → batterij doet niets
-      - Geen spread → batterij doet niets (min_spread_ok=False)
+      - Normale prijs -> batterij doet niets
+      - Geen spread -> batterij doet niets (min_spread_ok=False)
 
     Dit is fundamenteel anders dan C: zon-overschot wordt NIET opgeslagen,
     en bij normale prijzen wordt het eigen tekort NIET uit de batterij gedekt.
@@ -204,7 +185,7 @@ def _simulate_quarter_b(consumption, feed_in, soc, battery, price,
     new_soc = soc
 
     if not min_spread_ok:
-        # Spread te klein voor winstgevende arbitrage → batterij doet niets
+        # Spread te klein voor winstgevende arbitrage -> batterij doet niets
         return new_soc, grid_consumption, grid_feed_in, grid_bought
 
     if price >= high_threshold:
@@ -236,13 +217,13 @@ def _simulate_quarter_b(consumption, feed_in, soc, battery, price,
             grid_bought = charge
             new_soc += charge * battery.charge_efficiency
 
-    # Normale prijs → batterij doet NIETS
+    # Normale prijs -> batterij doet NIETS
 
     return new_soc, grid_consumption, grid_feed_in, grid_bought
 
 
 # ============================================================
-# 4. SIMULATIE PER KWARTIER — STRATEGIE C (HYBRIDE)
+# 4. SIMULATIE PER KWARTIER - STRATEGIE C (HYBRIDE)
 # ============================================================
 
 def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
@@ -251,10 +232,10 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
     Strategie C: Hybride (eigen verbruik + arbitrage).
 
     Prioriteit:
-      1. Eigen verbruik gaat ALTIJD voor (tekort → ontladen uit batterij)
-      2. Eigen overschot → batterij laden
-      3. Prijs laag + nog ruimte → bijkopen van net (alleen als spread OK)
-      4. Prijs hoog + nog energie → extra ontladen en terugleveren (alleen als spread OK)
+      1. Eigen verbruik gaat ALTIJD voor (tekort -> ontladen uit batterij)
+      2. Eigen overschot -> batterij laden
+      3. Prijs laag + nog ruimte -> bijkopen van net (alleen als spread OK)
+      4. Prijs hoog + nog energie -> extra ontladen en terugleveren (alleen als spread OK)
 
     Het verschil met B: eigen verbruik wordt ALTIJD geoptimaliseerd, ook bij
     normale prijzen. Zon-overschot wordt altijd eerst opgeslagen.
@@ -266,7 +247,7 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
     charge_used = 0.0
 
     if net > 0:
-        # Stap 1: Eigen tekort → ontladen uit batterij (ALTIJD, ongeacht prijs)
+        # Stap 1: Eigen tekort -> ontladen uit batterij (ALTIJD, ongeacht prijs)
         available_stored = soc - battery.min_soc_pct * battery.capacity_kwh
         available_output = max(0, available_stored) * battery.discharge_efficiency
         discharge = min(net, available_output, battery.max_discharge_per_quarter_kwh)
@@ -278,7 +259,7 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
         grid_feed_in = 0.0
 
     else:
-        # Stap 2: Eigen overschot → laden (ALTIJD, ongeacht prijs)
+        # Stap 2: Eigen overschot -> laden (ALTIJD, ongeacht prijs)
         surplus = abs(net)
         room = battery.max_soc_pct * battery.capacity_kwh - soc
         max_input = max(0, room) / battery.charge_efficiency if battery.charge_efficiency > 0 else 0
@@ -292,7 +273,7 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
 
     # Stap 3+4: Arbitrage (alleen als spread groot genoeg is)
     if min_spread_ok:
-        # Stap 4: Prijs hoog → extra ontladen en terugleveren
+        # Stap 4: Prijs hoog -> extra ontladen en terugleveren
         if price >= high_threshold:
             extra_available_stored = new_soc - battery.min_soc_pct * battery.capacity_kwh
             extra_available_output = max(0, extra_available_stored) * battery.discharge_efficiency
@@ -304,7 +285,7 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
                 new_soc = new_soc - extra_discharge / battery.discharge_efficiency
                 grid_feed_in += extra_discharge
 
-        # Stap 3: Prijs laag → bijkopen van net om batterij bij te vullen
+        # Stap 3: Prijs laag -> bijkopen van net om batterij bij te vullen
         if price <= low_threshold:
             room = battery.max_soc_pct * battery.capacity_kwh - new_soc
             max_input = max(0, room) / battery.charge_efficiency if battery.charge_efficiency > 0 else 0
@@ -321,7 +302,7 @@ def _simulate_quarter_c(consumption, feed_in, soc, battery, price,
 
 
 # ============================================================
-# 4b. SIMULATIE PER KWARTIER — STRATEGIE D (SLIM ZELFVERBRUIK)
+# 4b. SIMULATIE PER KWARTIER - STRATEGIE D (SLIM ZELFVERBRUIK)
 # ============================================================
 
 def _simulate_quarter_d(consumption, feed_in, soc, battery, price,
@@ -329,33 +310,33 @@ def _simulate_quarter_d(consumption, feed_in, soc, battery, price,
     """
     Strategie D: Slim Zelfverbruik (prijsbewust, alleen eigen zon).
 
-    Alleen eigen zon-energie wordt opgeslagen — GEEN bijkopen van net.
+    Alleen eigen zon-energie wordt opgeslagen - GEEN bijkopen van net.
     Daardoor is opgeslagen energie BELASTINGVRIJ (geen EB/ODE/btw).
 
     Zon-overschot:
-      - Prijs >= hoog → VERKOPEN aan net (goede prijs nu pakken)
-      - Prijs < hoog  → OPSLAAN in batterij (bewaren voor dure uren)
+      - Prijs >= hoog -> VERKOPEN aan net (goede prijs nu pakken)
+      - Prijs < hoog  -> OPSLAAN in batterij (bewaren voor dure uren)
 
     Eigen tekort:
-      - Prijs >= hoog → ONTLADEN uit batterij (vermijd dure stroom + belasting)
-      - Prijs < laag  → KOPEN van net (goedkoop), batterij bewaren voor later
-      - Prijs normaal → ONTLADEN uit batterij (standaard zelfverbruik)
+      - Prijs >= hoog -> ONTLADEN uit batterij (vermijd dure stroom + belasting)
+      - Prijs < laag  -> KOPEN van net (goedkoop), batterij bewaren voor later
+      - Prijs normaal -> ONTLADEN uit batterij (standaard zelfverbruik)
 
-    Verschil met A: prijsbewust — bewaart batterij voor dure uren.
-    Verschil met B/C: GEEN bijkopen van net → geen belasting op opgeslagen kWh.
+    Verschil met A: prijsbewust - bewaart batterij voor dure uren.
+    Verschil met B/C: GEEN bijkopen van net -> geen belasting op opgeslagen kWh.
     """
     net = consumption - feed_in
-    grid_bought = 0.0  # altijd 0 bij D — we kopen nooit voor de batterij
+    grid_bought = 0.0  # altijd 0 bij D - we kopen nooit voor de batterij
 
     if net > 0:
         # Tekort: eigen verbruik hoger dan zonne-opbrengst
         if price <= low_threshold:
-            # Prijs LAAG → kopen van net (goedkoop), batterij bewaren
+            # Prijs LAAG -> kopen van net (goedkoop), batterij bewaren
             grid_consumption = net
             grid_feed_in = 0.0
             new_soc = soc
         else:
-            # Prijs NORMAAL of HOOG → ontladen uit batterij
+            # Prijs NORMAAL of HOOG -> ontladen uit batterij
             available_stored = soc - battery.min_soc_pct * battery.capacity_kwh
             available_output = max(0, available_stored) * battery.discharge_efficiency
             discharge = min(net, available_output, battery.max_discharge_per_quarter_kwh)
@@ -370,12 +351,12 @@ def _simulate_quarter_d(consumption, feed_in, soc, battery, price,
         surplus = abs(net)
 
         if price >= high_threshold:
-            # Prijs HOOG → verkopen aan net (goede prijs pakken)
+            # Prijs HOOG -> verkopen aan net (goede prijs pakken)
             grid_consumption = 0.0
             grid_feed_in = surplus
             new_soc = soc
         else:
-            # Prijs NORMAAL of LAAG → opslaan in batterij
+            # Prijs NORMAAL of LAAG -> opslaan in batterij
             room = battery.max_soc_pct * battery.capacity_kwh - soc
             max_input = max(0, room) / battery.charge_efficiency if battery.charge_efficiency > 0 else 0
             charge = min(surplus, max_input, battery.max_charge_per_quarter_kwh)
@@ -401,7 +382,7 @@ def simulate_battery(meter_data, battery, prices=None, strategy='A', start_soc=N
         battery: BatteryConfig object
         prices: DataFrame met valid_from, price (vereist voor B en C)
         strategy: 'A' (zelfverbruik), 'B' (arbitrage), 'C' (hybride)
-        start_soc: initiële SoC in kWh (default: minimum SoC)
+        start_soc: initiele SoC in kWh (default: minimum SoC)
 
     Returns:
         DataFrame met extra kolommen: soc, grid_consumption, grid_feed_in, grid_bought
@@ -454,7 +435,7 @@ def simulate_battery(meter_data, battery, prices=None, strategy='A', start_soc=N
 
     soc = start_soc
 
-    # Kolommen één keer naar numpy-arrays trekken. Per-cel toegang via
+    # Kolommen een keer naar numpy-arrays trekken. Per-cel toegang via
     # df.at[i, ...] is in pandas erg traag, en deze lus draait ~11.000 keer
     # per scenario, dus dat tikt hard aan. De simulatie blijft sequentieel
     # (de SoC van elk kwartier hangt af van het vorige), maar de overhead per
@@ -471,7 +452,7 @@ def simulate_battery(meter_data, battery, prices=None, strategy='A', start_soc=N
             grid_bought_arr[i] = gb
     else:
         price_in = df['price'].to_numpy(dtype=float)
-        # Datum per kwartier één keer vooraf bepalen i.p.v. .date() per stap.
+        # Datum per kwartier een keer vooraf bepalen i.p.v. .date() per stap.
         date_keys = df['timestamp_from'].dt.date.to_numpy()
         _default_thresh = {'low': 0, 'high': 999, 'min_spread_ok': True}
         for i in range(n):
@@ -552,385 +533,3 @@ def get_simulation_summary(df, battery, strategy='A'):
             'max_kwh': round(df['soc'].max(), 2),
         },
     }
-
-
-def print_simulation_summary(summary):
-    """Print een leesbare samenvatting."""
-    if not summary:
-        print("Geen simulatieresultaten")
-        return
-
-    strategy_names = {'A': 'Zelfverbruik', 'B': 'Arbitrage', 'C': 'Hybride (A+B)', 'D': 'Slim Zelfverbruik'}
-    strat = summary.get('strategie', '?')
-    bat = summary['batterij']
-    orig = summary['origineel']
-    met = summary['met_batterij']
-    besp = summary['besparing']
-    soc = summary['soc']
-
-    print(f"\n{'=' * 60}")
-    print(f"  STRATEGIE {strat}: {strategy_names.get(strat, strat)}")
-    print(f"{'=' * 60}")
-    print(f"  Batterij: {bat['capaciteit_kwh']} kWh "
-          f"(bruikbaar: {bat['bruikbaar_kwh']:.1f} kWh)")
-    print(f"  Laden: {bat['max_laden_kw']} kW | "
-          f"Ontladen: {bat['max_ontladen_kw']} kW")
-    print(f"  Kwartieren: {summary['kwartieren']}")
-
-    print(f"\n  --- Zonder batterij ---")
-    print(f"  Verbruik:      {orig['verbruik_kwh']:8.1f} kWh")
-    print(f"  Teruglevering: {orig['teruglevering_kwh']:8.1f} kWh")
-    print(f"  Netto:         {orig['netto_kwh']:8.1f} kWh")
-
-    print(f"\n  --- Met batterij ---")
-    print(f"  Van net:       {met['grid_consumption_kwh']:8.1f} kWh")
-    print(f"  Naar net:      {met['grid_feed_in_kwh']:8.1f} kWh")
-    print(f"  Netto:         {met['netto_kwh']:8.1f} kWh")
-    if met['bijgekocht_kwh'] > 0:
-        print(f"  Bijgekocht:    {met['bijgekocht_kwh']:8.1f} kWh (arbitrage)")
-
-    print(f"\n  --- Batterij-effect ---")
-    print(f"  Minder van net:        {besp['minder_van_net_kwh']:8.1f} kWh")
-    print(f"  Minder teruggeleverd:  {besp['minder_teruggeleverd_kwh']:8.1f} kWh")
-    print(f"  Eigenverbruik zonne:   {besp['eigenverbruik_pct']:7.1f}%")
-
-    print(f"\n  --- SoC ---")
-    print(f"  Gem: {soc['gemiddeld_kwh']} kWh | "
-          f"Min: {soc['min_kwh']} kWh | Max: {soc['max_kwh']} kWh")
-    print(f"{'=' * 60}")
-
-
-# ============================================================
-# STANDALONE TEST
-# ============================================================
-
-def _fetch_all_meter_data(client, klant_id, start_date, end_date):
-    """Haal alle meterdata gepagineerd op via Gebouw-filter.
-
-    Returns records met pandas-conventie kolomnamen.
-    """
-    gebouwen = client.table('Gebouw').select('ID').eq('Klant_ID', klant_id).execute()
-    gebouw_ids = [g['ID'] for g in (gebouwen.data or [])]
-    if not gebouw_ids:
-        return []
-
-    all_records = []
-    offset = 0
-    while True:
-        response = (
-            client.table('Verbruiksdata')
-            .select('MeetDatumTijd, Stroom_Gekocht_Net_kWh, Stroom_Verkocht_Net_kWh')
-            .in_('Gebouw_ID', gebouw_ids)
-            .gte('MeetDatumTijd', f'{start_date}T00:00:00+00:00')
-            .lte('MeetDatumTijd', f'{end_date}T23:59:59+00:00')
-            .order('MeetDatumTijd')
-            .range(offset, offset + 999)
-            .execute()
-        )
-        for rec in response.data:
-            all_records.append({
-                'timestamp_from': rec['MeetDatumTijd'],
-                'consumption_kwh': rec['Stroom_Gekocht_Net_kWh'],
-                'feed_in_kwh': rec['Stroom_Verkocht_Net_kWh'],
-            })
-        if len(response.data) < 1000:
-            break
-        offset += 1000
-    return all_records
-
-
-def run_unit_tests():
-    """Unit tests met dummy data."""
-    print(f"\n{'=' * 60}")
-    print(f"  DEEL 1: UNIT TESTS")
-    print(f"{'=' * 60}")
-
-    battery = BatteryConfig(
-        capacity_kwh=10, max_charge_kw=2.5, max_discharge_kw=3.68,
-        charge_efficiency=0.95, discharge_efficiency=0.95,
-        min_soc_pct=0.20, max_soc_pct=0.80,
-    )
-
-    print(f"\n  Batterij: {battery.capacity_kwh} kWh, "
-          f"laden {battery.max_charge_kw} kW, "
-          f"ontladen {battery.max_discharge_kw} kW")
-    print(f"  Bruikbaar: {battery.usable_capacity_kwh:.1f} kWh")
-    print(f"  Max laden/kwartier: {battery.max_charge_per_quarter_kwh:.3f} kWh")
-    print(f"  Max ontladen/kwartier: {battery.max_discharge_per_quarter_kwh:.3f} kWh")
-
-    soc_min = battery.min_soc_pct * battery.capacity_kwh
-
-    # Test 1: Strategie A — batterij leeg, tekort → alles van net
-    print(f"\n  Test 1 (A): Batterij leeg, tekort 0.5 kWh")
-    soc, gc, gf, gb = _simulate_quarter_a(0.5, 0.0, soc_min, battery)
-    assert gc == 0.5 and gf == 0.0 and gb == 0.0
-    print(f"    Van net: {gc} ✅")
-
-    # Test 2: Strategie A — overschot → laden
-    print(f"\n  Test 2 (A): Overschot 1.0 kWh")
-    soc, gc, gf, gb = _simulate_quarter_a(0.0, 1.0, soc_min, battery)
-    assert gc == 0.0 and gb == 0.0
-    print(f"    Geladen: {soc - soc_min:.3f} kWh, naar net: {gf:.3f} ✅")
-
-    # Test 3: Strategie B — lage prijs → bijkopen (puur arbitrage)
-    print(f"\n  Test 3 (B): Lage prijs, geen eigen verbruik → laden")
-    soc, gc, gf, gb = _simulate_quarter_b(0.0, 0.0, soc_min, battery, 0.01, 0.05, 0.20, True)
-    assert gb > 0, "Moet bijkopen bij lage prijs"
-    print(f"    Bijgekocht: {gb:.3f} kWh, SoC: {soc:.3f} ✅")
-
-    # Test 4: Strategie B — hoge prijs + volle batterij → terugleveren
-    print(f"\n  Test 4 (B): Hoge prijs, batterij vol → ontladen en terugleveren")
-    soc_vol = 7.0
-    soc, gc, gf, gb = _simulate_quarter_b(0.0, 0.0, soc_vol, battery, 0.30, 0.05, 0.20, True)
-    assert gf > 0, "Moet terugleveren bij hoge prijs"
-    print(f"    Teruggeleverd: {gf:.3f} kWh, SoC: {soc:.3f} ✅")
-
-    # Test 5: Strategie B — zon-overschot bij NORMALE prijs → NIET opslaan
-    print(f"\n  Test 5 (B): Zon-overschot bij normale prijs → gaat naar net, niet batterij")
-    soc_start = soc_min
-    soc, gc, gf, gb = _simulate_quarter_b(0.0, 1.0, soc_start, battery, 0.12, 0.05, 0.20, True)
-    assert soc == soc_start, "SoC mag niet veranderen bij normale prijs"
-    assert gf == 1.0, "Alles moet naar net gaan"
-    print(f"    SoC onveranderd: {soc:.3f}, naar net: {gf:.3f} ✅")
-
-    # Test 6: Strategie B — tekort bij NORMALE prijs → kopen van net (niet uit batterij)
-    print(f"\n  Test 6 (B): Tekort bij normale prijs → kopen van net, batterij doet niets")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_b(0.5, 0.0, soc_start, battery, 0.12, 0.05, 0.20, True)
-    assert soc == soc_start, "SoC mag niet veranderen bij normale prijs"
-    assert gc == 0.5, "Alles van net kopen"
-    print(f"    SoC onveranderd: {soc:.3f}, van net: {gc:.3f} ✅")
-
-    # Test 7: Strategie B — hoge prijs + eigen verbruik → eerst eigen dekken
-    print(f"\n  Test 7 (B): Hoge prijs + verbruik 0.3 kWh → batterij dekt eigen + surplus naar net")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_b(0.3, 0.0, soc_start, battery, 0.30, 0.05, 0.20, True)
-    assert gc < 0.3, "Eigen verbruik moet (deels) uit batterij"
-    assert gf > 0, "Overschot moet naar net"
-    print(f"    Van net: {gc:.3f}, teruggeleverd: {gf:.3f} ✅")
-
-    # Test 8: Strategie B — min_spread_ok=False → batterij doet niets
-    print(f"\n  Test 8 (B): Spread te klein → batterij doet niets")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_b(0.3, 0.0, soc_start, battery, 0.01, 0.05, 0.20, False)
-    assert soc == soc_start, "SoC mag niet veranderen als spread te klein"
-    assert gc == 0.3, "Alles van net"
-    print(f"    SoC onveranderd: {soc:.3f} ✅")
-
-    # Test 9: Strategie C — eigen verbruik VOOR arbitrage
-    print(f"\n  Test 9 (C): Overschot + lage prijs → eerst opslaan, dan bijkopen")
-    soc, gc, gf, gb = _simulate_quarter_c(0.0, 0.8, soc_min, battery, 0.01, 0.05, 0.20, True)
-    assert gf < 0.8, "Overschot moet (deels) geladen worden"
-    print(f"    Overschot geladen, bijgekocht: {gb:.3f} kWh, naar net: {gf:.3f} ✅")
-
-    # Test 10: Strategie C — tekort + hoge prijs → eigen verbruik + extra terugleveren
-    print(f"\n  Test 10 (C): Tekort 0.3 + hoge prijs, batterij halfvol")
-    soc, gc, gf, gb = _simulate_quarter_c(0.3, 0.0, 5.0, battery, 0.30, 0.05, 0.20, True)
-    assert gc == 0.0, "Eigen tekort moet uit batterij"
-    assert gf > 0, "Extra terugleveren bij hoge prijs"
-    print(f"    Uit batterij, extra teruggeleverd: {gf:.3f} kWh ✅")
-
-    # Test 11: Strategie C — zon-overschot bij normale prijs → WEL opslaan (verschil met B!)
-    print(f"\n  Test 11 (C): Zon-overschot bij normale prijs → opslaan in batterij (≠ B)")
-    soc_start = soc_min
-    soc, gc, gf, gb = _simulate_quarter_c(0.0, 1.0, soc_start, battery, 0.12, 0.05, 0.20, True)
-    assert soc > soc_start, "SoC moet stijgen — zon-overschot wordt opgeslagen"
-    assert gf < 1.0, "Niet alles naar net — deel opgeslagen"
-    print(f"    SoC: {soc_start:.3f} → {soc:.3f}, naar net: {gf:.3f} ✅ (verschil met B!)")
-
-    # Test 12: Strategie D — zon-overschot bij HOGE prijs → verkopen, niet opslaan
-    print(f"\n  Test 12 (D): Zon-overschot bij hoge prijs → verkopen aan net")
-    soc_start = soc_min
-    soc, gc, gf, gb = _simulate_quarter_d(0.0, 1.0, soc_start, battery, 0.30, 0.05, 0.20)
-    assert soc == soc_start, "SoC mag niet veranderen — verkoop nu tegen hoge prijs"
-    assert gf == 1.0, "Alles naar net bij hoge prijs"
-    assert gb == 0.0, "D koopt nooit bij"
-    print(f"    SoC onveranderd: {soc:.3f}, verkocht: {gf:.3f} ✅")
-
-    # Test 13: Strategie D — zon-overschot bij LAGE prijs → opslaan
-    print(f"\n  Test 13 (D): Zon-overschot bij lage prijs → opslaan in batterij")
-    soc, gc, gf, gb = _simulate_quarter_d(0.0, 1.0, soc_min, battery, 0.02, 0.05, 0.20)
-    assert soc > soc_min, "SoC moet stijgen — opslaan bij lage prijs"
-    assert gf < 1.0, "Deel opgeslagen"
-    assert gb == 0.0, "D koopt nooit bij"
-    print(f"    SoC: {soc_min:.3f} → {soc:.3f}, naar net: {gf:.3f} ✅")
-
-    # Test 14: Strategie D — tekort bij HOGE prijs → ontladen (vermijd dure stroom)
-    print(f"\n  Test 14 (D): Tekort bij hoge prijs → ontladen uit batterij")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_d(0.3, 0.0, soc_start, battery, 0.30, 0.05, 0.20)
-    assert gc == 0.0, "Tekort uit batterij, niet van net"
-    assert gb == 0.0, "D koopt nooit bij"
-    print(f"    SoC: {soc_start:.3f} → {soc:.3f}, van net: {gc:.3f} ✅")
-
-    # Test 15: Strategie D — tekort bij LAGE prijs → kopen van net, batterij bewaren
-    print(f"\n  Test 15 (D): Tekort bij lage prijs → kopen van net, batterij bewaren")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_d(0.5, 0.0, soc_start, battery, 0.02, 0.05, 0.20)
-    assert soc == soc_start, "SoC onveranderd — batterij bewaren voor later"
-    assert gc == 0.5, "Alles van net kopen (goedkoop)"
-    assert gb == 0.0, "D koopt nooit bij"
-    print(f"    SoC onveranderd: {soc:.3f}, van net: {gc:.3f} ✅ (batterij bewaard!)")
-
-    # Test 16: Strategie D — tekort bij NORMALE prijs → ontladen (standaard zelfverbruik)
-    print(f"\n  Test 16 (D): Tekort bij normale prijs → ontladen (als A)")
-    soc_start = 5.0
-    soc, gc, gf, gb = _simulate_quarter_d(0.3, 0.0, soc_start, battery, 0.12, 0.05, 0.20)
-    assert gc == 0.0, "Tekort uit batterij bij normale prijs"
-    print(f"    SoC: {soc_start:.3f} → {soc:.3f}, van net: {gc:.3f} ✅")
-
-    # Test 17: DataFrame simulatie alle strategieën
-    print(f"\n  Test 17: DataFrame met alle strategieën")
-    dummy = pd.DataFrame({
-        'timestamp_from': pd.to_datetime([
-            '2025-06-15 10:00:00+00:00', '2025-06-15 10:15:00+00:00',
-            '2025-06-15 10:30:00+00:00', '2025-06-15 10:45:00+00:00',
-        ]),
-        'consumption_kwh': [0.3, 0.1, 0.0, 0.5],
-        'feed_in_kwh':     [0.0, 0.5, 1.0, 0.0],
-    })
-    dummy_prices = pd.DataFrame({
-        'valid_from': pd.to_datetime([
-            '2025-06-15 10:00:00+00:00', '2025-06-15 10:15:00+00:00',
-            '2025-06-15 10:30:00+00:00', '2025-06-15 10:45:00+00:00',
-        ]),
-        'price': [0.05, 0.10, 0.02, 0.35],  # goedkoop-normaal-goedkoop-duur
-    })
-
-    for strat in ['A', 'B', 'C', 'D']:
-        if strat == 'A':
-            res = simulate_battery(dummy.copy(), battery, strategy='A')
-        else:
-            res = simulate_battery(dummy.copy(), battery, prices=dummy_prices, strategy=strat)
-        assert (res['grid_consumption'] >= -0.001).all()
-        assert (res['grid_feed_in'] >= -0.001).all()
-        assert (res['soc'] >= battery.min_soc_pct * battery.capacity_kwh - 0.01).all()
-        assert (res['soc'] <= battery.max_soc_pct * battery.capacity_kwh + 0.01).all()
-        bought = res['grid_bought'].sum()
-        print(f"    Strategie {strat}: grid_c={res['grid_consumption'].sum():.3f}, "
-              f"grid_f={res['grid_feed_in'].sum():.3f}, "
-              f"bijgekocht={bought:.3f} ✅")
-
-    print(f"\n  ✅ Alle unit tests geslaagd!")
-
-
-def run_integration_test():
-    """Integratietest met echte data — alle 3 strategieën vergelijken."""
-    from simulation_config import SimulationConfig
-    from reference_data import reconstruct_historical_prices, get_net_prices
-    from cost_calculator import calculate_costs_no_battery, calculate_costs_with_battery, calculate_savings_summary
-    from cost_calculator import get_malus_for_date, calculate_feed_in_price
-    from db_connection import get_client
-
-    print(f"\n{'=' * 60}")
-    print(f"  DEEL 2: INTEGRATIETEST — ALLE STRATEGIEEN VERGELIJKEN")
-    print(f"{'=' * 60}")
-
-    config = SimulationConfig.from_json("config.json")
-    print(f"\n  Config: klant={config.klant_id}")
-    print(f"  Periode: {config.simulation.start_date} t/m {config.simulation.end_date}")
-    print(f"  Batterij: {config.battery.capacity_kwh} kWh")
-
-    # Meterdata ophalen
-    client = get_client()
-    records = _fetch_all_meter_data(
-        client, config.klant_id,
-        config.simulation.start_date, config.simulation.end_date
-    )
-    if not records:
-        print("  Geen meterdata gevonden!")
-        return
-
-    meter = pd.DataFrame(records)
-    meter['timestamp_from'] = pd.to_datetime(meter['timestamp_from'], utc=True)
-    meter['consumption_kwh'] = meter['consumption_kwh'].astype(float)
-    meter['feed_in_kwh'] = meter['feed_in_kwh'].astype(float)
-    print(f"  {len(meter)} kwartieren geladen")
-
-    # Nettoprijzen ophalen (kale beursprijs — voor terugleverprijs)
-    net_prices_df = get_net_prices(config.simulation.start_date, config.simulation.end_date)
-    print(f"  Nettoprijzen: {len(net_prices_df)} records (gem: EUR {net_prices_df['price'].mean():.4f}/kWh)")
-
-    # Prijzen ophalen (we gebruiken BE als voorbeeld)
-    provider = 'BE'
-    prices = reconstruct_historical_prices(
-        provider, config.simulation.start_date, config.simulation.end_date
-    )
-    print(f"  All-in prijzen {provider}: {len(prices)} records (gem: EUR {prices['price'].mean():.4f}/kWh)")
-    print(f"  Verschil (EB+ODE+btw+opslag): ~EUR {prices['price'].mean() - net_prices_df['price'].mean():.4f}/kWh")
-
-    # Kosten zonder batterij
-    costs_no_bat = calculate_costs_no_battery(meter, prices, provider, net_prices=net_prices_df)
-    summary_no_bat = calculate_savings_summary(costs_no_bat)
-    print(f"\n  Kosten ZONDER batterij ({provider}): EUR {summary_no_bat['total_cost_no_battery']:.2f}")
-    print(f"  (afname=all-in, teruglevering=beursprijs−malus)")
-
-    # Alle 3 strategieën simuleren
-    print(f"\n  Simulatie draaien voor strategie A, B, C en D...")
-    for strat in ['A', 'B', 'C', 'D']:
-        if strat == 'A':
-            sim_result = simulate_battery(meter.copy(), config.battery, strategy='A')
-            # Voor A: handmatig prijzen mergen voor kostenberekening
-            sim_result = pd.merge(
-                sim_result, prices[['valid_from', 'price']],
-                left_on='timestamp_from', right_on='valid_from', how='inner'
-            )
-        else:
-            sim_result = simulate_battery(
-                meter.copy(), config.battery, prices=prices, strategy=strat
-            )
-
-        # Nettoprijzen mergen voor terugleverprijs
-        sim_result = pd.merge(
-            sim_result,
-            net_prices_df[['valid_from', 'price']].rename(columns={'price': 'net_price'}),
-            left_on='timestamp_from',
-            right_on='valid_from',
-            how='left',
-            suffixes=('', '_net_merge')
-        )
-        sim_result['net_price'] = sim_result['net_price'].fillna(sim_result['price'])
-        # Opruimen dubbele valid_from kolommen
-        for col in sim_result.columns:
-            if col.endswith('_net_merge'):
-                sim_result.drop(columns=[col], inplace=True, errors='ignore')
-
-        # Kosten berekenen (gevectoriseerd)
-        malus_info = get_malus_for_date(provider, config.simulation.start_date)
-        # Terugleverprijs = nettoprijzen − malus (NIET all-in prijs!)
-        fi_price = (sim_result['net_price'] - malus_info['malus']).clip(lower=0)
-
-        sim_result['cost_no_battery'] = (
-            sim_result['consumption_kwh'] * sim_result['price']
-            - sim_result['feed_in_kwh'] * fi_price
-        )
-        sim_result['cost_with_battery'] = (
-            sim_result['grid_consumption'] * sim_result['price']
-            - sim_result['grid_feed_in'] * fi_price
-        )
-        cost_summary = calculate_savings_summary(sim_result)
-
-        # Simulatie samenvatting
-        sim_summary = get_simulation_summary(sim_result, config.battery, strat)
-        print_simulation_summary(sim_summary)
-
-        print(f"  Kosten {provider}:")
-        print(f"    Zonder batterij: EUR {cost_summary['total_cost_no_battery']:.2f}")
-        print(f"    Met batterij:    EUR {cost_summary['total_cost_with_battery']:.2f}")
-        print(f"    Besparing:       EUR {cost_summary['total_savings']:.2f} "
-              f"({cost_summary['savings_percentage']}%)")
-
-    print(f"\n  ✅ Integratietest voltooid!")
-    print(f"{'=' * 60}")
-
-
-if __name__ == "__main__":
-    import sys
-
-    if "--skip-unit" in sys.argv:
-        run_integration_test()
-    elif "--skip-integration" in sys.argv:
-        run_unit_tests()
-    else:
-        run_unit_tests()
-        run_integration_test()

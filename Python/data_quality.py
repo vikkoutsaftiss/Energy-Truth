@@ -1,13 +1,13 @@
 """
-data_quality.py — Betrouwbaarheidsscore (0-100) voor Energy-Truth meterdata.
+data_quality.py - Betrouwbaarheidsscore (0-100) voor Energy-Truth meterdata.
 
 Berekent een kwaliteitsscore op basis van vier componenten:
-  - Dekkingsgraad (30%): gewogen telling — 15-min=1pt, uur=0.6pt, dag=0.2pt
+  - Dekkingsgraad (30%): gewogen telling - 15-min=1pt, uur=0.6pt, dag=0.2pt
   - Seizoensspreiding (30%): proportionele dekking per seizoen (maanden/3)
   - Consistentie (20%): alleen gaps, geen dubbele straf voor opgesplitste data
   - Input-type (20%): originele 15-min data vs. uur- of dagdata
 
-Prijskwaliteit is bewust geen onderdeel — de score meet de kwaliteit van
+Prijskwaliteit is bewust geen onderdeel - de score meet de kwaliteit van
 de meterdata van de klant, niet de volledigheid van onze prijsdatabase.
 
 Gebruik:
@@ -42,7 +42,7 @@ SEASONS = {
     'herfst': {9, 10, 11},
 }
 
-# Score per original_interval (gebruikt voor input-type én dekkingsgraad).
+# Score per original_interval (gebruikt voor input-type en dekkingsgraad).
 # Sleutels zijn INTEGER-minuten, passend bij de DB-kolom
 # Verbruiksdata.Origineel_Interval_Min (int): 15 = kwartier, 60 = uur, 1440 = dag.
 INTERVAL_SCORES = {
@@ -139,7 +139,7 @@ def _normalize_interval_column(df):
 
 
 # ============================================================
-# COMPONENT 1: DEKKINGSGRAAD (35%)
+# COMPONENT 1: DEKKINGSGRAAD (30%)
 # ============================================================
 
 def _calculate_dekkingsgraad(df):
@@ -150,7 +150,7 @@ def _calculate_dekkingsgraad(df):
     Opgesplitst uit uurdata telt als 0.6 punt.
     Opgesplitst uit dagdata telt als 0.2 punt.
 
-    Dit voorkomt dat dagdata (365 metingen → 35.040 kwartieren)
+    Dit voorkomt dat dagdata (365 metingen -> 35.040 kwartieren)
     onterecht een 100% dekkingsgraad krijgt.
     """
     if df.empty:
@@ -172,7 +172,7 @@ def _calculate_dekkingsgraad(df):
         gewichten = df['original_interval'].map(COVERAGE_WEIGHT).fillna(0.5)
         gewogen_punten = gewichten.sum()
     else:
-        # Geen interval-info → neem aan dat alles origineel 15-min is
+        # Geen interval-info -> neem aan dat alles origineel 15-min is
         gewogen_punten = float(len(df))
 
     percentage = min(gewogen_punten / verwacht, 1.0) * 100  # max 100%
@@ -186,7 +186,7 @@ def _calculate_dekkingsgraad(df):
 
 
 # ============================================================
-# COMPONENT 2: SEIZOENSSPREIDING (25%)
+# COMPONENT 2: SEIZOENSSPREIDING (30%)
 # ============================================================
 
 def _calculate_seizoensspreiding(df):
@@ -194,7 +194,7 @@ def _calculate_seizoensspreiding(df):
     Proportionele seizoensdekking.
 
     Per seizoen (3 maanden) wordt berekend hoeveel maanden data bevatten.
-    Score = gemiddelde dekking over alle 4 seizoenen × 100.
+    Score = gemiddelde dekking over alle 4 seizoenen * 100.
 
     Voorbeeld jan-mrt: winter=2/3 (67%), lente=1/3 (33%), rest=0%.
     Score = (67+33+0+0)/4 = 25%.
@@ -232,9 +232,9 @@ def _calculate_consistentie(df):
     """
     Berekent consistentie: alleen gaps (ontbrekende kwartieren).
 
-    Opgesplitste records (is_interpolated=TRUE) worden NIET meegeteld —
+    Opgesplitste records (is_interpolated=TRUE) worden NIET meegeteld -
     die straf zit al in dekkingsgraad + input-type.
-    Score = 1 − ontbrekende_kwartieren / totaal_verwacht × 100.
+    Score = 1 - ontbrekende_kwartieren / totaal_verwacht * 100.
     """
     if df.empty:
         return 0.0, {'gaps': 0, 'verwacht': 0}
@@ -288,7 +288,7 @@ def _calculate_input_type(df):
         return 0.0, {'verdeling': {}}
 
     if 'original_interval' not in df.columns:
-        # Geen interval-info → neem aan dat alles 15-min (kwartier) is
+        # Geen interval-info -> neem aan dat alles 15-min (kwartier) is
         return 100.0, {'verdeling': {15: len(df)}}
 
     verdeling = df['original_interval'].value_counts().to_dict()
@@ -312,13 +312,13 @@ def _calculate_input_type(df):
 def _interpretatie(score):
     """Geeft tekstuele interpretatie van de totaalscore."""
     if score >= 80:
-        return "Zeer betrouwbaar — solide advies"
+        return "Zeer betrouwbaar - solide advies"
     elif score >= 60:
-        return "Goed bruikbaar — kleine beperkingen"
+        return "Goed bruikbaar - kleine beperkingen"
     elif score >= 40:
-        return "Voorzichtig interpreteren — indicatief advies"
+        return "Voorzichtig interpreteren - indicatief advies"
     else:
-        return "Onbetrouwbaar — meer data nodig"
+        return "Onbetrouwbaar - meer data nodig"
 
 
 # ============================================================
@@ -418,24 +418,28 @@ MAX_KWH_PER_KWARTIER = 25.0
 
 def valideer_meterdata(df):
     """
-    Verwijdert fysiek onmogelijke kwartieren uit de meterdata.
+    Zet fysiek onmogelijke meetwaarden bij naar 0 (clampen), zonder rijen te
+    verwijderen.
 
-    Wat van het net gekocht of eraan teruggeleverd wordt kan nooit negatief
-    zijn, en een huishouden trekt geen tientallen kWh in één kwartier. Zulke
-    waarden zijn meterstand-artefacten (bijv. een teller-reset die als gigantische
-    delta binnenkomt) en zouden de hele kosten- en grafiekberekening vergiftigen.
-    We gooien die rijen weg en rapporteren hoeveel.
+    Wat van het net gekocht of eraan teruggeleverd wordt kan nooit negatief zijn,
+    en een huishouden trekt geen tientallen kWh in een kwartier. Een kleine
+    negatieve waarde is meestal meet-ruis (afronding rond nul); een grote
+    negatieve of absurd hoge waarde is een meterstand-artefact (bijv. een
+    teller-reset die als gigantische delta binnenkomt) en zou de kosten- en
+    grafiekberekening vergiftigen. In alle gevallen is 0 de veilige waarde: de
+    rij blijft staan (geen gaten), alleen de waarde wordt bijgesteld.
 
-    Verwacht kolommen consumption_kwh en feed_in_kwh. Returnt (df_clean, report).
+    Verwacht kolommen consumption_kwh en feed_in_kwh. Returnt (df_clamped, report).
     """
     leeg = {
-        'rijen_in': 0, 'verwijderd': 0, 'negatief_verbruik': 0,
+        'rijen_in': 0, 'bijgesteld': 0, 'negatief_verbruik': 0,
         'negatief_teruglevering': 0, 'absurd_hoog': 0,
         'bericht': 'Geen meterdata om te valideren.',
     }
     if df is None or df.empty:
         return df, leeg
 
+    df = df.copy()
     cons = pd.to_numeric(df.get('consumption_kwh', 0), errors='coerce')
     feed = pd.to_numeric(df.get('feed_in_kwh', 0), errors='coerce')
 
@@ -443,28 +447,33 @@ def valideer_meterdata(df):
     neg_feed = int((feed < 0).sum())
     absurd = int(((cons > MAX_KWH_PER_KWARTIER) | (feed > MAX_KWH_PER_KWARTIER)).sum())
 
-    ok = (cons >= 0) & (feed >= 0) & (cons <= MAX_KWH_PER_KWARTIER) & (feed <= MAX_KWH_PER_KWARTIER)
-    df_clean = df[ok.fillna(False)].copy()
-    verwijderd = len(df) - len(df_clean)
+    # Onmogelijk = negatief, boven het plafond, of niet-numeriek (NaN). Die
+    # waarden worden 0; de rij blijft behouden.
+    cons_bad = (cons < 0) | (cons > MAX_KWH_PER_KWARTIER) | cons.isna()
+    feed_bad = (feed < 0) | (feed > MAX_KWH_PER_KWARTIER) | feed.isna()
+    df['consumption_kwh'] = cons.where(~cons_bad, 0.0)
+    df['feed_in_kwh'] = feed.where(~feed_bad, 0.0)
 
-    if verwijderd:
+    bijgesteld = int((cons_bad | feed_bad).sum())
+
+    if bijgesteld:
         bericht = (
-            f"{verwijderd} onmogelijke meetwaarde(n) verwijderd "
+            f"{bijgesteld} meetwaarde(n) bijgesteld naar 0 "
             f"({neg_cons} negatief verbruik, {neg_feed} negatieve teruglevering, "
-            f"{absurd} absurd hoog > {MAX_KWH_PER_KWARTIER:.0f} kWh/kwartier)."
+            f"{absurd} > {MAX_KWH_PER_KWARTIER:.0f} kWh/kwartier). Rijen behouden."
         )
     else:
-        bericht = "Alle meetwaarden plausibel; niets verwijderd."
+        bericht = "Alle meetwaarden plausibel; niets bijgesteld."
 
     report = {
         'rijen_in': int(len(df)),
-        'verwijderd': int(verwijderd),
+        'bijgesteld': int(bijgesteld),
         'negatief_verbruik': neg_cons,
         'negatief_teruglevering': neg_feed,
         'absurd_hoog': absurd,
         'bericht': bericht,
     }
-    return df_clean, report
+    return df, report
 
 
 def _backfill_interval_in_db(import_batch_id, interval):
@@ -553,7 +562,7 @@ def calculate_quality_score(import_batch_id, backfill_nulls=True,
             all_records = [dict(r) for r in cur.fetchall()]
 
     if not all_records:
-        print("⚠️  Geen meterdata gevonden voor dit gebouw!")
+        print("Let op: geen meterdata gevonden voor dit gebouw!")
         return {
             'totaalscore': 0,
             'interpretatie': _interpretatie(0),
@@ -563,7 +572,7 @@ def calculate_quality_score(import_batch_id, backfill_nulls=True,
 
     print(f"  {len(all_records)} records opgehaald")
 
-    # Naar DataFrame — hernoem terug naar interne pandas-conventie
+    # Naar DataFrame - hernoem terug naar interne pandas-conventie
     df = pd.DataFrame(all_records)
     df = df.rename(columns={
         'MeetDatumTijd': 'timestamp_from',
@@ -573,7 +582,7 @@ def calculate_quality_score(import_batch_id, backfill_nulls=True,
     df['timestamp_from'] = pd.to_datetime(df['timestamp_from'], utc=True)
 
     # Bron-reparatie: vul lege Origineel_Interval_Min in de DB met het
-    # gemeten interval. Alleen als er NULL-rijen zijn én het interval
+    # gemeten interval. Alleen als er NULL-rijen zijn en het interval
     # eenduidig bepaald kan worden (anders niets schrijven).
     if backfill_nulls and df['original_interval'].isna().any():
         inferred = _detect_interval_from_timestamps(df['timestamp_from'])
@@ -581,74 +590,14 @@ def calculate_quality_score(import_batch_id, backfill_nulls=True,
             try:
                 n = _backfill_interval_in_db(import_batch_id, inferred)
                 if n:
-                    print(f"  ↻ {n} rijen met lege Origineel_Interval_Min "
+                    print(f"  {n} rijen met lege Origineel_Interval_Min "
                           f"bijgewerkt naar {inferred} (gemeten interval).")
             except Exception as e:
-                print(f"  ⚠️  Backfill van Origineel_Interval_Min overgeslagen: {e}")
+                print(f"  Let op: backfill van Origineel_Interval_Min overgeslagen: {e}")
         else:
-            print("  ⚠️  Origineel_Interval_Min leeg, maar interval niet "
-                  "eenduidig te meten — niets weggeschreven.")
+            print("  Let op: Origineel_Interval_Min leeg, maar interval niet "
+                  "eenduidig te meten - niets weggeschreven.")
 
     result = calculate_quality_from_dataframe(df)
     result['records'] = len(all_records)
     return result
-
-
-# ============================================================
-# PRINT RAPPORT
-# ============================================================
-
-def print_quality_report(result):
-    """Print een leesbaar rapport van de betrouwbaarheidsscore."""
-    print("\n" + "=" * 55)
-    print(f"  BETROUWBAARHEIDSSCORE: {result['totaalscore']}/100")
-    print(f"  {result['interpretatie']}")
-    if result.get('cap_actief'):
-        print(f"  ! Gecapt op {result['cap_grens']}/100 wegens "
-              f"{result['seizoenen_aanwezig']}/4 seizoenen "
-              f"(ruwe score zou {result['totaalscore_voor_cap']} zijn)")
-    print("=" * 55)
-
-    if not result.get('componenten'):
-        print("  Geen data beschikbaar.")
-        return
-
-    for naam, details in result['componenten'].items():
-        print(f"\n  {naam.upper()} (gewicht: {details['gewicht']})")
-        print(f"    Score: {details['score']}/100 → bijdrage: {details['bijdrage']} punten")
-
-        if naam == 'dekkingsgraad':
-            print(f"    Records: {details['records']} → gewogen punten: {details['gewogen_punten']} / {details['verwacht']} verwacht")
-
-        elif naam == 'seizoensspreiding':
-            for seizoen, info in details.get('per_seizoen', {}).items():
-                maanden_str = ', '.join(str(m) for m in info['maanden']) if info['maanden'] else '-'
-                print(f"    {seizoen}: {info['dekking']}% (maanden: {maanden_str})")
-
-        elif naam == 'consistentie':
-            print(f"    Gaps (ontbrekend): {details['gaps']} kwartieren")
-
-        elif naam == 'input_type':
-            for interval, aantal in details.get('verdeling', {}).items():
-                label = INTERVAL_SCORES.get(interval, '?')
-                print(f"    {interval}: {aantal} records (score: {label}%)")
-
-    print("\n" + "=" * 55)
-
-
-# ============================================================
-# STANDALONE TEST
-# ============================================================
-
-if __name__ == "__main__":
-    import sys
-
-    # Standalone test: geef het ImportBatchID als argument mee.
-    #   python data_quality.py <import_batch_id>
-    if len(sys.argv) < 2:
-        print("Gebruik: python data_quality.py <import_batch_id>")
-        sys.exit(1)
-
-    import_batch_id = int(sys.argv[1])
-    result = calculate_quality_score(import_batch_id)
-    print_quality_report(result)

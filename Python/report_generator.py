@@ -16,8 +16,6 @@ Of via CLI:
 """
 from __future__ import annotations
 
-import os
-import sys
 import logging
 from datetime import datetime
 from typing import Optional
@@ -29,15 +27,14 @@ import numpy as np
 # zodat pagina 1 ook draait zonder matplotlib geïnstalleerd.
 
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import mm, cm
+from reportlab.lib.units import mm
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    PageBreak, KeepTogether, HRFlowable, Image,
+    PageBreak, Image,
 )
-from reportlab.platypus.flowables import Flowable
 from io import BytesIO
 
 from simulation_config import SimulationConfig
@@ -360,7 +357,7 @@ def _footer(canvas_obj, doc):
 def _get_user_name(klant_id) -> Optional[str]:
     """Haal de bedrijfsnaam op uit de Klant tabel."""
     if klant_id is None:
-        print("⚠️  Geen klant_id — kan naam niet ophalen")
+        print("Let op: geen klant_id - kan naam niet ophalen")
         return None
     try:
         from db_connection import get_client
@@ -376,12 +373,12 @@ def _get_user_name(klant_id) -> Optional[str]:
         print(f"  Klant response: {resp.data}")
         if resp.data and resp.data[0].get("Bedrijfsnaam"):
             name = resp.data[0]["Bedrijfsnaam"]
-            print(f"  ✅ Bedrijfsnaam: {name}")
+            print(f"  Bedrijfsnaam: {name}")
             return name
         else:
-            print(f"  ⚠️  Geen Bedrijfsnaam gevonden in Klant tabel")
+            print(f"  Let op: geen Bedrijfsnaam gevonden in Klant tabel")
     except Exception as e:
-        print(f"  ❌ Klantnaam ophalen mislukt: {e}")
+        print(f"  Klantnaam ophalen mislukt: {e}")
     return None
 
 
@@ -646,7 +643,6 @@ def _make_battery_card(row, is_winner: bool, styles, card_width: float) -> Table
     naam = row.get("productnaam", "Onbekend")
     kwh = row.get("capaciteit_kwh", 0)
     prijs = row.get("totale_capex_eur") or row.get("aanschafprijs_eur", 0)
-    bespaart = row.get("jaarlijkse_besparing_eur", 0)
     payback = row.get("payback_jaren")
     garantie = row.get("garantiejaren")
 
@@ -918,10 +914,6 @@ def _make_quality_tile(quality_score: Optional[dict], styles, content_width: flo
     hero_big_style = ParagraphStyle(
         "qs_big", parent=styles["KpiTileValue"],
         fontSize=44, leading=46, textColor=score_color, alignment=TA_LEFT,
-    )
-    hero_small_style = ParagraphStyle(
-        "qs_small", parent=styles["KpiTileFoot"],
-        fontSize=11, leading=13, textColor=COLOR_MUTED, alignment=TA_LEFT,
     )
     hero_label_style = ParagraphStyle(
         "qs_label", parent=styles["KpiTileLabel"],
@@ -1235,7 +1227,7 @@ def _make_monthly_chart(meter_data: pd.DataFrame, content_width_mm: float = 170)
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
-        logger.warning("matplotlib niet geinstalleerd — maandgrafiek wordt overgeslagen")
+        logger.warning("matplotlib niet geinstalleerd - maandgrafiek wordt overgeslagen")
         return None
 
     df = meter_data.copy()
@@ -2944,10 +2936,6 @@ def _make_methodology_block(styles, content_width: float) -> Table:
         "meth_head", fontName="Helvetica-Bold", fontSize=11, leading=14,
         textColor=COLOR_INK,
     )
-    body_style = ParagraphStyle(
-        "meth_body", parent=styles["BodyText"],
-        fontSize=10, leading=14, textColor=COLOR_INK,
-    )
     bullet_style = ParagraphStyle(
         "meth_bullet", parent=styles["BodyText"],
         fontSize=10, leading=14, textColor=COLOR_INK, leftIndent=10,
@@ -3501,81 +3489,3 @@ def generate_report(
         return pdf_bytes
     logger.info(f"Rapport gegenereerd: {output_path}")
     return output_path
-
-
-# ============================================================
-# CLI entry point
-# ============================================================
-
-if __name__ == "__main__":
-    import argparse
-
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    for _lib in ("httpx", "httpcore", "hpack", "urllib3"):
-        logging.getLogger(_lib).setLevel(logging.WARNING)
-
-    parser = argparse.ArgumentParser(description="Energy-Truth Rapport Generator")
-    parser.add_argument("config", nargs="?", default="config.json",
-                        help="Pad naar config.json")
-    parser.add_argument("--output", "-o", default="Energy-Truth_Rapport.pdf",
-                        help="Output PDF-pad")
-    parser.add_argument("--top", type=int, default=30,
-                        help="Aantal scenarios in ranking")
-    parser.add_argument("--no-sizing", action="store_true",
-                        help="Sla batterij-sizing sectie over (sneller)")
-    parser.add_argument("--sizing-strategies", default="A,C,D",
-                        help="Strategieen voor sizing-advies (default: A,C,D). "
-                             "Strategie B optioneel: --sizing-strategies A,B,C,D")
-    parser.add_argument("--sizing-provider", default=None,
-                        help="Provider voor sizing (default: top-1 uit ranking)")
-    parser.add_argument("--sizing-horizon", type=int, default=10,
-                        help="NPV-horizon in jaren voor sizing (default: 10)")
-
-    args = parser.parse_args()
-
-    from scenario_engine import run_all_scenarios
-
-    print("Simulatie starten...")
-    config = SimulationConfig.from_json(args.config)
-    results, price_cache, selection_info = run_all_scenarios(args.config)
-
-    if results.empty:
-        print("Geen resultaten - rapport kan niet worden gegenereerd.")
-        sys.exit(1)
-
-    sizing_results = None
-    if not args.no_sizing:
-        try:
-            from battery_sizing import find_optimal_battery
-            from scenario_engine import _load_meter_data
-
-            sizing_provider = args.sizing_provider
-            if sizing_provider is None and not results.empty:
-                sizing_provider = results.iloc[0].get("provider_code", "BE")
-
-            sizing_strategies = [s.strip().upper() for s in args.sizing_strategies.split(",")]
-            print(f"\nSizing-advies starten ({sizing_provider}, strategieen {sizing_strategies})...")
-
-            meter_data = _load_meter_data(config)
-            if meter_data.empty:
-                print("Geen meterdata - sizing-sectie overgeslagen.")
-            else:
-                sizing_results = find_optimal_battery(
-                    meter_data,
-                    provider_code=sizing_provider,
-                    strategies=sizing_strategies,
-                    start_date=config.simulation.start_date,
-                    end_date=config.simulation.end_date,
-                    horizon_years=args.sizing_horizon,
-                    own_battery=config.battery,
-                )
-        except Exception as e:
-            logger.warning(f"Sizing-advies mislukt: {e}")
-            print(f"Sizing-advies mislukt ({e}) - rapport gaat door zonder sizing-sectie.")
-
-    output = generate_report(
-        results, config, output_path=args.output,
-        price_cache=price_cache, selection_info=selection_info,
-        sizing_results=sizing_results,
-    )
-    print(f"\nRapport gegenereerd: {output}")

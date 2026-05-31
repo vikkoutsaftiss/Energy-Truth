@@ -77,7 +77,7 @@ def claim_next_batch() -> Optional[dict]:
 
 def mark_done(batch_id: int, note: Optional[str] = None) -> None:
     """Zet de batch op 'done'. Als we iets aan de data hebben gedaan
-    (bijv. onmogelijke rijen verwijderd), zetten we die notitie in
+    (bijv. onmogelijke meetwaarden bijgesteld naar 0), zetten we die notitie in
     Error_Message zodat het zichtbaar is in de ImportBatch-tabel. Het is geen
     fout, maar wel een logboek van wat er met de data gebeurd is."""
     with get_connection() as conn:
@@ -168,7 +168,6 @@ def _parse_eigen_batterij(raw):
     dezelfde defaults als de catalogus. De bruikbare capaciteit wordt vertaald
     naar een SoC-venster en de round-trip naar laad/ontlaad-efficiency, precies
     zoals battery_catalog.to_battery_config dat voor de catalogus doet."""
-    import json
     import math
     from simulation_config import BatteryConfig
 
@@ -237,7 +236,7 @@ def _parse_eigen_batterij(raw):
 
 
 # ---------------------------------------------------------------------------
-# Pipeline per batch -- spiegelt report_generator.__main__ na.
+# Pipeline per batch -- spiegelt de report_generator-CLI na.
 # ---------------------------------------------------------------------------
 def process_batch(batch: dict) -> Optional[str]:
     batch_id = int(batch["ID"])
@@ -364,7 +363,7 @@ def process_batch(batch: dict) -> Optional[str]:
         "data_validatie": data_validatie,
         "data_bericht": data_validatie.get("bericht"),
     }
-    if data_validatie.get("verwijderd"):
+    if data_validatie.get("bijgesteld"):
         print(f"[worker] Datavalidatie: {data_validatie['bericht']}")
 
     # 7. PDF in het GEHEUGEN genereren en als bytea in de DB opslaan.
@@ -388,8 +387,9 @@ def process_batch(batch: dict) -> Optional[str]:
     print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id} (alleen in DB, geen bestand)")
 
     # Notitie voor ImportBatch.Error_Message: alleen als we iets aan de data
-    # hebben gedaan (onmogelijke rijen verwijderd). Geen fout, maar een logboek.
-    return data_validatie["bericht"] if data_validatie.get("verwijderd") else None
+    # hebben gedaan (onmogelijke meetwaarden bijgesteld naar 0). Geen fout, maar
+    # een logboek.
+    return data_validatie["bericht"] if data_validatie.get("bijgesteld") else None
 
 
 # ---------------------------------------------------------------------------
@@ -429,7 +429,7 @@ def main_loop(once: bool = False) -> None:
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--once", action="store_true", help="één batch en stoppen")
+    p.add_argument("--once", action="store_true", help="een batch en stoppen")
     args = p.parse_args()
     try:
         main_loop(once=args.once)

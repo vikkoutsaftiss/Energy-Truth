@@ -1,5 +1,5 @@
 """
-battery_sizing.py — Optimal battery selection voor een huishouden.
+battery_sizing.py - Optimal battery selection voor een huishouden.
 
 Loopt over alle actieve batterijen uit markt_product (via
 battery_catalog), draait simulaties voor elke (batterij x
@@ -365,7 +365,7 @@ def find_optimal_battery(
         else:
             print(f"  Eigen batterij toegevoegd: {own_entry.label}")
             if own_battery.garantiejaren is None or own_battery.gegarandeerde_laadcycli is None:
-                print(f"    LET OP: garantiejaren en/of cycli ontbreken in config.json — "
+                print(f"    LET OP: garantiejaren en/of cycli ontbreken in config.json - "
                       f"defaults gebruikt (10j, 6000 cycli)")
             catalog = catalog + [own_entry]
 
@@ -425,125 +425,3 @@ def find_optimal_battery(
     df.index = df.index + 1
     df.index.name = "rank"
     return df
-
-
-# ============================================================
-# RAPPORT-HELPERS
-# ============================================================
-
-def print_sizing_ranking(df: pd.DataFrame, top_n: int = 20) -> None:
-    """Print een leesbare sizing-tabel."""
-    if df.empty:
-        print("  Geen resultaten.")
-        return
-
-    cols = [
-        "productnaam", "strategie", "capaciteit_kwh",
-        "totale_capex_eur", "jaarlijkse_besparing_eur",
-        "payback_jaren", "garantiejaren", "go_nogo",
-        "npv_eur", "lcoe_storage_eur_per_kwh", "efc_per_jaar",
-    ]
-    cols = [c for c in cols if c in df.columns]
-
-    view = df[cols].head(top_n).copy()
-    rename = {
-        "productnaam": "Product",
-        "strategie": "Strat",
-        "capaciteit_kwh": "kWh",
-        "totale_capex_eur": "CAPEX",
-        "jaarlijkse_besparing_eur": "Bespar/j",
-        "payback_jaren": "Payback",
-        "garantiejaren": "Gar",
-        "go_nogo": "Advies",
-        "npv_eur": "NPV",
-        "lcoe_storage_eur_per_kwh": "LCOE/kWh",
-        "efc_per_jaar": "EFC/j",
-    }
-    view = view.rename(columns=rename)
-    print()
-    print("=" * 100)
-    print(f"  ENERGY-TRUTH BATTERY SIZING - top {min(top_n, len(view))}")
-    print("=" * 100)
-    print(view.to_string())
-    print()
-
-
-def get_best_go_battery(df: pd.DataFrame) -> Optional[dict]:
-    """Beste batterij met GO-advies (hoogste NPV)."""
-    if df.empty:
-        return None
-    go = df[df["go_nogo"] == "GO"]
-    if go.empty:
-        return None
-    return go.iloc[0].to_dict()
-
-
-# ============================================================
-# CLI
-# ============================================================
-
-def _load_meter_data_for_cli():
-    """Laad meterdata via SimulationConfig (consistent met scenario_engine)."""
-    from simulation_config import SimulationConfig
-    from scenario_engine import _load_meter_data
-
-    config = SimulationConfig.from_json("config.json")
-    return config, _load_meter_data(config)
-
-
-if __name__ == "__main__":
-    import sys
-
-    config, meter_data = _load_meter_data_for_cli()
-    if meter_data.empty:
-        print("Geen meterdata gevonden.")
-        sys.exit(1)
-
-    # CLI args (positie-gebaseerd, met optionele --skip-own-battery flag)
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    flags = {a for a in sys.argv[1:] if a.startswith("--")}
-
-    provider = args[0] if len(args) > 0 else "BE"
-    strategies = args[1].split(",") if len(args) > 1 else ["A", "C", "D"]
-    horizon = int(args[2]) if len(args) > 2 else DEFAULT_HORIZON_YEARS
-    include_own = "--skip-own-battery" not in flags
-
-    print()
-    print("=" * 70)
-    print("  ENERGY-TRUTH BATTERY SIZING")
-    print("=" * 70)
-    print(f"  Provider:    {provider}")
-    print(f"  Strategieen: {strategies}")
-    print(f"  Horizon:     {horizon} jaar")
-    print(f"  Discount:    {DEFAULT_DISCOUNT_RATE * 100:.1f}%")
-    print(f"  Eigen batt:  {'ja (uit config.json)' if include_own else 'nee (--skip-own-battery)'}")
-    print(f"  Periode:     {config.simulation.start_date} t/m {config.simulation.end_date}")
-    print(f"  Kwartieren:  {len(meter_data)}")
-    print()
-
-    results = find_optimal_battery(
-        meter_data,
-        provider_code=provider,
-        strategies=strategies,
-        start_date=config.simulation.start_date,
-        end_date=config.simulation.end_date,
-        horizon_years=horizon,
-        own_battery=config.battery if include_own else None,
-    )
-
-    print_sizing_ranking(results, top_n=20)
-
-    best = get_best_go_battery(results)
-    if best:
-        print(f"  >> AANBEVELING <<")
-        print(f"     {best['productnaam']} ({best['capaciteit_kwh']:.1f} kWh), "
-              f"strategie {best['strategie']}")
-        print(f"     CAPEX EUR {best['totale_capex_eur']:.0f}, "
-              f"payback {best['payback_jaren']:.1f}j, "
-              f"NPV EUR {best['npv_eur']:.0f} over {horizon}j")
-        print(f"     {best['go_nogo_reden']}")
-    else:
-        print(f"  >> GEEN GO-ADVIES <<")
-        print(f"     Geen batterij haalt payback binnen kalendergarantie.")
-        print(f"     Mogelijk te lage prijsvolatiliteit, te dure batterijen,")
-        print(f"     of huishouden zonder PV-overschot.")

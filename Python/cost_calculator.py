@@ -1,5 +1,5 @@
 """
-cost_calculator.py — Kostenberekening per kwartier voor Energy-Truth.
+cost_calculator.py - Kostenberekening per kwartier voor Energy-Truth.
 
 Berekent energiekosten per 15-minuten interval, zowel zonder als met batterij.
 
@@ -16,7 +16,6 @@ Gebruik:
 """
 
 import pandas as pd
-from db_connection import get_client
 
 # ============================================================
 # FEED-IN PRIJS BEREKENEN
@@ -35,10 +34,10 @@ def calculate_feed_in_price(net_price):
     net_price af.
 
     Args:
-        net_price: kale beursprijs / nettoprijzen (€/kWh), EXCL belastingen
+        net_price: kale beursprijs / nettoprijzen (EUR/kWh), EXCL belastingen
 
     Returns:
-        feed_in_price (€/kWh), minimaal 0
+        feed_in_price (EUR/kWh), minimaal 0
     """
     return max(0.0, net_price)
 
@@ -51,7 +50,7 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
     """
     Bereken energiekosten per kwartier ZONDER batterij.
 
-    Formule: kosten = verbruik × all-in prijs − teruglevering × terugleverprijs
+    Formule: kosten = verbruik * all-in prijs - teruglevering * terugleverprijs
     Terugleverprijs = kale beursprijs (nettoprijzen)
 
     Args:
@@ -74,7 +73,7 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
     )
 
     if merged.empty:
-        print(f"⚠️  Geen overlap tussen meterdata en prijzen voor {provider_code}")
+        print(f"Let op: geen overlap tussen meterdata en prijzen voor {provider_code}")
         return merged
 
     # Nettoprijzen mergen (voor terugleverprijs)
@@ -94,7 +93,7 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
             if col.endswith('_net'):
                 merged.drop(columns=[col], inplace=True, errors='ignore')
     else:
-        # Legacy: geen nettoprijzen meegegeven → all-in prijs als terugval
+        # Legacy: geen nettoprijzen meegegeven -> all-in prijs als terugval
         merged['net_price'] = merged['price']
 
     # Terugleverprijs = kale beursprijs (geen teruglever-malus gemodelleerd).
@@ -102,7 +101,7 @@ def calculate_costs_no_battery(meter_data, prices, provider_code, net_prices=Non
     # Gevectoriseerd (geen iterrows): scheelt fors over ~tienduizenden rijen.
     merged['feed_in_price'] = merged['net_price'].clip(lower=0)
 
-    # Kosten = verbruik × all-in prijs − teruglevering × terugleverprijs
+    # Kosten = verbruik * all-in prijs - teruglevering * terugleverprijs
     merged['cost_no_battery'] = (
         merged['consumption_kwh'] * merged['price']
         - merged['feed_in_kwh'] * merged['feed_in_price']
@@ -122,7 +121,7 @@ def calculate_costs_with_battery(simulated_data, provider_code, net_prices=None)
     Verwacht dat battery_simulator al grid_consumption en grid_feed_in
     heeft berekend. Deze functie voegt alleen de kostenkolom toe.
 
-    Formule: kosten = grid_consumption × all-in prijs − grid_feed_in × terugleverprijs
+    Formule: kosten = grid_consumption * all-in prijs - grid_feed_in * terugleverprijs
     Terugleverprijs = kale beursprijs (nettoprijzen)
 
     Args:
@@ -158,7 +157,7 @@ def calculate_costs_with_battery(simulated_data, provider_code, net_prices=None)
     # Terugleverprijs = kale beursprijs (geen teruglever-malus). Gevectoriseerd.
     simulated_data['feed_in_price_battery'] = simulated_data['net_price'].clip(lower=0)
 
-    # Kosten = netverbruik × all-in prijs − netto-teruglevering × terugleverprijs
+    # Kosten = netverbruik * all-in prijs - netto-teruglevering * terugleverprijs
     simulated_data['cost_with_battery'] = (
         simulated_data['grid_consumption'] * simulated_data['price']
         - simulated_data['grid_feed_in'] * simulated_data['feed_in_price_battery']
@@ -356,250 +355,3 @@ def calculate_savings_summary(costs_df):
         })
 
     return result
-
-
-# ============================================================
-# STANDALONE TEST
-# ============================================================
-
-def _fetch_all_meter_data(client, klant_id, start_date, end_date):
-    """Haal alle meterdata gepagineerd op via Gebouw-filter.
-
-    Returns records met pandas-conventie kolomnamen (timestamp_from,
-    consumption_kwh, feed_in_kwh) - intern hernoemd vanaf Yan-stijl.
-    """
-    # Eerst Gebouw-IDs voor deze klant ophalen
-    gebouwen = client.table('Gebouw').select('ID').eq('Klant_ID', klant_id).execute()
-    gebouw_ids = [g['ID'] for g in (gebouwen.data or [])]
-    if not gebouw_ids:
-        return []
-
-    all_records = []
-    offset = 0
-    while True:
-        response = (
-            client.table('Verbruiksdata')
-            .select('MeetDatumTijd, Stroom_Gekocht_Net_kWh, Stroom_Verkocht_Net_kWh')
-            .in_('Gebouw_ID', gebouw_ids)
-            .gte('MeetDatumTijd', f'{start_date}T00:00:00+00:00')
-            .lte('MeetDatumTijd', f'{end_date}T23:59:59+00:00')
-            .order('MeetDatumTijd')
-            .range(offset, offset + 999)
-            .execute()
-        )
-        # Hernoem keys naar interne pandas-conventie
-        for rec in response.data:
-            all_records.append({
-                'timestamp_from': rec['MeetDatumTijd'],
-                'consumption_kwh': rec['Stroom_Gekocht_Net_kWh'],
-                'feed_in_kwh': rec['Stroom_Verkocht_Net_kWh'],
-            })
-        if len(response.data) < 1000:
-            break
-        offset += 1000
-    return all_records
-
-
-def run_unit_tests():
-    """Unit tests met dummy data."""
-    print("\n" + "=" * 60)
-    print("  DEEL 1: UNIT TESTS")
-    print("=" * 60)
-
-    # Test 1: Feed-in prijs = kale beursprijs, afgekapt op >= 0
-    print("\n  Test 1: Feed-in prijs berekening")
-    fi = calculate_feed_in_price(0.25)
-    assert abs(fi - 0.25) < 0.001
-    print(f"    positief: EUR {fi:.4f} ✅")
-
-    fi = calculate_feed_in_price(-0.05)
-    assert fi == 0.0
-    print(f"    negatief: max(0, -0.05) = EUR {fi:.4f} ✅")
-
-    # Test 3: Kosten zonder batterij (dummy data)
-    print("\n  Test 3: Kosten zonder batterij (dummy data)")
-    dummy_meter = pd.DataFrame({
-        'timestamp_from': pd.to_datetime([
-            '2025-06-15 12:00:00+00:00',
-            '2025-06-15 12:15:00+00:00',
-            '2025-06-15 12:30:00+00:00',
-        ]),
-        'consumption_kwh': [0.5, 0.3, 0.0],
-        'feed_in_kwh':     [0.0, 0.0, 0.4],
-    })
-    dummy_prices = pd.DataFrame({
-        'valid_from': pd.to_datetime([
-            '2025-06-15 12:00:00+00:00',
-            '2025-06-15 12:15:00+00:00',
-            '2025-06-15 12:30:00+00:00',
-        ]),
-        'price': [0.20, 0.25, 0.30],
-    })
-    result = calculate_costs_no_battery(dummy_meter, dummy_prices, 'TEST')
-    expected = [0.10, 0.075, -0.12]
-    for i, exp in enumerate(expected):
-        actual = result.iloc[i]['cost_no_battery']
-        assert abs(actual - exp) < 0.001
-        print(f"    Kwartier {i+1}: EUR {actual:.4f} (verwacht EUR {exp:.4f}) ✅")
-
-    # Test 4: Besparingssamenvatting
-    print("\n  Test 4: Besparingssamenvatting")
-    result['cost_with_battery'] = [0.08, 0.05, -0.15]
-    summary = calculate_savings_summary(result)
-    print(f"    Zonder batterij: EUR {summary['total_cost_no_battery']:.2f}")
-    print(f"    Met batterij:    EUR {summary['total_cost_with_battery']:.2f}")
-    print(f"    Besparing:       EUR {summary['total_savings']:.2f} "
-          f"({summary['savings_percentage']}%)")
-    print("    ✅ Samenvatting correct")
-
-    print("\n  ✅ Alle unit tests geslaagd!")
-
-
-def run_integration_test():
-    """Integratietest met echte data uit config.json."""
-    from simulation_config import SimulationConfig
-    from reference_data import reconstruct_historical_prices, get_net_prices
-
-    print("\n" + "=" * 60)
-    print("  DEEL 2: INTEGRATIETEST MET ECHTE DATA")
-    print("=" * 60)
-
-    # Config laden
-    config = SimulationConfig.from_json("config.json")
-    print(f"\n  Config geladen:")
-    print(f"    Klant ID:  {config.klant_id}")
-    print(f"    Periode:  {config.simulation.start_date} t/m {config.simulation.end_date}")
-    print(f"    Providers: {config.providers}")
-
-    # Meterdata ophalen
-    client = get_client()
-    print(f"\n  Meterdata ophalen...")
-    records = _fetch_all_meter_data(
-        client, config.klant_id,
-        config.simulation.start_date, config.simulation.end_date
-    )
-
-    if not records:
-        print("  ❌ Geen meterdata gevonden voor deze klant!")
-        return
-
-    meter = pd.DataFrame(records)
-    meter['timestamp_from'] = pd.to_datetime(meter['timestamp_from'], utc=True)
-    meter['consumption_kwh'] = meter['consumption_kwh'].astype(float)
-    meter['feed_in_kwh'] = meter['feed_in_kwh'].astype(float)
-
-    totaal_verbruik = meter['consumption_kwh'].sum()
-    totaal_teruglevering = meter['feed_in_kwh'].sum()
-    print(f"    {len(meter)} kwartieren geladen")
-    print(f"    Verbruik:      {totaal_verbruik:.0f} kWh")
-    print(f"    Teruglevering: {totaal_teruglevering:.0f} kWh")
-
-    # Nettoprijzen ophalen (kale beursprijzen, voor terugleverprijs)
-    print(f"\n  Nettoprijzen ophalen (kale EPEX beursprijs)...")
-    net_prices_df = get_net_prices(config.simulation.start_date, config.simulation.end_date)
-    print(f"    {len(net_prices_df)} nettoprijzen geladen")
-    if not net_prices_df.empty:
-        gem_net = net_prices_df['Prijs_per_kWh'].mean()
-        print(f"    Gem. beursprijs: EUR {gem_net:.4f}/kWh")
-
-    # Aanbieders ophalen via Marges_Per_Aanbieder + Net_Aanbieder lookup naar Afkorting
-    if config.providers == "all":
-        margins_resp = client.table('Marges_Per_Aanbieder').select('Net_AanbiederID').order('Net_AanbiederID').execute()
-        na_ids = [m['Net_AanbiederID'] for m in margins_resp.data]
-        aanbieders = client.table('Net_Aanbieder').select('ID, Afkorting').in_('ID', na_ids).execute()
-        provider_codes = sorted([a['Afkorting'] for a in (aanbieders.data or [])])
-    else:
-        provider_codes = config.providers if isinstance(config.providers, list) else [config.providers]
-
-    print(f"\n  Kosten berekenen voor {len(provider_codes)} aanbieders...")
-    print(f"  Afname: all-in prijs | Teruglevering: kale beursprijs")
-    print()
-
-    # Per aanbieder kosten berekenen
-    results = []
-    for pc in provider_codes:
-        prices = reconstruct_historical_prices(
-            pc, config.simulation.start_date, config.simulation.end_date
-        )
-        if prices.empty:
-            print(f"    {pc}: geen prijzen beschikbaar, overgeslagen")
-            continue
-
-        costs_df = calculate_costs_no_battery(meter, prices, pc, net_prices=net_prices_df)
-        if costs_df.empty:
-            print(f"    {pc}: geen overlap met meterdata, overgeslagen")
-            continue
-
-        summary = calculate_savings_summary(costs_df)
-        results.append({
-            'provider': pc,
-            'kosten': summary['total_cost_no_battery'],
-            'kwartieren': summary['quarters_calculated'],
-        })
-
-    if not results:
-        print("  ❌ Geen resultaten — controleer of nettoprijzen en margins bestaan")
-        return
-
-    # Ranglijst
-    results.sort(key=lambda x: x['kosten'])
-    goedkoopst = results[0]['kosten']
-    duurst = results[-1]['kosten']
-
-    print("\n" + "=" * 60)
-    print(f"  RESULTAAT: {config.simulation.start_date} t/m {config.simulation.end_date}")
-    print(f"  {len(meter)} kwartieren | {totaal_verbruik:.0f} kWh verbruik | "
-          f"{totaal_teruglevering:.0f} kWh teruglevering")
-    print(f"  Kosten ZONDER batterij, per aanbieder:")
-    print(f"  (afname=all-in prijs, teruglevering=kale beursprijs)")
-    print("=" * 60)
-
-    for i, r in enumerate(results):
-        verschil = r['kosten'] - goedkoopst
-        if i == 0:
-            label = "<-- goedkoopst"
-        elif i == len(results) - 1:
-            label = "<-- duurst"
-        else:
-            label = f"    +EUR {verschil:.2f}"
-        print(f"  {i+1:2d}. {r['provider']:5s}  EUR {r['kosten']:8.2f}  {label}")
-
-    print(f"\n  Verschil goedkoopst - duurst: EUR {duurst - goedkoopst:.2f}/jaar")
-    print(f"  Gem. kosten per maand:        EUR {goedkoopst / 12:.2f} (goedkoopst)")
-
-    # Per maand breakdown voor goedkoopste
-    print(f"\n  --- Maandoverzicht {results[0]['provider']} (goedkoopst) ---")
-    best_pc = results[0]['provider']
-    prices = reconstruct_historical_prices(
-        best_pc, config.simulation.start_date, config.simulation.end_date
-    )
-    costs_df = calculate_costs_no_battery(meter, prices, best_pc, net_prices=net_prices_df)
-    costs_df['maand'] = costs_df['timestamp_from'].dt.month
-    maand_namen = {1:'jan', 2:'feb', 3:'mrt', 4:'apr', 5:'mei', 6:'jun',
-                   7:'jul', 8:'aug', 9:'sep', 10:'okt', 11:'nov', 12:'dec'}
-    monthly = costs_df.groupby('maand').agg(
-        verbruik=('consumption_kwh', 'sum'),
-        teruglevering=('feed_in_kwh', 'sum'),
-        kosten=('cost_no_battery', 'sum'),
-        kwartieren=('cost_no_battery', 'count'),
-    )
-    for m, row in monthly.iterrows():
-        naam = maand_namen.get(m, str(m))
-        print(f"    {naam:3s}: EUR {row['kosten']:7.2f}  "
-              f"({row['verbruik']:6.0f} kWh verbr, {row['teruglevering']:5.0f} kWh terug, "
-              f"{int(row['kwartieren'])} kw)")
-
-    print(f"\n  ✅ Integratietest voltooid!")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    import sys
-
-    if "--skip-unit" in sys.argv:
-        run_integration_test()
-    elif "--skip-integration" in sys.argv:
-        run_unit_tests()
-    else:
-        run_unit_tests()
-        run_integration_test()

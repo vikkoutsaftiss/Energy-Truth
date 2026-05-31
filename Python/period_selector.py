@@ -109,24 +109,3 @@ def bepaal_periode(
         days_used=span_days,
         is_partial_year=True,
     )
-
-
-# ---------------------------------------------------------------------------
-# MAIN -- handmatig testen
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    import sys
-    from db_connection import get_psycopg2_connection  # nog te schrijven
-
-    if len(sys.argv) < 2:
-        print("Gebruik: python period_selector.py <import_batch_id>")
-        sys.exit(1)
-
-    import_batch_id = int(sys.argv[1])
-    with get_psycopg2_connection() as conn:
-        period = bepaal_periode(conn, import_batch_id)
-
-    if period is None:
-        print(f"Geen verbruiksdata gevonden voor ImportBatchID {import_batch_id}")
-    else:
-        print(period.summary())

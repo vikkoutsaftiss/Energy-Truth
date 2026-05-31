@@ -1,6 +1,11 @@
 # Vaste, geteste versies voor de Energy-Truth worker (reproduceerbare builds).
 # Gegenereerd uit een werkende omgeving (pip freeze, 31 mei 2026).
 #
+# Python-versie: getest op Python 3.12 (de dev-omgeving waarop deze pip freeze
+# draaide). Minimaal Python 3.11 vereist (pandas 3.0 / numpy 2.4 ondersteunen
+# geen oudere versie). Pin de base-image in de Dockerfile hierop:
+#     FROM python:3.12-slim-bookworm
+#
 # Bewust EXACT gepind (==): elke build, elke machine en de k8s-pod krijgen
 # precies dezelfde versies. Updaten doe je bewust: versie ophogen, testen,
 # en daarna deze pins bijwerken (niet automatisch de laatste pakken).

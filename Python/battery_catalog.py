@@ -1,5 +1,5 @@
 """
-battery_catalog.py — Catalog van thuisbatterijen ophalen uit de DB.
+battery_catalog.py - Catalog van thuisbatterijen ophalen uit de DB.
 
 Werkt op de tabel `Markt_Product` (Categorie_Batterij = 'Batterij') zoals
 uitgebreid via sql/migrations/001_uitbreiding_markt_product.sql.
@@ -40,7 +40,7 @@ DEFAULT_CATALOG_ROUND_TRIP_EFFICIENCY = 0.90  # LiFePO4 typische waarde
 
 @dataclass
 class BatteryCatalogEntry:
-    """Eén rij uit Markt_Product, Categorie_Batterij = 'Batterij'."""
+    """Een rij uit Markt_Product, Categorie_Batterij = 'Batterij'."""
 
     id: int
     productnaam: str
@@ -296,58 +296,3 @@ def to_battery_config(
         max_soc_pct=max_soc_pct,
         battery_price_eur=entry.aanschafprijs,
     )
-
-
-# ============================================================
-# CLI-TEST
-# ============================================================
-
-if __name__ == "__main__":
-    print("=" * 70)
-    print("  BATTERY CATALOG - DUMP")
-    print("=" * 70)
-
-    catalog = get_battery_catalog()
-    if not catalog:
-        print("  Geen actieve batterijen gevonden in Markt_Product.")
-        print("  Run eerst de SQL migraties + seed.")
-        raise SystemExit(1)
-
-    print(f"\n  {len(catalog)} actieve batterijen gevonden:\n")
-    header = (
-        f"  {'Product':<38} "
-        f"{'kWh':>5} "
-        f"{'lad':>5} "
-        f"{'ont':>5} "
-        f"{'eff':>5} "
-        f"{'gar':>5} "
-        f"{'cycli':>7} "
-        f"{'prijs':>7} "
-        f"{'inst':>6}"
-    )
-    print(header)
-    print("  " + "-" * (len(header) - 2))
-
-    for e in catalog:
-        print(
-            f"  {e.productnaam[:36]:<38} "
-            f"{e.capaciteit_kwh:>5.1f} "
-            f"{e.max_laden_kw:>5.1f} "
-            f"{e.max_ontladen_kw:>5.1f} "
-            f"{e.round_trip_efficiency:>5.2f} "
-            f"{e.garantiejaren:>5.1f} "
-            f"{int(e.gegarandeerde_laadcycli):>7d} "
-            f"{e.aanschafprijs:>7.0f} "
-            f"{e.installatiekosten_eur:>6.0f}"
-        )
-
-    print("\n  --- BatteryConfig conversie test ---")
-    sample = catalog[0]
-    cfg = to_battery_config(sample)
-    print(f"  {sample.label}")
-    print(f"    capacity_kwh      = {cfg.capacity_kwh}")
-    print(f"    max_charge_kw     = {cfg.max_charge_kw}")
-    print(f"    charge_efficiency = {cfg.charge_efficiency:.4f}")
-    print(f"    min_soc_pct       = {cfg.min_soc_pct:.4f}")
-    print(f"    max_soc_pct       = {cfg.max_soc_pct:.4f}")
-    print(f"    bruikbaar         = {cfg.usable_capacity_kwh:.2f} kWh")
