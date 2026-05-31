@@ -52,6 +52,12 @@ LAATSTE_DATA_VALIDATIE: dict = {
     'bericht': 'Nog geen meterdata gevalideerd.',
 }
 
+# DoS-vangnet: bovengrens op het aantal meetrijen dat één run laadt. Een
+# gebouw-rolling-jaar is normaal ~35.000 kwartieren; deze grens trekt alleen
+# bij een opgeblazen of dubbele import. De harde geheugen-/CPU-grens hoort
+# daarnaast in de Kubernetes resources.limits te staan (zie infra).
+MAX_METERDATA_RIJEN = 5_000_000
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -279,13 +285,33 @@ def _load_meter_data_from_db(import_batch_id: int, start_date: str, end_date: st
           AND v."MeetDatumTijd" <= %s
         ORDER BY v."MeetDatumTijd", v."ImportBatchID" DESC
     """
+    params = (
+        import_batch_id,
+        f"{start_date} 00:00:00",
+        f"{end_date} 23:59:59",
+    )
     with get_connection() as conn:
+        # DoS-vangnet: tel eerst (goedkoop) hoeveel rijen we zouden laden en
+        # weiger bij een onrealistisch grote dataset, zodat een opgeblazen of
+        # dubbele import de pod niet het geheugen laat opmaken. We materialiseren
+        # de grote set dus NIET als hij over de grens is.
+        count_sql = (
+            'SELECT count(*) FROM "Verbruiksdata" v '
+            'JOIN "ImportBatch" b ON v."ImportBatchID" = b."ID" '
+            'WHERE b."GebouwID" = (SELECT "GebouwID" FROM "ImportBatch" WHERE "ID" = %s) '
+            'AND v."MeetDatumTijd" >= %s AND v."MeetDatumTijd" <= %s'
+        )
+        with conn.cursor() as cur:
+            cur.execute(count_sql, params)
+            n_rijen = cur.fetchone()[0]
+        if n_rijen > MAX_METERDATA_RIJEN:
+            raise ValueError(
+                f"Te veel meetrijen voor dit gebouw in de periode: {n_rijen:,} "
+                f"(maximum {MAX_METERDATA_RIJEN:,}). Waarschijnlijk een opgeblazen "
+                f"of dubbele import; de run is gestopt om geheugen en CPU te sparen."
+            )
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (
-                import_batch_id,
-                f"{start_date} 00:00:00",
-                f"{end_date} 23:59:59",
-            ))
+            cur.execute(sql, params)
             all_records = [dict(r) for r in cur.fetchall()]
 
     if not all_records:

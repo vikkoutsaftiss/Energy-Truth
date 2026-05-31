@@ -21,7 +21,13 @@ Een gebruiker kan optioneel een **eigen batterij** meegeven via het veld `Eigen_
 
 - Python 3.11 of nieuwer
 - Een PostgreSQL database (het schema en de seed-data staan in de `sql/`-map elders in deze repo)
-- Een paar standaard Python-pakketten: `psycopg2`, `pandas`, `numpy`, `reportlab`
+- De Python-pakketten met vaste versies uit `requirements.txt`. Installeer ze met:
+
+  ```
+  pip install -r requirements.txt
+  ```
+
+  (matplotlib, numpy, pandas, psycopg2-binary, reportlab; exact gepind voor reproduceerbare builds)
 
 ## Hoe stel je het in?
 

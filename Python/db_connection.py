@@ -84,9 +84,25 @@ def _read_db_env() -> dict:
 
 def get_connection():
     """Open een nieuwe psycopg2-connectie. Caller is verantwoordelijk
-    voor close (of gebruik `with` context manager)."""
+    voor close (of gebruik `with` context manager).
+
+    Time-outs (instelbaar via env, met verstandige defaults):
+      - connect_timeout (seconden): hoe lang we wachten om verbinding te
+        krijgen. Voorkomt eindeloos hangen als de DB onbereikbaar is.
+        Env: DATABASE_CONNECT_TIMEOUT (default 10).
+      - statement_timeout (milliseconden, server-side): de DB breekt een
+        enkele query af die te lang draait, zodat een hangende of op-hol-
+        geslagen query de worker niet blokkeert. Env:
+        DATABASE_STATEMENT_TIMEOUT_MS (default 60000 = 60s).
+    """
     cfg = _read_db_env()
-    return psycopg2.connect(**cfg)
+    connect_timeout = int(os.environ.get("DATABASE_CONNECT_TIMEOUT", "10"))
+    statement_timeout_ms = int(os.environ.get("DATABASE_STATEMENT_TIMEOUT_MS", "60000"))
+    return psycopg2.connect(
+        connect_timeout=connect_timeout,
+        options=f"-c statement_timeout={statement_timeout_ms}",
+        **cfg,
+    )
 
 
 # ---------------------------------------------------------------------------
