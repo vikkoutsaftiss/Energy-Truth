@@ -9,8 +9,8 @@ Loop:
          - default placeholder-batterij (alleen nodig voor own_battery)
          - de periode uit de data
     5. Draai run_all_scenarios + find_optimal_battery (alle batterijen
-       uit Markt_Product) + generate_report -> PDF op disk.
-    6. Lees PDF en bewaar als bytea in "SimulatieRapport_PDF".
+       uit Markt_Product) + generate_report -> PDF in het geheugen.
+    6. Bewaar de PDF-bytes als bytea in "SimulatieRapport_PDF" (geen bestand).
     7. Zet ImportBatch.Status='done' (of 'failed' + Error_Message).
 
 Lokaal draaien via VPN naar de DB:
@@ -29,8 +29,8 @@ import os
 import sys
 import time
 import traceback
+import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import psycopg2.extras
@@ -121,8 +121,7 @@ def get_klant_id(gebouw_id: int) -> Optional[int]:
 # PDF opslaan in DB.
 # ---------------------------------------------------------------------------
 def store_pdf(batch_id: int, gebouw_id: int, filename: str,
-              pdf_path: Path, samenvatting: Optional[dict] = None) -> int:
-    pdf_bytes = pdf_path.read_bytes()
+              pdf_bytes: bytes, samenvatting: Optional[dict] = None) -> int:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -368,26 +367,25 @@ def process_batch(batch: dict) -> Optional[str]:
     if data_validatie.get("verwijderd"):
         print(f"[worker] Datavalidatie: {data_validatie['bericht']}")
 
-    # 7. PDF genereren naar een TIJDELIJKE map en als bytea in de DB opslaan.
-    #    AVG: een klant-PDF (meterdata = persoonsgegeven) blijft niet als bestand
-    #    achter in de projectmap; de tijdelijke map wordt direct opgeruimd. Het
-    #    rapport leeft in SimulatieRapport_PDF.PDF_Bytes.
+    # 7. PDF in het GEHEUGEN genereren en als bytea in de DB opslaan.
+    #    Geen bestand op schijf: output_path=None laat generate_report de
+    #    PDF-bytes teruggeven. AVG: een klant-PDF (meterdata = persoonsgegeven)
+    #    raakt zo nooit de schijf; het rapport leeft in SimulatieRapport_PDF.
     from report_generator import generate_report
-    import tempfile
 
-    with tempfile.TemporaryDirectory() as _tmp:
-        pdf_path = Path(_tmp) / f"rapport_batch_{batch_id}.pdf"
-        generate_report(
-            results=results,
-            config=config,
-            output_path=str(pdf_path),
-            top_n=30,
-            price_cache=price_cache,
-            selection_info=selection_info,
-            sizing_results=sizing_results,
-        )
-        rapport_id = store_pdf(batch_id, gebouw_id, pdf_path.name, pdf_path, samenvatting)
-    print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id} (geen lokale kopie)")
+    pdf_bytes = generate_report(
+        results=results,
+        config=config,
+        output_path=None,
+        top_n=30,
+        price_cache=price_cache,
+        selection_info=selection_info,
+        sizing_results=sizing_results,
+    )
+    rapport_id = store_pdf(
+        batch_id, gebouw_id, f"rapport_batch_{batch_id}.pdf", pdf_bytes, samenvatting
+    )
+    print(f"[worker] PDF opgeslagen als SimulatieRapport_PDF.ID = {rapport_id} (alleen in DB, geen bestand)")
 
     # Notitie voor ImportBatch.Error_Message: alleen als we iets aan de data
     # hebben gedaan (onmogelijke rijen verwijderd). Geen fout, maar een logboek.
@@ -413,9 +411,17 @@ def main_loop(once: bool = False) -> None:
             mark_done(int(batch["ID"]), data_note)
             print(f"[worker] Batch {batch['ID']} klaar.")
         except Exception as e:
-            print(f"[worker] Batch {batch['ID']} GEFAALD: {e}")
+            # Volledige details INTERN in de log (met referentie om terug te
+            # vinden). In de DB komt alleen een korte, algemene melding + die
+            # referentie -- geen tabelnamen, paden of query-fragmenten.
+            ref = uuid.uuid4().hex[:12]
+            print(f"[worker] Batch {batch['ID']} GEFAALD (ref={ref}): {type(e).__name__}: {e}")
             traceback.print_exc()
-            mark_failed(int(batch["ID"]), f"{type(e).__name__}: {e}")
+            mark_failed(
+                int(batch["ID"]),
+                f"Verwerking mislukt. Referentie: {ref}. "
+                f"Neem contact op met het team met deze referentie.",
+            )
 
         if once:
             return

@@ -3440,8 +3440,12 @@ def generate_report(
         logger.warning(f"Meterdata laden mislukt: {e}")
         meter_data = pd.DataFrame()
 
+    # output_path=None (worker-pad) -> in een geheugenbuffer bouwen en de
+    # PDF-bytes teruggeven, zodat er geen bestand op schijf nodig is. Een pad
+    # blijft werken voor losse/lokale runs (CLI).
+    _pdf_buffer = BytesIO() if output_path is None else None
     doc = SimpleDocTemplate(
-        output_path,
+        _pdf_buffer if _pdf_buffer is not None else output_path,
         pagesize=A4,
         leftMargin=20 * mm,
         rightMargin=20 * mm,
@@ -3491,6 +3495,10 @@ def generate_report(
     elements.extend(_build_appendix_v2(results, sizing_results, selection_info, config, styles))
 
     doc.build(elements, onFirstPage=_footer, onLaterPages=_footer)
+    if _pdf_buffer is not None:
+        pdf_bytes = _pdf_buffer.getvalue()
+        logger.info(f"Rapport in geheugen gegenereerd ({len(pdf_bytes)} bytes)")
+        return pdf_bytes
     logger.info(f"Rapport gegenereerd: {output_path}")
     return output_path
 
