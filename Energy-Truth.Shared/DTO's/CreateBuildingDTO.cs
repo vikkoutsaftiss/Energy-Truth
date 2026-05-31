@@ -9,7 +9,7 @@ namespace Energy_Truth.Shared.DTO_s
     {
         public int CustomerId { get; set; }
         public string PostalCode { get; set; }
-        public int? ConstructionYear { get; set; }
+        public string? ConstructionYear { get; set; }
         public string? ISTEnergyLabel { get; set; }
     }
 }

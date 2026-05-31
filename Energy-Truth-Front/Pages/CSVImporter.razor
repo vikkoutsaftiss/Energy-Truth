@@ -7,6 +7,7 @@
 @using Energy_Truth.Shared.Providers;
 @using Energy_Truth_Presentation.Services
 @using CsvHelper.Configuration;
+@using Energy_Truth.Shared.DTO_s;
 @inject HttpClient HttpClient
 @inject IDialogService DialogService
 @inject IEnumerable<IEnergyProvider> EnergyProviders
@@ -222,6 +223,7 @@ else
     private Dictionary<string, string> displayNames = new();    
     private IBrowserFile? selectedFile;
     private List<EnergyImportDTO>? energyDataList;
+    private CustomBatteryDTO _customBattery;
     private bool loading = false;
     private CalculationResultDTO? calculatedResult;
     private string? errorMessage;
@@ -373,8 +375,14 @@ else
 
         try
         {
+            var request = new ImportRequestDTO
+            {
+                Data = energyDataList,
+                CustomBattery = AuthService.CustomBattery
+            };
+
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var response = await HttpClient.PostAsJsonAsync($"api/Import/posttodatabase/{selectedProvider}?buildingId={BuildingId}", energyDataList);
+            var response = await HttpClient.PostAsJsonAsync($"api/Import/posttodatabase/{selectedProvider}?buildingId={BuildingId}", request);
 
             if (response.IsSuccessStatusCode)
             {

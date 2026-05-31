@@ -7,36 +7,45 @@
 
 @if (AuthService.CurrentUser == null)
 {
-    NavigationManager.NavigateTo("/login");
+    NavigationManager.NavigateTo("/building");
 }
 
 
-<MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Jouw woningoverzicht</MudText>
-<MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Selecteer de juiste woning om door te gaan.</MudText>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-6">
 
-@foreach (BuildingDTO building in _buildings)
-{
-    <MudCard Class="mb-3">
-        <MudCardContent>
-            <MudText><strong>Postcode:</strong> @building.PostalCode</MudText>
-            <MudText><strong>Bouwjaar:</strong> @building.ConstructionYear</MudText>
-            <MudText><strong>Energielabel:</strong> @building.ISTEnergyLabel</MudText>
-        </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       OnClick="@(() => NavigationManager.NavigateTo($"/csvimporter/{building.Id}"))">
-                Selecteer
-            </MudButton>
-        </MudCardActions>
-    </MudCard>
-}
+    <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Jouw woningoverzicht</MudText>
+    <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;" Class="mb-4">Selecteer de juiste woning om door te gaan.</MudText>
 
-<MudButton Variant="Variant.Filled"
-           Color="Color.Primary"
-           OnClick="@(() => NavigationManager.NavigateTo($"/building"))">
-    Woning toevoegen
-</MudButton>
+    @foreach (BuildingDTO building in _buildings)
+    {
+        <MudCard Class="mb-3">
+            <MudCardContent>
+                <MudText><strong>Postcode:</strong> @building.PostalCode</MudText>
+                <MudText><strong>Bouwjaar:</strong> @building.ConstructionYear</MudText>
+                <MudText><strong>Energielabel:</strong> @building.ISTEnergyLabel</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@(() => NavigationManager.NavigateTo($"/batteryoverview/{building.Id}"))">
+                    Selecteer
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+
+    <MudDivider Class="my-4" />
+    <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Dark" Class="mb-2">
+        Staat de juiste woning er niet tussen?
+    </MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth="true"
+               OnClick="@(() => NavigationManager.NavigateTo($"/building"))">
+        Woning toevoegen
+    </MudButton>
+
+</MudContainer>
 
 
 @code {

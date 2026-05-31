@@ -10,7 +10,7 @@
 
 @if (AuthService.CurrentUser != null)
 {
-    NavigationManager.NavigateTo("/csvimporter");
+    NavigationManager.NavigateTo("/buildinglist");
 }
 
 <MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Registreer je bij Energy-Truth</MudText>
@@ -120,8 +120,8 @@
         {
             SuccessMessage = "Registratie geslaagd!";
             StateHasChanged();
-            await Task.Delay(4000);
-            NavigationManager.NavigateTo("/csvimporter");
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/buildinglist");
             
         }
         else

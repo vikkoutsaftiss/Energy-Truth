@@ -7,6 +7,7 @@ using System.Text.Json;
 using Energy_Truth.Shared.Repositories;
 using Energy_Truth_WEB_API.Services.Import;
 using Energy_Truth_WEB_API.Services.DateFilter;
+using Energy_Truth.Shared.DTO_s;
 
 [ApiController]
 [Route("api/[controller]")] // Dit zorgt dat de URL /api/import wordt
@@ -93,20 +94,20 @@ public class ImportController : ControllerBase
     }
 
     [HttpPost("posttodatabase/{provider}")]
-    public async Task<IActionResult> PostToDatabase([FromBody] List<EnergyImportDTO> data, string provider, [FromQuery] int buildingId)
+    public async Task<IActionResult> PostToDatabase([FromBody] ImportRequestDTO request, string provider, [FromQuery] int buildingId)
     {
-        if (data == null || !data.Any() || !ModelState.IsValid)
+        if (request == null || !request.Data.Any() || !ModelState.IsValid)
         {
             return BadRequest("Geen of ongeldige data ontvangen.");
         }
 
         try
         {
-            var cumulativeValues = _cumulativeCalculator.CalculateCumulativeImport(data, provider);
+            var cumulativeValues = _cumulativeCalculator.CalculateCumulativeImport(request.Data, provider);
 
             var filteredData = await _dateFilterService.FilterExistingDatesAsync(cumulativeValues, buildingId);
 
-            var batchId = await _usageDataRepository.BulkInsertAsync(filteredData, buildingId);
+            var batchId = await _usageDataRepository.BulkInsertAsync(filteredData, buildingId, request.CustomBattery);
 
             return Ok("Data succesvol geupload. Je ontvangt binnen 10 minuten een email met daarin je adviesrapport!");
         }

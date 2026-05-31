@@ -36,7 +36,7 @@
 </div>
 
 <div data-testid="buildyear-field">
-    <MudTextField T="int"
+    <MudTextField T="string"
                   Label="Bouwjaar"
                   Variant="Variant.Outlined"
                   @bind-Value="ConstructionYear"
@@ -63,7 +63,7 @@
 
 @code {
     private string PostalCode { get; set; } = "";
-    private int ConstructionYear { get; set; } = 2000;
+    private string ConstructionYear { get; set; } = "2000";
     private ISTEnergyLabel EnergyLabel { get; set; }
     private int CustomerID;
     private string ErrorMessage = "";

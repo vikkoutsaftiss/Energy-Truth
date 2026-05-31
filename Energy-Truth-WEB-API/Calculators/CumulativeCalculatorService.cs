@@ -10,10 +10,17 @@ namespace Energy_Truth_WEB_API.Calculators
         {
             var list = new List<UsageDataDTO>();
 
+            var lastDate = data.Max(d => d.Time.Date);
+            data = data.Where(d => d.Time.Date < lastDate).ToList();
+
             for (int i = 1; i < data.Count; i++)
             {
                 var currentDataPoint = data[i];
                 var previousDataPoint = data[i - 1];
+
+                if (currentDataPoint.ImportT1 == null && currentDataPoint.ImportT2 == null &&
+                    currentDataPoint.ExportT1 == null && currentDataPoint.ExportT2 == null)
+                    continue;
 
                 var cumulativeDTO = new UsageDataDTO
                 {
@@ -22,6 +29,9 @@ namespace Energy_Truth_WEB_API.Calculators
                     UsageMoment = DateTime.SpecifyKind(currentDataPoint.Time, DateTimeKind.Utc),
                     SourceData = provider
                 };
+
+                if (cumulativeDTO.KWhBought < 0 || cumulativeDTO.KWhSold < 0)
+                    continue;
 
                 list.Add(cumulativeDTO);
             }

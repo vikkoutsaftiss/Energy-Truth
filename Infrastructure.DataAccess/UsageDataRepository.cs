@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using EFCore.BulkExtensions;
 using Infrastructure.DataAccess.DBContext;
 using Infrastructure.DataAccess.Entities;
+
 namespace Infrastructure.DataAccess
 {
     public class UsageDataRepository : IUsageDataRepository
@@ -17,12 +18,12 @@ namespace Infrastructure.DataAccess
             _importBatchRepository = importBatchRepository;
         }
 
-        public async Task<int> BulkInsertAsync(IEnumerable<UsageDataDTO> usageDataList, int buildingId)
+        public async Task<int> BulkInsertAsync(IEnumerable<UsageDataDTO> usageDataList, int buildingId, CustomBatteryDTO customBattery)
         {
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
-                var importBatchId = await _importBatchRepository.CreateImportBatchAsync(buildingId);
+                var importBatchId = await _importBatchRepository.CreateImportBatchAsync(buildingId, customBattery);
 
                 await _dbContext.BulkInsertAsync(usageDataList.Select(u => new UsageData
                 {
