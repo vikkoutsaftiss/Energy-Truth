@@ -1,0 +1,65 @@
+# =====================================================================
+# CronJob -- de refresher (dagelijkse voorberekening).
+#
+# Een "CronJob" is een taak op een klok: hij start de pod op een vast
+# tijdstip, die draait `python refresher.py` en stopt weer. Hier: elke
+# nacht om 03:00 de marges en all-in prijzen herberekenen.
+#
+# Zelfde image als de worker; we overschrijven alleen het commando.
+# =====================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: algoritme-refresher
+spec:
+  schedule: "0 3 * * *"            # elke dag om 03:00 (min uur dag maand weekdag)
+  timeZone: "Europe/Amsterdam"
+  concurrencyPolicy: Forbid       # nooit twee refreshers tegelijk
+  startingDeadlineSeconds: 600    # gemiste run (node down) tot 10 min later inhalen
+  successfulJobsHistoryLimit: 3   # bewaar de laatste 3 geslaagde runs
+  failedJobsHistoryLimit: 3       # ...en 3 gefaalde, om in de logs te kijken
+  jobTemplate:
+    spec:
+      backoffLimit: 2             # bij fout: maximaal 2x opnieuw proberen
+      template:
+        metadata:
+          labels:
+            app: algoritme-refresher
+        spec:
+          restartPolicy: OnFailure
+          # Zelfde private-registry-toegang als de worker (Secret bestaat al).
+          imagePullSecrets:
+            - name: github-registry-secret
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: refresher
+              image: energytruth-algoritme   # registry + tag uit de overlay
+              command: ["python", "refresher.py"]   # overschrijft de worker-CMD
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              envFrom:
+                - secretRef:
+                    name: db-auth
+                - configMapRef:
+                    name: algoritme-config
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "500m"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
