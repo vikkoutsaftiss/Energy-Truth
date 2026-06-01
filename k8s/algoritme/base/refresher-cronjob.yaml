@@ -45,9 +45,34 @@ spec:
                 readOnlyRootFilesystem: true
                 capabilities:
                   drop: ["ALL"]
+              # DB-credentials per key uit het db-auth Secret (backend-stijl).
+              env:
+                - name: DATABASE_IP
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_IP
+                - name: DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_PORT
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_DB
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_PASSWORD
               envFrom:
-                - secretRef:
-                    name: db-auth
                 - configMapRef:
                     name: algoritme-config
               resources:
