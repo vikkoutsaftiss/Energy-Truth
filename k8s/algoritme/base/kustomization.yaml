@@ -11,7 +11,7 @@ kind: Kustomization
 
 resources:
   - configmap.yaml
-  - worker-deployment.yaml
+  - deployment.yaml
   - refresher-cronjob.yaml
 
 # Handig label op alles, zodat je `kubectl get all -l project=energytruth` kunt doen.
