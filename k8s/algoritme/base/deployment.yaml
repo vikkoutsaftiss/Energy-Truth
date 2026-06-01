@@ -42,10 +42,35 @@ spec:
             readOnlyRootFilesystem: true  # schijf is alleen-lezen...
             capabilities:
               drop: ["ALL"]
-          # DB-gegevens uit het Secret van Marijn + de niet-geheime ConfigMap.
+          # DB-credentials per key uit db-auth (backend-stijl, zoals Marijn vroeg).
+          env:
+            - name: DATABASE_IP
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_IP
+            - name: DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_PORT
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_PASSWORD
+          # Niet-geheime config (defaults in de code) via de ConfigMap.
           envFrom:
-            - secretRef:
-                name: db-auth           # DATABASE_IP/PORT/POSTGRES_DB/USER/PASSWORD
             - configMapRef:
                 name: algoritme-config  # DB_SSLMODE, timeouts, POLL_INTERVAL, LOG_LEVEL
           # --- Resourcegrenzen (veiligheidsrapport punt 2: DoS-vangnet) ---
