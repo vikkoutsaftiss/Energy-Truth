@@ -9,16 +9,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: algoritme-worker
+  name: algoritme
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: algoritme-worker
+      app: algoritme
   template:
     metadata:
       labels:
-        app: algoritme-worker
+        app: algoritme
     spec:
       # De image staat in een PRIVATE GitHub Container Registry (ghcr.io).
       # Dit Secret geeft het cluster toegang om hem op te halen. Het bestaat
