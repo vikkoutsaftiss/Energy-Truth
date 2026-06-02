@@ -47,6 +47,8 @@ spec:
                   drop: ["ALL"]
               # DB-credentials per key uit het db-auth Secret (backend-stijl).
               env:
+                - name: HOME
+                  value: /tmp
                 - name: DATABASE_IP
                   valueFrom:
                     secretKeyRef:
