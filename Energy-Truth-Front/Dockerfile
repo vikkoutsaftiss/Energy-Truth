@@ -1,7 +1,7 @@
 # Stage 1: Build met .NET SDK
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
-
+#
 # Kopieer eerst alleen de .csproj bestanden voor betere Docker cache
 COPY Energy-Truth-Front/Energy-Truth_Presentation.csproj Energy-Truth-Front/
 COPY Energy-Truth.Shared/Energy-Truth.Shared.csproj Energy-Truth.Shared/
