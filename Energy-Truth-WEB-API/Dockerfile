@@ -13,7 +13,7 @@ RUN dotnet restore Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj
 # 2. Kopieer DAARNA pas de volledige broncode van alle mappen
 COPY Energy-Truth-WEB-API/ Energy-Truth-WEB-API/
 COPY Energy-Truth.Shared/ Energy-Truth.Shared/
-COPY Infrastructure.DataAcess/ Infrastructure.DataAcess/ # TOEGEVOEGD
+COPY Infrastructure.DataAcess/ Infrastructure.DataAcess/ 
 
 # Publiceer de applicatie
 RUN dotnet publish Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj -c Release -o /app/publish
