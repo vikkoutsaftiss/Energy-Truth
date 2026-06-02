@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: algoritme-refresher
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: refresher
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "500m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "2000m"
