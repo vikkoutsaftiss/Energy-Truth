@@ -17,5 +17,5 @@ images:
     newTag: latest
 
 # Verwijs naar je losse patch-bestand, exact zoals bij de frontend/backend
-patchesStrategicMerge:
-  - deployment-patch.yaml
+patches:
+  - path: deployment-patch.yaml
