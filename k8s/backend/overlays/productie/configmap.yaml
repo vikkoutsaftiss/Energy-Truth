@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-network-config
+  namespace: energytruth-productie
+data:
+  frontend_url: "https://mierlofirst.org"
+  backend_url: "https://mierlofirst.org/api"
+  algoritme_url: ""
