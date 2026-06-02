@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: algoritme-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker
+          env:
+            - name: HOME
+              value: /tmp
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1.5Gi"
+              cpu: "1.5"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: algoritme-refresher
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: refresher
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "500m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "2"
