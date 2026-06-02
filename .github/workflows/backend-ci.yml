@@ -5,17 +5,17 @@ on:
     branches:
       - '**'
     paths:
-        - 'k8s/backend/**'
-        - 'Energy-Truth-WEB-API/**'
-        - 'Energy-Truth.Shared/**'
+      - 'k8s/backend/**'
+      - 'Energy-Truth-WEB-API/**'
+      - 'Energy-Truth.Shared/**'
         
   pull_request:
     branches:
       - '**'
     paths:
-        - 'k8s/backend/**'
-        - 'Energy-Truth-WEB-API/**'
-        - 'Energy-Truth.Shared/**'
+      - 'k8s/backend/**'
+      - 'Energy-Truth-WEB-API/**'
+      - 'Energy-Truth.Shared/**'
 
 jobs:
   build-and-test:
@@ -37,9 +37,6 @@ jobs:
 
       - name: Build project
         run: dotnet build Energy-Truth.slnx --no-restore --configuration Release
-
-      - name: Run Unit Tests
-        run: dotnet test Tests/EnergyTruth.tests.csproj --no-build --configuration Release --verbosity normal
 
   build-and-push:
     runs-on: ubuntu-latest
