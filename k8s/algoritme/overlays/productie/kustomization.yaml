@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Dwing de productie-namespace af
 namespace: energytruth-productie
-
+namePrefix: prod-
 resources:
   - ../../base
 
