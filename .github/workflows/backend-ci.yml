@@ -8,7 +8,7 @@ on:
       - 'k8s/backend/**'
       - 'Energy-Truth-WEB-API/**'
       - 'Energy-Truth.Shared/**'
-      - 'Infrastructure.DataAcess/**' #  Toegevoegd bij push
+      - 'Infrastructure.DataAccess/**' #  Toegevoegd bij push
         
   pull_request:
     branches:
@@ -17,7 +17,7 @@ on:
       - 'k8s/backend/**'
       - 'Energy-Truth-WEB-API/**'
       - 'Energy-Truth.Shared/**'
-      - 'Infrastructure.DataAcess/**' # Nu ook synchroon bij PR
+      - 'Infrastructure.DataAccess/**' # Nu ook synchroon bij PR
 
 jobs:
   build-and-test:
