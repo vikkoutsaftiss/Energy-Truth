@@ -8,6 +8,7 @@ on:
       - 'k8s/backend/**'
       - 'Energy-Truth-WEB-API/**'
       - 'Energy-Truth.Shared/**'
+      - 'Infrastructure.DataAcess/**'
         
   pull_request:
     branches:
