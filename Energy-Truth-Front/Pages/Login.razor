@@ -1,0 +1,116 @@
+﻿@page "/login"
+@using Energy_Truth_Presentation.Services
+@using Energy_Truth.Shared.Login
+@inject IAuthenticateService AuthService
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+@if (AuthService.CurrentUser != null)
+{
+    NavigationManager.NavigateTo("/building");
+}
+
+<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Login bij Energy-Truth</MudText>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Elevation="1" Dense="true" Class="mb-3"
+              ShowCloseIcon="true" CloseIconClicked="() => ErrorMessage = null">
+        <strong>Oeps!</strong> @ErrorMessage
+    </MudAlert>
+}
+
+<div data-testid="username-field">
+    <MudTextField T="string"
+                  Label="Gebruikersnaam"
+                  Variant="Variant.Outlined"
+                  @bind-Value="Username"
+                  InputType="InputType.Text" />
+</div>
+
+<div data-testid="password-field">
+    <MudTextField T="string"
+                  Label="Wachtwoord"
+                  Variant="Variant.Outlined"
+                  @bind-Value="Password"
+                  InputType="@PasswordInput"
+                  Adornment="Adornment.End"
+                  AdornmentAriaLabel="Toggle Password Visibility"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  AdornmentIcon="@PasswordVisibilityIcon" />
+</div>
+
+<div data-testid="login-button">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth="true"
+               Size="Size.Large"
+               Class="mt-4"
+               @onclick="@HandleUserLogin">
+        Aanmelden
+    </MudButton>
+</div>
+
+<div data-testid="not-registered?">
+
+    <MudText Align="Align.Center" Class="mt-2">
+        Nog geen account? <MudLink Href="/register">Registreer hier</MudLink>
+    </MudText>
+</div>
+
+@code {
+    private string Username { get; set; } = "";
+    private string Password { get; set; } = "";
+    private bool isPasswordVisible;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordVisibilityIcon = Icons.Material.Filled.VisibilityOff;
+    private string ErrorMessage = "";
+
+    private void TogglePasswordVisibility()
+    {
+        isPasswordVisible = !isPasswordVisible;
+        PasswordInput = isPasswordVisible ? InputType.Text : InputType.Password;
+        PasswordVisibilityIcon = isPasswordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+    }
+
+    private async Task HandleUserLogin()
+    {
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        {
+            // Show an error message to the user (this can be done using a Snackbar or similar component)
+            ErrorMessage = "Gebruikersnaam en wachtwoord kunnen niet leeg zijn.";
+            return;
+        }
+
+        LoginRequestDTO loginRequest = new LoginRequestDTO(Username, Password);
+
+        var result = await HttpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
+
+        if (result.IsSuccessStatusCode)
+        {
+            var response = await result.Content.ReadFromJsonAsync<LoggedInUser>();
+            if (response != null)
+            {
+                bool success = AuthService.LogIn(response);
+
+                Console.WriteLine($"Id: {response?.Id}, Email: {response?.Email}");
+
+
+                NavigationManager.NavigateTo("/building");
+            }
+            else
+            {
+                string message = await result.Content.ReadAsStringAsync();
+                ErrorMessage = "Er is een fout opgetreden bij het verwerken van de serverrespons.";
+            }
+        }
+        else
+        {
+            string message = await result.Content.ReadAsStringAsync();
+            ErrorMessage = message;
+        }        
+    }
+
+
+}
+

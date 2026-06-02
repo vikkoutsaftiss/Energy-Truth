@@ -9,12 +9,12 @@ namespace Energy_Truth.Shared.Providers
 {
     public class HomeWizard : IEnergyProvider
     {
-        public string Name => "Home Wizard";
+        public string Name => "HomeWizard";
         public bool IsCumulative => true;
         public CsvMode CsvMode => CsvMode.Escape;
         public string Delimiter => ",";
         public bool StripRowQuotes => false;
-        public string DateFormat => "yyyy-MM-dd HH:mm";
+        public List<string> DateFormat => new() { "yyyy-MM-dd HH:mm", "M/d/yyyy H:mm" };
 
         public Dictionary<string, string> CsvMapping { get; } = new()
         {

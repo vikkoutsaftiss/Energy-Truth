@@ -1,0 +1,13 @@
+﻿@page "/importsuccess"
+@inject NavigationManager NavigationManager
+
+<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 70vh;" Spacing="4">
+    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 8rem;" />
+    <MudText Typo="Typo.h4" Align="Align.Center">Import succesvol!</MudText>
+    <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Secondary" Style="max-width: 600px;">
+        Je energiedata is verwerkt. Je ontvangt het adviesrapport binnen 10 minuten in je mailbox.
+    </MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => NavigationManager.NavigateTo("/buildinglist"))">
+        Terug naar mijn gebouwen
+    </MudButton>
+</MudStack>

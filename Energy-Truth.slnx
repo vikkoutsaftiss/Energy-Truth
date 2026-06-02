@@ -12,7 +12,11 @@
   <Folder Name="/03_Shared/">
     <Project Path="Energy-Truth.Shared/Energy-Truth.Shared.csproj" />
   </Folder>
-  <Folder Name="/04_Tests/">
+  <Folder Name="/04_Infrastructure/">
+    <Project Path="Infrastructure.DataAccess/Infrastructure.DataAccess.csproj" Id="fa3f4b1e-8f56-40da-a01d-725cd8895208" />
+  </Folder>
+  <Folder Name="/10_Tests/">
+    <Project Path="Energy-Truth.E2ETests/Energy-Truth.E2ETests.csproj" Id="8fb74b44-2e8f-4822-ae93-fbc9ce11bdf2" />
     <Project Path="Tests/EnergyTruth.tests.csproj" />
   </Folder>
 </Solution>

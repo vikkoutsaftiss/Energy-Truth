@@ -1,0 +1,134 @@
+﻿@page "/register"
+@using Energy_Truth_Presentation.Services
+@using Energy_Truth.Shared.Login
+@using Energy_Truth.Shared.DTO_s
+@using Energy_Truth_Presentation.ViewModels
+
+@inject IAuthenticateService AuthService
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+@if (AuthService.CurrentUser != null)
+{
+    NavigationManager.NavigateTo("/buildinglist");
+}
+
+<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Registreer je bij Energy-Truth</MudText>
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <MudAlert Severity="Severity.Success">@SuccessMessage</MudAlert>
+}
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Elevation="1" Dense="true" Class="mb-3"
+              ShowCloseIcon="true" CloseIconClicked="() => ErrorMessage = null">
+        <strong>Oeps!</strong> @ErrorMessage
+    </MudAlert>
+}
+
+<div data-testid="username-field">
+    <MudTextField T="string"
+                  Label="Email"
+                  Variant="Variant.Outlined"
+                  @bind-Value="Email"
+                  InputType="InputType.Text" />
+</div>
+
+<div data-testid="password-field">
+    <MudTextField T="string"
+                  Label="Wachtwoord"
+                  Variant="Variant.Outlined"
+                  @bind-Value="Password"
+                  InputType="@PasswordInput"
+                  Adornment="Adornment.End"
+                  AdornmentAriaLabel="Toggle Password Visibility"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  AdornmentIcon="@PasswordVisibilityIcon" />
+</div>
+
+<div data-testid="passwordconfirm-field">
+    <MudTextField T="string"
+                  Label="Bevestig Wachtwoord"
+                  Variant="Variant.Outlined"
+                  @bind-Value="ConfirmPassword"
+                  InputType="@PasswordInput"
+                  Adornment="Adornment.End"
+                  AdornmentAriaLabel="Toggle Password Visibility"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  AdornmentIcon="@PasswordVisibilityIcon" />
+</div>
+
+<div data-testid="address-field">
+    <MudTextField T="string"
+                  Label="Adres"
+                  Variant="Variant.Outlined"
+                  @bind-Value="Address"
+                  InputType="InputType.Text" />
+</div>
+
+<div data-testid="register-button">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               FullWidth="true"
+               Size="Size.Large"
+               Class="mt-4"
+               @onclick="@HandleUserRegistration">
+        Registreren
+    </MudButton>
+</div>
+
+@code {
+    private string Email { get; set; } = "";
+    private string Password { get; set; } = "";
+    private string ConfirmPassword { get; set; } = "";
+    private string Address { get; set; } = "";
+    private bool isPasswordVisible;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordVisibilityIcon = Icons.Material.Filled.VisibilityOff;
+    private string ErrorMessage = null;
+    private string SuccessMessage = null;
+
+    private void TogglePasswordVisibility()
+    {
+        isPasswordVisible = !isPasswordVisible;
+        PasswordInput = isPasswordVisible ? InputType.Text : InputType.Password;
+        PasswordVisibilityIcon = isPasswordVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+    }
+
+    private async Task HandleUserRegistration()
+    {
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword))
+        {
+            // Show an error message to the user (this can be done using a Snackbar or similar component)
+            ErrorMessage = "Alle velden dienen ingevuld te zijn";
+            return;
+        }
+
+        if (Password != ConfirmPassword)
+        {
+            ErrorMessage = "Wachtwoord en bevestiging komen niet overeen.";
+            return;
+        }
+
+        CreateCustomerDTO registerRequest = new CreateCustomerDTO { Email = Email, Password = Password, Address = Address };
+
+        var result = await HttpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
+
+        if (result.IsSuccessStatusCode)
+        {
+            SuccessMessage = "Registratie geslaagd!";
+            StateHasChanged();
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/buildinglist");
+            
+        }
+        else
+        {
+            var message = await result.Content.ReadAsStringAsync();
+            ErrorMessage = message;
+        }
+    }
+}
+

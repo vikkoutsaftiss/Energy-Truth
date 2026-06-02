@@ -12,7 +12,7 @@ namespace Energy_Truth.Shared.Providers
         CsvMode CsvMode { get; }
         string Delimiter { get; }
         bool StripRowQuotes { get; }
-        string DateFormat { get; }
+        List<string> DateFormat { get; }
 
         Dictionary<string, string> CsvMapping { get; }
         Dictionary<string, string> DisplayNames { get; }
