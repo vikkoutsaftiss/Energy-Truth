@@ -12,5 +12,16 @@ images:
     newName: ghcr.io/vikkoutsaftiss/energy-truth-algoritme
     newTag: latest
 
+# Gecorrigeerde targeting exact gekoppeld aan de juiste base-namen
 patches:
-  - path: deployment-patch.yaml
+  - target:
+      version: v1
+      kind: Deployment
+      name: energytruth-algoritme     # Echte naam uit de base (image_574982.png)
+    path: deployment-patch.yaml
+  - target:
+      group: batch
+      version: v1
+      kind: CronJob
+      name: algoritme-refresher       # Echte naam uit de base (image_574945.png)
+    path: cronjob-patch.yaml
