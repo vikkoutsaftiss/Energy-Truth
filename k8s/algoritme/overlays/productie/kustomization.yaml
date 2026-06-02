@@ -3,26 +3,35 @@ kind: Kustomization
 
 # Dwing de productie-namespace af
 namespace: energytruth-productie
+
+# Voeg de prod- prefix toe zoals Vik dat ook doet
 namePrefix: prod-
+
 resources:
   - ../../base
 
-# Overschrijf de resources voor productie (het algoritme mag hier meer RAM gebruiken)
-patchesStrategicMerge:
-  - |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
+# Essentieel: Overschrijf de image naar de juiste GitHub Registry tag
+images:
+  - name: energytruth-algoritme
+    newName: ghcr.io/vikkoutsaftiss/energy-truth-algoritme
+    newTag: latest
+
+# Gecorrigeerde patches syntax zonder string-pipes (|-) om ArgoCD te pleasen
+patches:
+  - target:
+      version: v1
+      kind: Deployment
       name: algoritme-worker
-    spec:
-      template:
-        spec:
-          containers:
-          - name: worker
-            resources:
-              requests:
-                memory: "512Mi"
-                cpu: "500m"
-              limits:
-                memory: "2Gi"
-                cpu: "2"
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "2"
