@@ -38,9 +38,9 @@ jobs:
       - name: Build project
         run: dotnet build Energy-Truth.slnx --no-restore --configuration Release
 
-      # HIER IS DE WIJZIGING DOORGEVOERD:
+      # HIER IS HET FILTER AANGEPAST OM HET E2E-PROJECT TE NEGEREN:
       - name: Run Unit Tests
-        run: dotnet test Energy-Truth.slnx --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~E2ETests"
+        run: dotnet test Energy-Truth.slnx --no-build --configuration Release --verbosity normal --filter "TestCategory!=E2E&FullyQualifiedName!~E2ETests"
 
   build-and-push:
     runs-on: ubuntu-latest
