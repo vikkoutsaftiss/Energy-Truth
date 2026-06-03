@@ -37,6 +37,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
+
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(policy => policy.AddPolicy("Open", opt => opt.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
@@ -68,6 +70,8 @@ var supabaseKey = builder.Configuration["Supabase:Key"];
 builder.Services.AddScoped(_ => new Supabase.Client(supabaseUrl, supabaseKey));
 
 var app = builder.Build();
+
+
 app.UseCors("Open");
 
 if (app.Environment.IsDevelopment())
