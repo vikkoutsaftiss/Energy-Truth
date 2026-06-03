@@ -8,19 +8,19 @@ namespace Energy_Truth.Shared.Extensions
     public static class EnergyLabelExtensions
     {
         private static readonly Dictionary<ISTEnergyLabel, string> _labels = new()
-    {
-        { ISTEnergyLabel.APlusPlusPlusPlus, "A++++" },
-        { ISTEnergyLabel.APlusPlusPlus, "A+++" },
-        { ISTEnergyLabel.APlusPlus, "A++" },
-        { ISTEnergyLabel.APlus, "A+" },
-        { ISTEnergyLabel.A, "A" },
-        { ISTEnergyLabel.B, "B" },
-        { ISTEnergyLabel.C, "C" },
-        { ISTEnergyLabel.D, "D" },
-        { ISTEnergyLabel.E, "E" },
-        { ISTEnergyLabel.F, "F" },
-        { ISTEnergyLabel.G, "G" }
-    };
+        {
+            { ISTEnergyLabel.APlusPlusPlusPlus, "A++++" },
+            { ISTEnergyLabel.APlusPlusPlus, "A+++" },
+            { ISTEnergyLabel.APlusPlus, "A++" },
+            { ISTEnergyLabel.APlus, "A+" },
+            { ISTEnergyLabel.A, "A" },
+            { ISTEnergyLabel.B, "B" },
+            { ISTEnergyLabel.C, "C" },
+            { ISTEnergyLabel.D, "D" },
+            { ISTEnergyLabel.E, "E" },
+            { ISTEnergyLabel.F, "F" },
+            { ISTEnergyLabel.G, "G" }
+        };
 
         public static string ToDisplayString(this ISTEnergyLabel label)
         {

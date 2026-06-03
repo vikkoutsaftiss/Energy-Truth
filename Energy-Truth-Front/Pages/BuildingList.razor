@@ -1,6 +1,8 @@
 ﻿@page "/buildinglist"
 @using Energy_Truth_Presentation.Services
 @using Energy_Truth.Shared.DTO_s
+@using Energy_Truth.Shared.Extensions
+@using Energy_Truth.Shared.EnergyLabel
 @inject HttpClient HttpClient
 @inject IAuthenticateService AuthService
 @inject NavigationManager NavigationManager
@@ -22,7 +24,7 @@
             <MudCardContent>
                 <MudText><strong>Postcode:</strong> @building.PostalCode</MudText>
                 <MudText><strong>Bouwjaar:</strong> @building.ConstructionYear</MudText>
-                <MudText><strong>Energielabel:</strong> @building.ISTEnergyLabel</MudText>
+                <MudText><strong>Energielabel:</strong> @(Enum.Parse<ISTEnergyLabel>(building.ISTEnergyLabel).ToDisplayString())</MudText>
             </MudCardContent>
             <MudCardActions>
                 <MudButton Variant="Variant.Filled"
@@ -41,7 +43,7 @@
     <MudButton Variant="Variant.Filled"
                Color="Color.Primary"
                FullWidth="true"
-               OnClick="@(() => NavigationManager.NavigateTo($"/building"))">
+               OnClick="@(() => NavigationManager.NavigateTo($"/building?skipRedirect=true"))">
         Woning toevoegen
     </MudButton>
 

@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO: Title & Description -->
+    <title>Energy-Truth | Nationaal Thuisbatterij Onderzoek 2026</title>
+    <meta name="description" content="Help mee de energiemarkt transparant te maken. Valideer uw terugverdientijd en claim Beta-toegang tot de onafhankelijke simulator.">
+    
+    <!-- Favicon: Lightning bolt emoji -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚡%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚡%3C/text%3E%3C/svg%3E">
+    
+    <!-- Open Graph: Facebook, LinkedIn, WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://energy-truth.nl/">
+    <meta property="og:title" content="⚡ Energy-Truth: Klopt uw batterij-rendement wel?">
+    <meta property="og:description" content="Doe mee aan het onafhankelijke onderzoek. Geen verkoop, alleen harde data. Claim nu uw plek als Beta-tester.">
+    <meta property="og:image" content="https://energy-truth.nl/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="nl_NL">
+    <meta property="og:site_name" content="Energy-Truth Simulator">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://energy-truth.nl/">
+    <meta name="twitter:title" content="⚡ Energy-Truth: Klopt uw batterij-rendement wel?">
+    <meta name="twitter:description" content="Doe mee aan het onafhankelijke onderzoek. Geen verkoop, alleen harde data. Claim nu uw plek als Beta-tester.">
+    <meta name="twitter:image" content="https://energy-truth.nl/og-image.jpg">
+    
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Energy-Truth - Fontys Hogeschool ICT">
+    <link rel="canonical" href="https://energy-truth.nl/">
+    
+    <!-- Content Security Policy - Beperkt bronnen voor XSS preventie -->
+    <!-- NOTE: frame-ancestors moet via HTTP header (server-side), niet via meta tag -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+        img-src 'self' data: https:;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net;
+        form-action 'self';
+        base-uri 'self';
+    ">
+    
+    <!-- X-Content-Type-Options - Voorkomt MIME sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'energy-green': '#22c55e',
+                        'energy-green-dark': '#16a34a',
+                        'trust-blue': '#1e3a5f',
+                        'trust-blue-light': '#2d4a6f',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Supabase Config (niet committen naar git!) -->
+    <script src="config.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #1e3a5f 60%, #0f172a 100%);
+        }
+        .scroll-smooth {
+            scroll-behavior: smooth;
+        }
+        .gradient-cta {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+        }
+        .gradient-cta:hover {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
+            box-shadow: 0 6px 25px rgba(34, 197, 94, 0.5);
+            transform: translateY(-2px);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glow-pulse {
+            animation: glow-pulse 2s ease-in-out infinite;
+        }
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+        }
+    </style>
+</head>
+<body class="scroll-smooth bg-white">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-bolt text-energy-green text-xl sm:text-2xl"></i>
+                    <span class="font-bold text-trust-blue text-lg sm:text-xl">Energy-Truth</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#probleem" class="text-gray-600 hover:text-trust-blue transition-colors">Het Probleem</a>
+                    <a href="#oplossing" class="text-gray-600 hover:text-trust-blue transition-colors">Onze Oplossing</a>
+                    <a href="#onderzoek" class="text-gray-600 hover:text-trust-blue transition-colors">Meedoen</a>
+                    <a href="#onderzoek" class="gradient-cta text-white px-5 py-2 rounded-lg font-semibold transition-all">
+                        <i class="fa-solid fa-rocket mr-2"></i>Beta-Toegang
+                    </a>
+                </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden text-gray-600 p-2 -mr-2" onclick="toggleMobileMenu()">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-4 py-3 space-y-2">
+                <a href="#probleem" class="block text-gray-600 hover:text-trust-blue py-2">Het Probleem</a>
+                <a href="#oplossing" class="block text-gray-600 hover:text-trust-blue py-2">Onze Oplossing</a>
+                <a href="#onderzoek" class="block text-gray-600 hover:text-trust-blue py-2">Meedoen</a>
+                <a href="#onderzoek" class="block gradient-cta text-white px-4 py-3 rounded-lg font-semibold text-center mt-2">
+                    <i class="fa-solid fa-rocket mr-2"></i>Beta-Toegang
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-hero">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- ========== MOBILE HERO (md:hidden) ========== -->
+            <div class="block md:hidden pt-20 pb-10">
+                <div class="text-center">
+                    <!-- Exclusive Badge -->
+                    <div class="inline-flex items-center bg-energy-green/20 backdrop-blur-sm rounded-full px-3 py-1.5 mb-4 border border-energy-green/30">
+                        <i class="fa-solid fa-lock text-energy-green mr-1.5 text-xs"></i>
+                        <span class="text-energy-green text-xs font-bold uppercase tracking-wide">Exclusieve Beta</span>
+                    </div>
+                    
+                    <!-- Powerful H1 -->
+                    <h1 class="text-2xl font-extrabold text-white leading-tight mb-3">
+                        De <span class="gradient-text">Eerlijke Waarheid</span> over Thuisbatterijen
+                    </h1>
+                    
+                    <!-- Subheading -->
+                    <p class="text-sm text-gray-300 mb-5 leading-relaxed">
+                        De markt is een chaos van claims. Help ons onafhankelijke rekenmodel te trainen en claim uw plek als <strong class="text-white">Beta-Tester</strong>.
+                    </p>
+                    
+                    <!-- CTA Button - Gradient -->
+                    <a href="#onderzoek" class="w-full inline-flex items-center justify-center gradient-cta glow-pulse text-white px-6 py-4 min-h-[52px] rounded-xl font-bold text-base transition-all">
+                        <i class="fa-solid fa-rocket mr-2"></i>
+                        Start Validatie & Claim Beta
+                    </a>
+                    
+                    <!-- Trust Checkmarks -->
+                    <div class="mt-5 grid grid-cols-1 gap-2">
+                        <div class="flex items-center justify-center text-gray-300">
+                            <i class="fa-solid fa-circle-check text-energy-green mr-2 text-sm"></i>
+                            <span class="text-xs">Check op 2027-regels</span>
+                        </div>
+                        <div class="flex items-center justify-center text-gray-300">
+                            <i class="fa-solid fa-circle-check text-energy-green mr-2 text-sm"></i>
+                            <span class="text-xs">Check op verborgen kosten</span>
+                        </div>
+                        <div class="flex items-center justify-center text-gray-300">
+                            <i class="fa-solid fa-circle-check text-energy-green mr-2 text-sm"></i>
+                            <span class="text-xs">100% Onafhankelijk</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Research Badge -->
+                    <div class="mt-5 inline-flex items-center bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                        <i class="fa-solid fa-graduation-cap text-energy-green mr-2 text-sm"></i>
+                        <span class="text-gray-400 text-xs">HBO-Onderzoek 2026 • Wij verkopen niets</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== DESKTOP HERO (hidden md:flex) ========== -->
+            <div class="hidden md:block pt-14 pb-10">
+                <div class="grid md:grid-cols-12 gap-6 lg:gap-10 items-center w-full">
+                    <!-- Left Column: Text (7 cols) -->
+                    <div class="md:col-span-7 text-left">
+                        <!-- Exclusive Badge -->
+                        <div class="inline-flex items-center bg-energy-green/20 backdrop-blur-sm rounded-full px-4 py-2 mb-5 border border-energy-green/30">
+                            <i class="fa-solid fa-lock text-energy-green mr-2"></i>
+                            <span class="text-energy-green text-sm font-bold uppercase tracking-wide">Exclusieve Beta-Toegang</span>
+                        </div>
+                        
+                        <h1 class="text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-[1.1] mb-5">
+                            De <span class="gradient-text">Eerlijke Waarheid</span> over Thuisbatterijen
+                        </h1>
+                        <p class="text-base lg:text-lg text-gray-400 mb-3 font-medium">
+                            Geen verkooppraatjes, maar harde data.
+                        </p>
+                        <p class="text-lg lg:text-xl text-gray-300 mb-6 leading-relaxed max-w-2xl">
+                            De markt is een chaos van claims. Help ons onafhankelijke rekenmodel te trainen met uw P1-data en claim uw plek als <strong class="text-white">Beta-Tester</strong> voor de eerste eerlijke simulator van Nederland.
+                        </p>
+                        
+                        <!-- Main CTA - Gradient -->
+                        <a href="#onderzoek" class="inline-flex items-center justify-center gradient-cta glow-pulse text-white px-8 py-4 lg:px-10 lg:py-5 rounded-xl font-bold text-lg lg:text-xl transition-all">
+                            <i class="fa-solid fa-rocket mr-3"></i>
+                            Start Validatie & Claim Beta-Toegang
+                        </a>
+                        
+                        <!-- Trust Checkmarks -->
+                        <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+                            <div class="flex items-center text-gray-300">
+                                <i class="fa-solid fa-circle-check text-energy-green mr-2"></i>
+                                <span class="text-sm">Check op 2027-regels</span>
+                            </div>
+                            <div class="flex items-center text-gray-300">
+                                <i class="fa-solid fa-circle-check text-energy-green mr-2"></i>
+                                <span class="text-sm">Check op verborgen kosten</span>
+                            </div>
+                            <div class="flex items-center text-gray-300">
+                                <i class="fa-solid fa-circle-check text-energy-green mr-2"></i>
+                                <span class="text-sm">100% Onafhankelijk</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Research Badge -->
+                        <div class="mt-5 inline-flex items-center bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                            <i class="fa-solid fa-graduation-cap text-energy-green mr-2"></i>
+                            <span class="text-gray-400 text-sm">Onafhankelijk HBO-Onderzoek 2026 • Wij verkopen niets</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column: Beta Access Card (5 cols) -->
+                    <div class="md:col-span-5 flex justify-center">
+                    <div class="relative">
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 lg:p-8 border border-white/20">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-white font-semibold text-sm lg:text-base">Beta-Tester Voordelen</span>
+                                <div class="bg-energy-green/20 rounded-full px-2 py-1">
+                                    <span class="text-energy-green text-xs font-bold">GRATIS</span>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <div class="bg-energy-green/20 rounded-full p-1.5 mr-3 mt-0.5">
+                                        <i class="fa-solid fa-check text-energy-green text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-white text-sm font-medium">Priority Access</span>
+                                        <p class="text-gray-400 text-xs">Als eerste de simulator gebruiken</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="bg-energy-green/20 rounded-full p-1.5 mr-3 mt-0.5">
+                                        <i class="fa-solid fa-check text-energy-green text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-white text-sm font-medium">Persoonlijke Analyse</span>
+                                        <p class="text-gray-400 text-xs">Op basis van uw echte data</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="bg-energy-green/20 rounded-full p-1.5 mr-3 mt-0.5">
+                                        <i class="fa-solid fa-check text-energy-green text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-white text-sm font-medium">Bijdragen aan Transparantie</span>
+                                        <p class="text-gray-400 text-xs">Help de energiemarkt eerlijker maken</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-5 pt-4 border-t border-white/20">
+                                <div class="flex items-center text-amber-400">
+                                    <i class="fa-solid fa-users mr-2"></i>
+                                    <span class="text-xs lg:text-sm font-medium">Beperkt aantal plekken beschikbaar</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Floating elements -->
+                        <div class="absolute -top-3 -right-3 bg-energy-green rounded-full p-2 lg:p-3 shadow-lg glow-pulse">
+                            <i class="fa-solid fa-bolt text-white text-base lg:text-xl"></i>
+                        </div>
+                        <div class="absolute -bottom-3 -left-3 bg-white rounded-full p-2 lg:p-3 shadow-lg">
+                            <i class="fa-solid fa-shield-halved text-trust-blue text-base lg:text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- Trust Indicators -->
+    <section class="bg-gradient-to-r from-gray-50 via-white to-gray-50 py-4 sm:py-6 md:py-8 border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap justify-center items-center gap-4 sm:gap-8 md:gap-12 text-gray-600 text-sm sm:text-base">
+                <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    <i class="fa-solid fa-graduation-cap text-energy-green text-lg"></i>
+                    <span class="font-medium">HBO-Onderzoek 2026</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    <i class="fa-solid fa-calendar-check text-energy-green text-lg"></i>
+                    <span class="font-medium">2027-regels gevalideerd</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    <i class="fa-solid fa-magnifying-glass-dollar text-energy-green text-lg"></i>
+                    <span class="font-medium">Verborgen kosten check</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    <i class="fa-solid fa-ban text-energy-green text-lg"></i>
+                    <span class="font-medium">100% Onafhankelijk</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="probleem" class="py-12 sm:py-16 md:py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 md:mb-16">
+                <span class="inline-block bg-amber-100 text-amber-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                    <i class="fa-solid fa-scale-balanced mr-2"></i>
+                    Financiële Onzekerheid
+                </span>
+                <h2 class="text-3xl md:text-4xl font-bold text-trust-blue mb-6">
+                    Waarom eerlijke informatie zo belangrijk is
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    De thuisbatterij-markt is complex. Onafhankelijke informatie helpt u een weloverwogen keuze te maken.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+                <!-- Problem Card 1: ACM Info -->
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 sm:p-6 md:p-8 border border-amber-100 hover:shadow-lg transition-shadow">
+                    <div class="bg-amber-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-scale-balanced text-amber-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">ACM Informatie</h3>
+                    <p class="text-gray-600 leading-relaxed mb-4">
+                        De Autoriteit Consument & Markt (ACM) adviseert consumenten om <strong>onafhankelijk onderzoek te doen</strong> voordat u een thuisbatterij koopt.
+                    </p>
+                    <div class="bg-white rounded-lg p-4 border border-amber-200">
+                        <p class="text-sm text-gray-500 italic">
+                            "Vergelijk altijd meerdere aanbiedingen en vraag om realistische berekeningen."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Problem Card 2: Rabobank -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 sm:p-6 md:p-8 border border-blue-100 hover:shadow-lg transition-shadow">
+                    <div class="bg-blue-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-building-columns text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">Rabobank Inzichten</h3>
+                    <p class="text-gray-600 leading-relaxed mb-4">
+                        Volgens Rabobank is het belangrijk om bij terugverdientijden <strong>rekening te houden met uw specifieke situatie</strong>.
+                    </p>
+                    <div class="bg-white rounded-lg p-4 border border-blue-200">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Vaak beloofd:</span>
+                            <span class="font-bold text-amber-600">3-7 jaar</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm mt-2">
+                            <span class="text-gray-500">Kan oplopen tot:</span>
+                            <span class="font-bold text-trust-blue">12-20+ jaar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Problem Card 3: 2027 Changes -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 sm:p-6 md:p-8 border border-green-100 hover:shadow-lg transition-shadow">
+                    <div class="bg-green-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-calendar-check text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">Salderingswijziging 2027</h3>
+                    <p class="text-gray-600 leading-relaxed mb-4">
+                        De <strong>afbouw van saldering vanaf 2027</strong> maakt een goede berekening extra waardevol om de juiste keuze te maken.
+                    </p>
+                    <div class="bg-white rounded-lg p-4 border border-green-200">
+                        <p class="text-sm text-gray-500">
+                            Wij helpen u doorrekenen wat dit concreet voor uw situatie betekent.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Banner -->
+            <div class="mt-8 sm:mt-12 md:mt-16 bg-trust-blue rounded-2xl p-5 sm:p-8 md:p-12">
+                <div class="text-center mb-4 sm:mb-6 md:mb-8">
+                    <h3 class="text-xl sm:text-2xl font-bold text-white">Waarom onafhankelijk narekenen loont</h3>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center">
+                    <div>
+                        <div class="text-2xl sm:text-4xl md:text-5xl font-bold text-energy-green mb-1 sm:mb-2">3-20</div>
+                        <div class="text-gray-300 text-xs sm:text-sm md:text-base">Jaar spreiding</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl md:text-5xl font-bold text-white mb-2">100%</div>
+                        <div class="text-gray-300">Onafhankelijk, geen verkoop</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl md:text-5xl font-bold text-white mb-2">Uw</div>
+                        <div class="text-gray-300">Eigen data als basis</div>
+                    </div>
+                    <div>
+                        <div class="text-4xl md:text-5xl font-bold text-energy-green mb-2">Gratis</div>
+                        <div class="text-gray-300">Voor deelnemers aan onderzoek</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="oplossing" class="py-12 sm:py-16 md:py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8 sm:mb-12 md:mb-16">
+                <span class="inline-block bg-energy-green/10 text-energy-green px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                    <i class="fa-solid fa-rocket mr-2"></i>
+                    Hoe Word Je Beta-Tester?
+                </span>
+                <h2 class="text-3xl md:text-4xl font-bold text-trust-blue mb-6">
+                    3 Stappen naar Beta-Toegang
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Word onderdeel van de beweging voor <strong>transparantie</strong> in de energiemarkt en krijg als eerste toegang tot onze simulator.
+                </p>
+            </div>
+
+            <!-- How it works - Updated Steps -->
+            <div class="grid md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12 md:mb-16">
+                <div class="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 text-center border-2 border-transparent hover:border-energy-green/20">
+                    <div class="bg-gradient-to-br from-trust-blue to-trust-blue-light w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i class="fa-solid fa-upload text-white text-2xl"></i>
+                    </div>
+                    <div class="text-energy-green font-bold text-sm mb-2">STAP 1</div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">Upload of Vul In</h3>
+                    <p class="text-gray-600">
+                        Upload uw P1-data <strong>(indien beschikbaar)</strong> of vul uw energiespecificaties handmatig in via onze slimme vragenlijst.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 text-center border-2 border-transparent hover:border-energy-green/20">
+                    <div class="bg-gradient-to-br from-trust-blue to-trust-blue-light w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i class="fa-solid fa-brain text-white text-2xl"></i>
+                    </div>
+                    <div class="text-energy-green font-bold text-sm mb-2">STAP 2</div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">AI Model Training</h3>
+                    <p class="text-gray-600">
+                        Onze AI analyseert uw profiel en <strong>traint ons rekenmodel</strong> met uw geanonimiseerde data voor nauwkeurigere resultaten.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 text-center border-2 border-transparent hover:border-energy-green/20">
+                    <div class="bg-gradient-to-br from-energy-green to-energy-green-dark w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i class="fa-solid fa-bell text-white text-2xl"></i>
+                    </div>
+                    <div class="text-energy-green font-bold text-sm mb-2">STAP 3</div>
+                    <h3 class="text-xl font-bold text-trust-blue mb-4">Priority Access</h3>
+                    <p class="text-gray-600">
+                        U ontvangt een <strong>seintje zodra de Simulator live gaat</strong>. Als Beta-Tester krijgt u als eerste toegang en een persoonlijke analyse.
+                    </p>
+                </div>
+            </div>
+
+            <!-- What Beta Testers Get -->
+            <div class="bg-gradient-to-r from-trust-blue to-trust-blue-light rounded-2xl p-8 md:p-12 shadow-lg">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white mb-6">
+                            <i class="fa-solid fa-gift text-energy-green mr-3"></i>
+                            Wat krijg je als Beta-Tester?
+                        </h3>
+                        <p class="text-gray-300 mb-6 leading-relaxed">
+                            Als dank voor uw bijdrage aan ons onderzoek ontvangt u exclusieve voordelen:
+                        </p>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <div class="bg-energy-green/20 rounded-full p-2 mr-4 mt-1">
+                                    <i class="fa-solid fa-check text-energy-green"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-white">Gratis persoonlijke analyse</div>
+                                    <div class="text-gray-400 text-sm">Volledige simulatie van uw specifieke situatie</div>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="bg-energy-green/20 rounded-full p-2 mr-4 mt-1">
+                                    <i class="fa-solid fa-check text-energy-green"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-white">Priority notificatie</div>
+                                    <div class="text-gray-400 text-sm">Als eerste weten wanneer de tool live gaat</div>
+                                </div>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="bg-energy-green/20 rounded-full p-2 mr-4 mt-1">
+                                    <i class="fa-solid fa-check text-energy-green"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-white">Bijdragen aan transparantie</div>
+                                    <div class="text-gray-400 text-sm">Help de energiemarkt eerlijker maken voor iedereen</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                        <div class="text-center mb-6">
+                            <span class="text-sm text-energy-green font-bold uppercase tracking-wide">Beperkte Plekken</span>
+                        </div>
+                        <div class="bg-white/10 rounded-lg p-6 border border-white/10 mb-4">
+                            <div class="flex items-center justify-center mb-4">
+                                <div class="text-5xl font-bold text-white">
+                                    <i class="fa-solid fa-user-plus text-energy-green"></i>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-white font-semibold text-lg mb-2">Word Beta-Tester</p>
+                                <p class="text-gray-400 text-sm mb-4">Help ons het model te valideren met échte Nederlandse data</p>
+                                <div class="flex items-center justify-center gap-2 text-amber-400">
+                                    <i class="fa-solid fa-hourglass-half"></i>
+                                    <span class="text-sm font-medium">Launch: Q2 2026</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#onderzoek" class="w-full inline-flex items-center justify-center gradient-cta text-white px-6 py-3 rounded-lg font-bold text-base transition-all">
+                            <i class="fa-solid fa-rocket mr-2"></i>
+                            Claim je plek
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Early Adopter Section -->
+    <section id="early-adopter" class="py-12 sm:py-16 md:py-20 bg-trust-blue">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center bg-amber-500/20 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-6 border border-amber-500/30">
+                <i class="fa-solid fa-star text-amber-400 mr-2 text-sm"></i>
+                <span class="text-amber-400 text-xs sm:text-sm font-bold uppercase tracking-wide">Priority Beta-Toegang</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
+                Heeft u al een CSV-export van uw P1-data?
+            </h2>
+            <p class="text-base sm:text-lg md:text-xl text-gray-300 mb-5 sm:mb-8 leading-relaxed">
+                Bijvoorbeeld via <strong class="text-white">HomeWizard</strong>, <strong class="text-white">uw netbeheerder</strong>, of een andere slimme meter-oplossing?
+            </p>
+            
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-white/20">
+                <h3 class="text-xl sm:text-2xl font-bold text-energy-green mb-3 sm:mb-4">
+                    <i class="fa-solid fa-users mr-2"></i>
+                    Word onderdeel van de beweging
+                </h3>
+                <p class="text-gray-300 mb-6">
+                    Als Beta-Tester helpt u ons de simulator te valideren met échte data én draagt u bij aan <strong class="text-white">transparantie</strong> in de energiemarkt:
+                </p>
+                <div class="grid md:grid-cols-3 gap-6 text-left">
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-gift text-energy-green mr-3 mt-1"></i>
+                        <div>
+                            <div class="text-white font-semibold">Gratis analyse</div>
+                            <div class="text-gray-400 text-sm">Volledige simulatie van uw situatie</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-clock text-energy-green mr-3 mt-1"></i>
+                        <div>
+                            <div class="text-white font-semibold">Vroege toegang</div>
+                            <div class="text-gray-400 text-sm">Als eerste de tool gebruiken</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-comments text-energy-green mr-3 mt-1"></i>
+                        <div>
+                            <div class="text-white font-semibold">Direct contact</div>
+                            <div class="text-gray-400 text-sm">Persoonlijke begeleiding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="#onderzoek" class="w-full sm:w-auto inline-flex items-center justify-center gradient-cta glow-pulse text-white px-8 sm:px-10 py-4 min-h-[52px] rounded-xl font-bold text-base sm:text-lg transition-all">
+                <i class="fa-solid fa-upload mr-2 sm:mr-3"></i>
+                Upload P1-data & Claim Beta
+            </a>
+        </div>
+    </section>
+
+    <!-- Survey / Research Section - JSON-Driven Form Engine -->
+    <section id="onderzoek" class="py-10 sm:py-16 md:py-20 bg-gradient-to-b from-white to-gray-50">
+        <div class="max-w-3xl mx-auto px-3 sm:px-4 lg:px-8">
+            <div class="text-center mb-6 sm:mb-8 md:mb-12">
+                <span class="inline-block bg-energy-green/10 text-energy-green px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wide mb-3 sm:mb-4">
+                    <i class="fa-solid fa-rocket mr-2"></i>
+                    Claim Beta-Toegang
+                </span>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-trust-blue mb-3 sm:mb-4 md:mb-6">
+                    Start uw Validatie
+                </h2>
+                <p class="text-base sm:text-lg md:text-xl text-gray-600">
+                    Vul de vragenlijst in en help ons de <strong>eerste eerlijke thuisbatterij-simulator</strong> van Nederland te bouwen.
+                </p>
+            </div>
+
+            <!-- Survey Container (Rendered by Engine) -->
+            <div id="survey-container" class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <!-- Progress Bar -->
+                <div class="bg-gray-50 px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-b border-gray-100">
+                    <div class="flex items-center justify-between mb-1">
+                        <span id="progress-category" class="text-xs sm:text-sm font-medium text-trust-blue">Nu bezig met: Introductie</span>
+                        <span id="progress-text" class="text-xs sm:text-sm text-gray-500 font-medium">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 sm:h-3 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-energy-green to-emerald-400 h-2 sm:h-3 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                    </div>
+                    <div id="progress-steps" class="flex justify-between mt-2 text-xs text-gray-400">
+                        <!-- Category dots rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Dynamic Step Content -->
+                <div id="step-content" class="p-4 sm:p-6 md:p-8 lg:p-10">
+                    <!-- Steps rendered by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JSON-Driven Survey Engine -->
+    <script>
+    // =============================================
+    // DEBUG MODE: Zet op false voor productie!
+    // Beperkt console logging voor betere security
+    // =============================================
+    const DEBUG_MODE = false; // ⚠️ ZET OP FALSE VOOR PRODUCTIE
+    
+    // Production-safe logger - alleen actief in debug mode
+    const Logger = {
+        log(...args) { if (DEBUG_MODE) console.log(...args); },
+        warn(...args) { if (DEBUG_MODE) console.warn(...args); },
+        // Errors worden altijd gelogd voor monitoring
+        error(...args) { console.error(...args); },
+        // Security-gevoelige logs worden NOOIT getoond
+        sensitive(...args) { /* Altijd geblokeerd */ }
+    };
+    
+    // =============================================
+    // SECURITY: HTML Sanitization Helper
+    // Prevents XSS attacks by escaping HTML entities
+    // =============================================
+    const SecurityUtils = {
+        // Escape HTML special characters to prevent XSS
+        escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        },
+        
+        // Sanitize filename - remove dangerous characters
+        sanitizeFilename(filename) {
+            if (!filename) return '';
+            // Remove HTML tags and dangerous characters
+            return filename
+                .replace(/[<>:"\/\\|?*]/g, '_')  // Replace dangerous chars with underscore
+                .replace(/[\x00-\x1f\x80-\x9f]/g, '')  // Remove control characters
+                .substring(0, 255);  // Limit length
+        },
+        
+        // Validate email format
+        isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        },
+        
+        // Sanitize phone number - only digits and common separators
+        sanitizePhone(phone) {
+            if (!phone) return '';
+            return phone.replace(/[^0-9+\-\s()]/g, '').substring(0, 20);
+        },
+        
+        // Sanitize text input - remove potential script injections
+        sanitizeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                .trim();
+        },
+        
+        // Validate file MIME type by checking magic bytes
+        // Returns: { valid: boolean, detectedType: string|null }
+        async validateFileMIME(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = (e) => {
+                    const arr = new Uint8Array(e.target.result);
+                    
+                    // Check for ZIP (XLSX) - starts with PK (0x504B)
+                    if (arr[0] === 0x50 && arr[1] === 0x4B) {
+                        resolve({ valid: true, detectedType: 'xlsx' });
+                        return;
+                    }
+                    
+                    // Check for OLE/XLS - starts with D0 CF 11 E0
+                    if (arr[0] === 0xD0 && arr[1] === 0xCF && arr[2] === 0x11 && arr[3] === 0xE0) {
+                        resolve({ valid: true, detectedType: 'xls' });
+                        return;
+                    }
+                    
+                    // CSV has no magic bytes - verify it's readable text
+                    // Check if first 512 bytes are valid UTF-8/ASCII text
+                    const textChars = arr.slice(0, Math.min(512, arr.length));
+                    const isText = textChars.every(byte => 
+                        (byte >= 0x20 && byte <= 0x7E) || // Printable ASCII
+                        byte === 0x09 || byte === 0x0A || byte === 0x0D || // Tab, LF, CR
+                        (byte >= 0xC0 && byte <= 0xFD) // UTF-8 continuation bytes
+                    );
+                    
+                    if (isText) {
+                        resolve({ valid: true, detectedType: 'csv' });
+                        return;
+                    }
+                    
+                    // Unknown/suspicious file type
+                    resolve({ valid: false, detectedType: null });
+                };
+                reader.onerror = () => resolve({ valid: false, detectedType: null });
+                
+                // Read first 16 bytes for magic number check
+                reader.readAsArrayBuffer(file.slice(0, 512));
+            });
+        }
+    };
+    
+    // =============================================
+    // SURVEY CONFIG wordt geladen uit surveyConfig.json
+    // Pas de vragen aan door surveyConfig.json te bewerken
+    // =============================================
+
+    // =============================================
+    // SURVEY ENGINE
+    // =============================================
+    const SurveyEngine = {
+        config: null,
+        supabase: null,
+        state: {
+            currentStepId: null,
+            stepHistory: [],
+            answers: {},
+            uploadedFile: null,
+            maxProgress: 0,  // Track highest progress reached (never goes backward)
+            visitedCategories: new Set(),  // Track visited categories
+            sessionId: null,  // Unique session identifier
+            stepStartTime: null,  // Track time spent on each step
+            isSubmitted: false,  // Prevent double submission
+            utm: {  // UTM tracking parameters
+                source: null,
+                medium: null,
+                campaign: null
+            }
+        },
+
+        // Initialize the engine
+        async init(config) {
+            try {
+                // Validate config structure
+                if (!config || !config.steps || !Array.isArray(config.steps) || config.steps.length === 0) {
+                    throw new Error('Invalid config: missing or empty steps array');
+                }
+                
+                this.config = JSON.parse(JSON.stringify(config)); // Deep clone
+                
+                // =============================================
+                // CONFIG VALIDATION: Check critical step IDs
+                // =============================================
+                // Kern stappen die altijd aanwezig moeten zijn voor data integrity
+                // Versie 2.4.0-Investment-Validation
+                const requiredStepIds = [
+                    'segmentation', 
+                    'pv_check_offer', 'pv_check_orient', 'pv_check_owner',  // Zonnepanelen check
+                    'data_availability', 'market_context', 'terugleverkosten', 
+                    'behavior_hesitation', 'investment_behavior',  // Nieuw in v2.4.0
+                    'final_lead_capture', 'success_standard'
+                ];
+                
+                const configStepIds = this.config.steps.map(s => s.id);
+                const missingSteps = requiredStepIds.filter(id => !configStepIds.includes(id));
+                
+                if (missingSteps.length > 0) {
+                    Logger.warn('⚠️ CONFIG WARNING: Missing expected step IDs:', missingSteps);
+                    Logger.warn('   Dit kan data mapping problemen veroorzaken!');
+                }
+                
+                // Log alle gevonden step IDs voor debugging
+                Logger.log('📋 Config step IDs:', configStepIds);
+                
+                if (missingSteps.length > 0) {
+                    Logger.warn('⚠️ CONFIG WARNING: Missing expected step IDs:', missingSteps);
+                    Logger.warn('   Dit kan data mapping problemen veroorzaken!');
+                }
+                
+                // Check for duplicate step IDs
+                const duplicates = configStepIds.filter((id, index) => configStepIds.indexOf(id) !== index);
+                if (duplicates.length > 0) {
+                    Logger.error('🚨 CONFIG ERROR: Duplicate step IDs found:', duplicates);
+                }
+                
+                // Validate critical steps have correct option values
+                const marketStep = this.config.steps.find(s => s.id === 'market_context');
+                const hesitationStep = this.config.steps.find(s => s.id === 'behavior_hesitation');
+                
+                if (marketStep && marketStep.options) {
+                    const marketValues = marketStep.options.map(o => o.value);
+                    const expectedMarket = ['dynamisch', 'vast_variabel', 'onbekend'];
+                    const wrongMarketValues = marketValues.filter(v => !expectedMarket.includes(v));
+                    if (wrongMarketValues.length > 0) {
+                        Logger.warn('⚠️ CONFIG INFO: market_context waarden:', marketValues);
+                    }
+                }
+                
+                if (hesitationStep && hesitationStep.options) {
+                    const hesValues = hesitationStep.options.map(o => o.value);
+                    const expectedHes = ['rendement_onzeker', 'regelgeving', 'prijs', 'techniek'];
+                    const wrongHesValues = hesValues.filter(v => !expectedHes.includes(v));
+                    if (wrongHesValues.length > 0) {
+                        Logger.warn('⚠️ CONFIG INFO: behavior_hesitation waarden:', hesValues);
+                    }
+                }
+                
+                // Validate first step exists
+                if (!this.config.steps[0] || !this.config.steps[0].id) {
+                    throw new Error('Invalid config: first step missing or has no id');
+                }
+                
+                // Initialize Supabase
+                this.initSupabase();
+                
+                // Generate or restore session ID
+                this.initSession();
+                
+                this.state.currentStepId = this.config.steps[0].id;
+                this.state.stepHistory = [this.state.currentStepId];
+                this.state.answers = {};
+                this.state.uploadedFile = null;
+                this.state.maxProgress = 0;
+                this.state.visitedCategories = new Set();
+                this.state.stepStartTime = Date.now();
+                this.state.isSubmitted = false;
+                
+                // Render category steps indicator
+                this.renderCategorySteps();
+                
+                // Create session record FIRST (before tracking events)
+                await this.saveProgress('in_progress');
+                
+                // Render first step
+                this.render();
+                
+                // Track session start (session now exists)
+                this.trackEvent('session_start');
+                
+                // Setup page unload handler for drop-off tracking
+                this.setupUnloadHandler();
+                
+                Logger.log('🚀 Survey Engine initialized (JSON-Driven v2.0 + Supabase)');
+            } catch (error) {
+                console.error('❌ Survey Engine init failed:', error);
+                this.showError('Er is een fout opgetreden bij het laden van de enquête. Probeer de pagina te verversen.', error.message);
+            }
+        },
+
+        // Initialize Supabase client
+        initSupabase() {
+            // Load config from external file (config.js)
+            const config = window.SUPABASE_CONFIG || {};
+            const url = config.url;
+            const anonKey = config.anonKey;
+            
+            if (url && url !== 'YOUR_SUPABASE_URL' && typeof supabase !== 'undefined') {
+                this.supabase = supabase.createClient(url, anonKey);
+                Logger.log('✅ Supabase client initialized');
+            } else {
+                Logger.warn('⚠️ Supabase not configured - running in mock mode');
+                console.info('💡 Tip: Configureer config.js met je Supabase credentials');
+            }
+        },
+
+        // Initialize new session (always fresh - answers are not restored anyway)
+        initSession() {
+            // Always generate new session ID for each page load
+            this.state.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('survey_session_id', this.state.sessionId);
+            Logger.sensitive('🆕 New session:', this.state.sessionId);
+            
+            // UTM Tracking: Check URL parameters first
+            const urlParams = new URLSearchParams(window.location.search);
+            const utmSource = urlParams.get('utm_source');
+            const utmMedium = urlParams.get('utm_medium');
+            const utmCampaign = urlParams.get('utm_campaign');
+            
+            if (utmSource || utmMedium || utmCampaign) {
+                // UTM parameters found in URL - save to state AND localStorage
+                this.state.utm.source = utmSource || null;
+                this.state.utm.medium = utmMedium || null;
+                this.state.utm.campaign = utmCampaign || null;
+                
+                // Persist to localStorage for page refreshes
+                localStorage.setItem('utm_source', this.state.utm.source || '');
+                localStorage.setItem('utm_medium', this.state.utm.medium || '');
+                localStorage.setItem('utm_campaign', this.state.utm.campaign || '');
+                
+                Logger.log('📍 UTM from URL:', this.state.utm);
+            } else {
+                // No UTM in URL - check localStorage (page refresh scenario)
+                const storedSource = localStorage.getItem('utm_source');
+                const storedMedium = localStorage.getItem('utm_medium');
+                const storedCampaign = localStorage.getItem('utm_campaign');
+                
+                if (storedSource || storedMedium || storedCampaign) {
+                    this.state.utm.source = storedSource || null;
+                    this.state.utm.medium = storedMedium || null;
+                    this.state.utm.campaign = storedCampaign || null;
+                    Logger.log('📍 UTM from localStorage:', this.state.utm);
+                } else {
+                    // No UTM found anywhere - mark as direct traffic
+                    this.state.utm.source = 'direct';
+                    this.state.utm.medium = null;
+                    this.state.utm.campaign = null;
+                    Logger.log('📍 UTM: direct traffic (no parameters found)');
+                }
+            }
+        },
+
+        // Setup page unload handler for drop-off tracking
+        setupUnloadHandler() {
+            const handleUnload = () => {
+                if (!this.state.isSubmitted && this.state.stepHistory.length > 0) {
+                    this.trackDropOff();
+                }
+            };
+            
+            // Use multiple events for better coverage
+            window.addEventListener('beforeunload', handleUnload);
+            window.addEventListener('pagehide', handleUnload);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden' && !this.state.isSubmitted) {
+                    this.saveProgress('in_progress');
+                }
+            });
+        },
+
+        // Track drop-off when user leaves
+        async trackDropOff() {
+            await this.saveProgress('dropped_off');
+            await this.trackEvent('drop_off', {
+                last_step: this.state.currentStepId,
+                progress: this.state.maxProgress,
+                time_spent: Date.now() - (this.state.stepStartTime || Date.now())
+            });
+        },
+
+        // Track events to Supabase
+        async trackEvent(eventType, eventData = {}) {
+            const step = this.getCurrentStep();
+            const event = {
+                session_id: this.state.sessionId,
+                event_type: eventType,
+                step_id: this.state.currentStepId,
+                step_category: step?.category || null,
+                event_data: eventData,
+                time_on_step_ms: this.state.stepStartTime ? Date.now() - this.state.stepStartTime : null
+            };
+            
+            if (this.supabase) {
+                try {
+                    const { error } = await this.supabase
+                        .from('survey_events')
+                        .insert([event]);
+                    if (error) console.error('❌ Event tracking error:', error);
+                } catch (e) {
+                    console.error('❌ Event tracking failed:', e);
+                }
+            } else {
+                Logger.log('📊 [Mock Event]', eventType, event);
+            }
+        },
+
+        // Save progress to Supabase
+        async saveProgress(status = 'in_progress') {
+            const exportData = this.getExportData();
+            const step = this.getCurrentStep();
+            
+            const sessionData = {
+                session_id: this.state.sessionId,
+                status: status,
+                last_step_id: this.state.currentStepId,
+                last_category: step?.category || null,
+                progress_percentage: Math.round(this.state.maxProgress),
+                step_history: this.state.stepHistory,
+                
+                // === ALLE EXPORT DATA VELDEN (v2.4.0-Investment-Validation) ===
+                // Segmentatie
+                segmentation: exportData.segmentation,
+                
+                // Zonnepanelen
+                has_pv: exportData.has_pv,
+                
+                // Offerte Details
+                offer_price_eur: exportData.offer_price_eur,
+                offer_capacity_kwh: exportData.offer_capacity_kwh,
+                offer_payback_years: exportData.offer_payback_years,
+                offer_assumptions: exportData.offer_assumptions,
+                
+                // Eigenaar Details
+                owner_purchase_price_eur: exportData.owner_purchase_price_eur,
+                owner_capacity_kwh: exportData.owner_capacity_kwh,
+                owner_install_year: exportData.owner_install_year,
+                
+                // Data Beschikbaarheid & Upload
+                has_data_export: exportData.has_data_export,
+                uploaded_file_name: exportData.uploaded_file_name,
+                uploaded_file_path: exportData.uploaded_file_path,
+                
+                // Markt Context
+                contract_type: exportData.contract_type,
+                terugleverkosten: exportData.terugleverkosten,
+                
+                // Gedrag & Mening
+                main_hesitation_reason: exportData.main_hesitation_reason,
+                owner_experience: exportData.owner_experience,
+                
+                // Marktonderzoek (v2.4.0 - NIEUW)
+                investment_behavior: exportData.investment_behavior,
+                
+                // Lead Capture (uit final_lead_capture)
+                contact_name: exportData.contact_name,
+                contact_email: exportData.contact_email,
+                contact_phone: exportData.contact_phone,
+                interview_optin: exportData.interview_optin,
+                
+                // Raw answers backup
+                raw_answers: this.state.answers,
+                
+                // Metadata
+                survey_version: this.config.meta?.version || '2.0.0',
+                user_agent: navigator.userAgent,
+                referrer: document.referrer || null,
+                utm_source: this.state.utm.source,
+                utm_medium: this.state.utm.medium,
+                utm_campaign: this.state.utm.campaign,
+                
+                // Timestamps
+                ...(status === 'completed' && { completed_at: new Date().toISOString() }),
+                ...(status === 'dropped_off' && { dropped_off_at: new Date().toISOString() })
+            };
+            
+            if (this.supabase) {
+                try {
+                    const { error } = await this.supabase
+                        .from('survey_sessions')
+                        .upsert([sessionData], { onConflict: 'session_id' });
+                    
+                    if (error) {
+                        console.error('❌ Save progress error:', error);
+                    } else {
+                        Logger.log(`✅ Progress saved (${status}):`, Math.round(this.state.maxProgress) + '%');
+                    }
+                } catch (e) {
+                    console.error('❌ Save progress failed:', e);
+                }
+            } else {
+                Logger.log(`💾 [Mock Save] ${status}:`, sessionData);
+            }
+        },
+
+        // Show error message to user
+        showError(message, details = null) {
+            const container = document.getElementById('step-content');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="inline-flex items-center justify-center bg-red-100 w-16 h-16 rounded-full mb-6">
+                            <i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-trust-blue mb-3">${message}</h3>
+                        ${details ? `<p class="text-sm text-gray-500 mb-4 font-mono bg-gray-100 p-3 rounded-lg max-w-md mx-auto">${details}</p>` : ''}
+                        <button onclick="location.reload()" class="inline-flex items-center bg-trust-blue hover:bg-trust-blue-light text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                            <i class="fa-solid fa-refresh mr-2"></i>
+                            Pagina verversen
+                        </button>
+                    </div>
+                `;
+            }
+            // Update progress to show error state
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressCategory = document.getElementById('progress-category');
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressText) progressText.textContent = 'Fout';
+            if (progressCategory) progressCategory.innerHTML = '<i class="fa-solid fa-exclamation-circle text-red-500 mr-1"></i>Er is een fout opgetreden';
+        },
+
+        // Get current step config
+        getCurrentStep() {
+            const step = this.config.steps.find(s => s.id === this.state.currentStepId);
+            if (!step) {
+                Logger.warn(`⚠️ Step not found: ${this.state.currentStepId}`);
+            }
+            return step;
+        },
+
+        // Check if a step exists by id
+        stepExists(stepId) {
+            return this.config.steps.some(s => s.id === stepId);
+        },
+
+        // Get unique categories from config (ordered by first appearance)
+        getUniqueCategories() {
+            const categories = [];
+            const seen = new Set();
+            for (const step of this.config.steps) {
+                if (step.category && !seen.has(step.category)) {
+                    seen.add(step.category);
+                    categories.push(step.category);
+                }
+            }
+            return categories;
+        },
+
+        // Get current category info
+        getCurrentCategoryInfo() {
+            const step = this.getCurrentStep();
+            const categories = this.getUniqueCategories();
+            const currentCategory = step?.category || null;
+            const categoryIndex = currentCategory ? categories.indexOf(currentCategory) : -1;
+            
+            return {
+                current: currentCategory,
+                index: categoryIndex,
+                total: categories.length,
+                categories: categories
+            };
+        },
+
+        // Calculate progress based on categories (never goes backward)
+        getProgress() {
+            const { index, total } = this.getCurrentCategoryInfo();
+            const step = this.getCurrentStep();
+            
+            // Success step = 100%
+            if (step?.type === 'success') {
+                return 100;
+            }
+            
+            if (index < 0 || total === 0) return this.state.maxProgress;
+            
+            // Calculate progress: completed categories + partial progress in current
+            // Each category is worth (100 / total) percent
+            const categoryProgress = ((index + 1) / total) * 100;
+            
+            // Only update if progress increased (never go backward)
+            if (categoryProgress > this.state.maxProgress) {
+                this.state.maxProgress = categoryProgress;
+            }
+            
+            return Math.min(this.state.maxProgress, 100);
+        },
+
+        // Render category step indicators
+        renderCategorySteps() {
+            const container = document.getElementById('progress-steps');
+            if (!container) return;
+            
+            const categories = this.getUniqueCategories();
+            
+            container.innerHTML = categories.map((cat, i) => `
+                <div class="flex flex-col items-center" data-category="${cat}">
+                    <div class="category-dot w-2 h-2 rounded-full bg-gray-300 transition-all duration-300"></div>
+                    <span class="hidden md:block mt-1 max-w-[60px] text-center truncate" title="${cat}">
+                        ${cat.split(' ')[0]}
+                    </span>
+                </div>
+            `).join('');
+        },
+
+        // Update progress UI
+        updateProgress() {
+            const step = this.getCurrentStep();
+            const progress = this.getProgress();
+            const { current: currentCategory, categories, index } = this.getCurrentCategoryInfo();
+            
+            // Update progress bar
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            // Update percentage text
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                progressText.textContent = step?.type === 'success' 
+                    ? 'Voltooid!' 
+                    : `${Math.round(progress)}%`;
+            }
+            
+            // Update category label
+            const progressCategory = document.getElementById('progress-category');
+            if (progressCategory) {
+                if (step?.type === 'success') {
+                    progressCategory.innerHTML = '<i class="fa-solid fa-check-circle text-energy-green mr-1"></i>Bedankt voor uw deelname!';
+                } else if (currentCategory) {
+                    // Format category name nicely
+                    const formattedCategory = currentCategory.charAt(0) + currentCategory.slice(1).toLowerCase();
+                    progressCategory.textContent = `Nu bezig met: ${formattedCategory}`;
+                }
+            }
+            
+            // Update category dots
+            const dots = document.querySelectorAll('#progress-steps [data-category]');
+            dots.forEach((dot, i) => {
+                const dotEl = dot.querySelector('.category-dot');
+                if (!dotEl) return;
+                
+                if (i < index) {
+                    // Completed category
+                    dotEl.classList.remove('bg-gray-300', 'bg-energy-green', 'ring-2', 'ring-energy-green', 'ring-offset-1');
+                    dotEl.classList.add('bg-energy-green');
+                } else if (i === index) {
+                    // Current category
+                    dotEl.classList.remove('bg-gray-300');
+                    dotEl.classList.add('bg-energy-green', 'ring-2', 'ring-energy-green', 'ring-offset-1');
+                } else {
+                    // Future category
+                    dotEl.classList.remove('bg-energy-green', 'ring-2', 'ring-energy-green', 'ring-offset-1');
+                    dotEl.classList.add('bg-gray-300');
+                }
+            });
+            
+            // Track visited categories
+            if (currentCategory) {
+                this.state.visitedCategories.add(currentCategory);
+            }
+        },
+
+        // Render the current step
+        render() {
+            try {
+                const step = this.getCurrentStep();
+                if (!step) {
+                    this.showError(
+                        'Stap niet gevonden', 
+                        `De stap "${this.state.currentStepId}" bestaat niet in de configuratie. Controleer de nextStep waarden in de admin.`
+                    );
+                    return;
+                }
+
+                const container = document.getElementById('step-content');
+                if (!container) {
+                    console.error('❌ step-content container not found');
+                    return;
+                }
+                
+                // Update progress indicator
+                this.updateProgress();
+
+            // Render based on step type
+            let html = '';
+            switch(step.type) {
+                case 'choice':
+                    html = this.renderChoice(step);
+                    break;
+                case 'multiselect':
+                    html = this.renderMultiselect(step);
+                    break;
+                case 'text':
+                    html = this.renderText(step);
+                    break;
+                case 'file':
+                    html = this.renderFile(step);
+                    break;
+                case 'multiform':
+                    html = this.renderMultiform(step);
+                    break;
+                case 'contact_form':
+                    html = this.renderContactForm(step);
+                    break;
+                case 'success':
+                    html = this.renderSuccess(step);
+                    break;
+                default:
+                    html = `<p class="text-red-500">Unknown step type: ${step.type}</p>`;
+            }
+
+            container.innerHTML = html;
+            this.bindEvents(step);
+            
+            // Track step view
+            this.trackEvent('step_view');
+            } catch (error) {
+                console.error('❌ Render error:', error);
+                this.showError('Er is een fout opgetreden bij het tonen van deze stap.', error.message);
+            }
+        },
+
+        // Render choice (radio) question
+        renderChoice(step) {
+            const savedValue = this.state.answers[step.id];
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-trust-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                            ${this.state.stepHistory.length}
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">${step.category || ''}</span>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-2">${step.question}</h3>
+                    <p class="text-gray-500">${step.description || ''}</p>
+                </div>
+                <div class="space-y-4 mb-8">
+                    ${step.options.map((opt, i) => `
+                        <label class="survey-option group block cursor-pointer">
+                            <input type="radio" name="step-answer" value="${opt.value}" 
+                                   data-next-step="${opt.nextStep || step.nextStep || 'next'}"
+                                   class="hidden peer" ${savedValue === opt.value ? 'checked' : ''}>
+                            <div class="flex items-start p-5 rounded-xl border-2 border-gray-200 hover:border-energy-green/50 peer-checked:border-energy-green peer-checked:bg-energy-green/5 transition-all">
+                                <div class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 mr-4 mt-0.5 flex items-center justify-center group-has-[:checked]:border-energy-green group-has-[:checked]:bg-energy-green">
+                                    <i class="fa-solid fa-check text-white text-xs hidden group-has-[:checked]:block"></i>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-trust-blue mb-1">${opt.label}</div>
+                                    ${opt.description ? `<div class="text-sm text-gray-500">${opt.description}</div>` : ''}
+                                </div>
+                            </div>
+                        </label>
+                    `).join('')}
+                </div>
+                ${this.renderNavigation(step)}
+            `;
+        },
+
+        // Render multiselect (checkbox) question
+        renderMultiselect(step) {
+            const savedValues = this.state.answers[step.id] || [];
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-trust-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                            ${this.state.stepHistory.length}
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">${step.category || ''}</span>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-2">${step.question}</h3>
+                    <p class="text-gray-500">${step.description || ''}</p>
+                    ${step.hint ? `<p class="text-sm text-energy-green mt-2"><i class="fa-solid fa-lightbulb mr-1"></i>${step.hint}</p>` : ''}
+                </div>
+                <div class="space-y-3 mb-8">
+                    ${step.options.map(opt => `
+                        <label class="group block cursor-pointer">
+                            <input type="checkbox" name="step-answer" value="${opt.value}" 
+                                   class="hidden peer" ${savedValues.includes(opt.value) ? 'checked' : ''}>
+                            <div class="flex items-start p-4 rounded-xl border-2 border-gray-200 hover:border-energy-green/50 peer-checked:border-energy-green peer-checked:bg-energy-green/5 transition-all">
+                                <div class="flex-shrink-0 w-5 h-5 rounded border-2 border-gray-300 mr-3 mt-0.5 flex items-center justify-center group-has-[:checked]:border-energy-green group-has-[:checked]:bg-energy-green">
+                                    <i class="fa-solid fa-check text-white text-xs hidden group-has-[:checked]:block"></i>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-trust-blue">${opt.label}</span>
+                                    ${opt.description ? `<p class="text-sm text-gray-500 mt-1">${opt.description}</p>` : ''}
+                                </div>
+                            </div>
+                        </label>
+                    `).join('')}
+                </div>
+                ${this.renderNavigation(step)}
+            `;
+        },
+
+        // Render multiform (multiple fields in one step)
+        renderMultiform(step) {
+            const savedAnswers = this.state.answers[step.id] || {};
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-trust-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                            ${this.state.stepHistory.length}
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">${step.category || ''}</span>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-2">${step.question}</h3>
+                    <p class="text-gray-500">${step.description || ''}</p>
+                </div>
+                <div class="space-y-5 mb-8" id="multiform-fields">
+                    ${step.fields.map(field => this.renderMultiformField(field, savedAnswers[field.id])).join('')}
+                </div>
+                ${step.hint ? `<p class="text-sm text-gray-500 mb-6"><i class="fa-solid fa-info-circle mr-1"></i>${step.hint}</p>` : ''}
+                ${this.renderNavigation(step)}
+            `;
+        },
+
+        // Render a single multiform field based on its type
+        renderMultiformField(field, savedValue) {
+            const requiredMark = field.required ? '<span class="text-red-500">*</span>' : '';
+            const baseInputClass = 'w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-energy-green focus:border-energy-green outline-none transition-all';
+            
+            let inputHtml = '';
+            
+            switch(field.type) {
+                case 'number':
+                    inputHtml = `
+                        <input type="number" 
+                               id="multiform-${field.id}" 
+                               name="${field.id}"
+                               value="${savedValue || field.default || ''}"
+                               placeholder="${field.placeholder || ''}"
+                               ${field.min !== undefined ? `min="${field.min}"` : ''}
+                               ${field.max !== undefined ? `max="${field.max}"` : ''}
+                               ${field.step !== undefined ? `step="${field.step}"` : ''}
+                               class="${baseInputClass} multiform-input"
+                               ${field.required ? 'required' : ''}
+                               data-field-id="${field.id}">
+                        ${field.unit ? `<span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">${field.unit}</span>` : ''}
+                    `;
+                    break;
+                    
+                case 'select':
+                    inputHtml = `
+                        <select id="multiform-${field.id}" 
+                                name="${field.id}"
+                                class="${baseInputClass} multiform-input"
+                                ${field.required ? 'required' : ''}
+                                data-field-id="${field.id}">
+                            <option value="">${field.placeholder || 'Selecteer...'}</option>
+                            ${field.options.map(opt => `
+                                <option value="${opt.value}" ${savedValue === opt.value ? 'selected' : ''}>
+                                    ${opt.label}
+                                </option>
+                            `).join('')}
+                        </select>
+                    `;
+                    break;
+                    
+                case 'textarea':
+                    inputHtml = `
+                        <textarea id="multiform-${field.id}" 
+                                  name="${field.id}"
+                                  placeholder="${field.placeholder || ''}"
+                                  rows="${field.rows || 3}"
+                                  class="${baseInputClass} multiform-input resize-none"
+                                  ${field.required ? 'required' : ''}
+                                  data-field-id="${field.id}">${savedValue || ''}</textarea>
+                    `;
+                    break;
+                    
+                default: // text, email, tel, etc.
+                    inputHtml = `
+                        <input type="${field.type || 'text'}" 
+                               id="multiform-${field.id}" 
+                               name="${field.id}"
+                               value="${savedValue || ''}"
+                               placeholder="${field.placeholder || ''}"
+                               ${field.autocomplete ? `autocomplete="${field.autocomplete}"` : ''}
+                               class="${baseInputClass} multiform-input"
+                               ${field.required ? 'required' : ''}
+                               data-field-id="${field.id}">
+                    `;
+            }
+            
+            return `
+                <div class="multiform-field">
+                    <label class="block text-sm font-semibold text-trust-blue mb-2" for="multiform-${field.id}">
+                        ${field.label} ${requiredMark}
+                    </label>
+                    ${field.description ? `<p class="text-sm text-gray-500 mb-2">${field.description}</p>` : ''}
+                    <div class="relative">
+                        ${inputHtml}
+                    </div>
+                    ${field.hint ? `<p class="text-xs text-gray-400 mt-1">${field.hint}</p>` : ''}
+                </div>
+            `;
+        },
+
+        // Render text input question
+        renderText(step) {
+            const savedValue = this.state.answers[step.id] || '';
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-trust-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                            ${this.state.stepHistory.length}
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">${step.category || ''}</span>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-2">${step.question}</h3>
+                    <p class="text-gray-500">${step.description || ''}</p>
+                </div>
+                <div class="mb-8">
+                    <input type="text" id="text-input" value="${savedValue}"
+                           placeholder="${step.placeholder || ''}"
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-energy-green focus:border-energy-green outline-none transition-all">
+                    ${step.hint ? `<p class="text-sm text-gray-500 mt-2"><i class="fa-solid fa-info-circle mr-1"></i>${step.hint}</p>` : ''}
+                </div>
+                ${this.renderNavigation(step)}
+            `;
+        },
+
+        // Render file upload question
+        renderFile(step) {
+            const hasFile = this.state.uploadedFile !== null;
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-trust-blue text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">
+                            ${this.state.stepHistory.length}
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">${step.category || ''}</span>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-2">${step.question}</h3>
+                    <p class="text-gray-500">${step.description || ''}</p>
+                </div>
+                <div class="bg-energy-green/5 border border-energy-green/20 rounded-xl p-5 mb-6">
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-lightbulb text-energy-green mr-3 mt-1"></i>
+                        <p class="text-sm text-gray-600">
+                            <strong class="text-trust-blue">Dit is cruciaal</strong> om de beloofde terugverdientijd van 3-7 jaar te toetsen aan de realiteit.
+                        </p>
+                    </div>
+                </div>
+                <div id="upload-zone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-energy-green/50 transition-colors cursor-pointer mb-8">
+                    <input type="file" id="file-input" accept="${step.accept || '*'}" class="hidden">
+                    <div id="upload-placeholder" class="${hasFile ? 'hidden' : ''}">
+                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-300 mb-4"></i>
+                        <p class="font-semibold text-trust-blue mb-2">Sleep uw bestand hierheen of klik om te uploaden</p>
+                        <p class="text-sm text-gray-500">${step.hint || 'Selecteer een bestand'}</p>
+                    </div>
+                    <div id="upload-success" class="${hasFile ? '' : 'hidden'}">
+                        <i class="fa-solid fa-file-circle-check text-4xl text-energy-green mb-4"></i>
+                        <p class="font-semibold text-trust-blue mb-2" id="uploaded-filename">${hasFile ? SecurityUtils.escapeHtml(this.state.uploadedFile.name) : ''}</p>
+                        <p class="text-sm text-energy-green">Bestand succesvol geselecteerd</p>
+                    </div>
+                </div>
+                ${this.renderNavigation(step)}
+            `;
+        },
+
+        // Render contact form
+        renderContactForm(step) {
+            const savedAnswers = this.state.answers[step.id] || {};
+            
+            // Helper om een input field te renderen op basis van type
+            const renderField = (field) => {
+                // Map field types to autocomplete values
+                const autocompleteMap = {
+                    'email': 'email',
+                    'tel': 'tel',
+                    'text': field.id === 'name' ? 'name' : 'on'
+                };
+                const autocomplete = autocompleteMap[field.type] || 'on';
+                
+                // Checkbox type field
+                if (field.type === 'checkbox') {
+                    return `
+                        <div class="flex items-start">
+                            <input type="checkbox" 
+                                   id="contact-${field.id}" 
+                                   name="${field.id}"
+                                   ${savedAnswers[field.id] === true ? 'checked' : ''}
+                                   class="mt-1 w-5 h-5 text-energy-green rounded border-gray-300 focus:ring-energy-green"
+                                   ${field.required ? 'required' : ''}>
+                            <label class="ml-3 text-sm text-gray-600" for="contact-${field.id}">
+                                ${field.label} ${field.required ? '<span class="text-red-500">*</span>' : ''}
+                            </label>
+                        </div>
+                    `;
+                }
+                
+                // Normal text/email/tel/etc. input field
+                return `
+                    <div>
+                        <label class="block text-sm font-semibold text-trust-blue mb-2" for="contact-${field.id}">
+                            ${field.label} ${field.required ? '<span class="text-red-500">*</span>' : ''}
+                        </label>
+                        <input type="${field.type}" 
+                               id="contact-${field.id}" 
+                               name="${field.id}"
+                               autocomplete="${autocomplete}"
+                               value="${savedAnswers[field.id] || ''}"
+                               placeholder="${field.placeholder || ''}"
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:ring-2 focus:ring-energy-green focus:border-energy-green outline-none transition-all"
+                               ${field.required ? 'required' : ''}>
+                    </div>
+                `;
+            };
+            
+            return `
+                <div class="mb-8 text-center">
+                    <div class="inline-flex items-center justify-center bg-energy-green/10 w-16 h-16 rounded-full mb-6">
+                        <i class="fa-solid fa-handshake text-energy-green text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-bold text-trust-blue mb-3">${step.question}</h3>
+                    <p class="text-gray-600 max-w-lg mx-auto">${step.description || ''}</p>
+                </div>
+                ${step.benefits ? `
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex items-center mb-4">
+                            <i class="fa-solid fa-gift text-energy-green mr-2"></i>
+                            <span class="font-semibold text-trust-blue">Wat krijgt u?</span>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-600">
+                            ${step.benefits.map(b => `
+                                <li class="flex items-center">
+                                    <i class="fa-solid fa-check text-energy-green mr-2"></i>${b}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                <div class="space-y-5 mb-8">
+                    ${step.fields.map(field => renderField(field)).join('')}
+                </div>
+                <p class="text-xs text-gray-400 text-center mb-6">
+                    <i class="fa-solid fa-lock mr-1"></i>
+                    Uw gegevens worden alleen gebruikt voor dit onderzoek en worden niet gedeeld met derden.
+                </p>
+                ${this.renderNavigation(step, true)}
+            `;
+        },
+
+        // Render success state
+        renderSuccess(step) {
+            return `
+                <div class="text-center py-8">
+                    <div class="inline-flex items-center justify-center bg-energy-green w-20 h-20 rounded-full mb-6">
+                        <i class="fa-solid fa-check text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl md:text-3xl font-bold text-trust-blue mb-4">${step.title}</h3>
+                    <p class="text-lg text-gray-600 mb-6 max-w-md mx-auto">${step.message}</p>
+                    ${step.steps ? `
+                        <div class="bg-energy-green/5 border border-energy-green/20 rounded-xl p-6 max-w-md mx-auto">
+                            <div class="flex items-center justify-center mb-3">
+                                <i class="fa-solid fa-envelope-circle-check text-energy-green text-xl mr-2"></i>
+                                <span class="font-semibold text-trust-blue">Wat gebeurt er nu?</span>
+                            </div>
+                            <ul class="text-sm text-gray-600 space-y-2 text-left">
+                                ${step.steps.map((s, i) => `
+                                    <li class="flex items-start">
+                                        <span class="text-energy-green mr-2">${i + 1}.</span>${s}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        },
+
+        // Render navigation buttons
+        renderNavigation(step, isSubmit = false) {
+            const showBack = this.state.stepHistory.length > 1;
+            
+            // Determine button text based on step context
+            let buttonText;
+            
+            // 1. Intro email step: "Start onderzoek"
+            if (step.id === 'intro_email') {
+                buttonText = '<i class="fa-solid fa-rocket mr-2"></i>Start onderzoek';
+            }
+            // 2. Final contact steps (going to success_*): "Verstuur aanmelding"
+            else if (step.nextStep && step.nextStep.startsWith('success')) {
+                buttonText = '<i class="fa-solid fa-paper-plane mr-2"></i>Verstuur aanmelding';
+            }
+            // 3. All other steps: "Volgende"
+            else {
+                buttonText = 'Volgende<i class="fa-solid fa-arrow-right ml-2"></i>';
+            }
+            
+            return `
+                <div class="flex ${showBack ? 'justify-between' : 'justify-end'}">
+                    ${showBack ? `
+                        <button type="button" onclick="SurveyEngine.prevStep()" 
+                                class="inline-flex items-center text-gray-500 hover:text-trust-blue px-6 py-3 rounded-xl font-semibold transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>Terug
+                        </button>
+                    ` : ''}
+                    <button type="button" onclick="SurveyEngine.${isSubmit ? 'submit' : 'nextStep'}()" id="next-btn"
+                            class="inline-flex items-center bg-energy-green hover:bg-energy-green-dark text-white px-8 py-3 rounded-xl font-semibold transition-colors">
+                        ${buttonText}
+                    </button>
+                </div>
+            `;
+        },
+
+        // Bind events for current step
+        bindEvents(step) {
+            // File upload handling
+            if (step.type === 'file') {
+                const zone = document.getElementById('upload-zone');
+                const input = document.getElementById('file-input');
+                
+                zone?.addEventListener('click', () => input?.click());
+                input?.addEventListener('change', (e) => this.handleFileUpload(e.target.files[0]));
+            }
+            
+            // Multiform real-time validation
+            if (step.type === 'multiform') {
+                const inputs = document.querySelectorAll('.multiform-input');
+                const nextBtn = document.getElementById('next-btn');
+                
+                const validateMultiform = () => {
+                    let isValid = true;
+                    step.fields.forEach(field => {
+                        if (field.required) {
+                            const input = document.getElementById(`multiform-${field.id}`);
+                            if (!input || !input.value || !input.value.toString().trim()) {
+                                isValid = false;
+                            }
+                        }
+                    });
+                    
+                    if (nextBtn) {
+                        nextBtn.disabled = !isValid;
+                        nextBtn.classList.toggle('opacity-50', !isValid);
+                        nextBtn.classList.toggle('cursor-not-allowed', !isValid);
+                    }
+                };
+                
+                inputs.forEach(input => {
+                    input.addEventListener('input', validateMultiform);
+                    input.addEventListener('change', validateMultiform);
+                });
+                
+                // Initial validation check
+                validateMultiform();
+            }
+        },
+
+        // Handle file upload - uploads to Supabase Storage
+        async handleFileUpload(file) {
+            if (file) {
+                const placeholder = document.getElementById('upload-placeholder');
+                const success = document.getElementById('upload-success');
+                const filename = document.getElementById('uploaded-filename');
+                
+                // === VALIDIERUNG: Nur CSV/Excel Dateien erlauben ===
+                const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+                const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+                
+                if (!allowedExtensions.includes(fileExtension)) {
+                    // Zeige Fehlermeldung
+                    if (placeholder) {
+                        placeholder.innerHTML = `
+                            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
+                            <p class="font-semibold text-red-600 mb-2">Ongeldig bestandstype!</p>
+                            <p class="text-sm text-gray-500">Alleen .csv, .xlsx of .xls bestanden zijn toegestaan.</p>
+                            <p class="text-xs text-gray-400 mt-2">U selecteerde: ${SecurityUtils.escapeHtml(file.name)}</p>
+                        `;
+                    }
+                    Logger.warn('❌ Invalid file type:', fileExtension);
+                    
+                    // Reset na 3 seconden
+                    setTimeout(() => {
+                        if (placeholder) {
+                            placeholder.innerHTML = `
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-300 mb-4"></i>
+                                <p class="font-semibold text-trust-blue mb-2">Sleep uw bestand hierheen of klik om te uploaden</p>
+                                <p class="text-sm text-gray-500">Alleen CSV of Excel bestanden (.csv, .xlsx, .xls)</p>
+                            `;
+                        }
+                    }, 3000);
+                    return;
+                }
+                
+                // === MAX BESTANDSGROOTTE: 10MB ===
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    if (placeholder) {
+                        placeholder.innerHTML = `
+                            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
+                            <p class="font-semibold text-red-600 mb-2">Bestand te groot!</p>
+                            <p class="text-sm text-gray-500">Maximum bestandsgrootte is 10MB.</p>
+                            <p class="text-xs text-gray-400 mt-2">Uw bestand: ${(file.size / 1024 / 1024).toFixed(2)}MB</p>
+                        `;
+                    }
+                    setTimeout(() => {
+                        if (placeholder) {
+                            placeholder.innerHTML = `
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-300 mb-4"></i>
+                                <p class="font-semibold text-trust-blue mb-2">Sleep uw bestand hierheen of klik om te uploaden</p>
+                                <p class="text-sm text-gray-500">Alleen CSV of Excel bestanden (max 10MB)</p>
+                            `;
+                        }
+                    }, 3000);
+                    return;
+                }
+                
+                // === MIME TYPE VALIDATION: Controleer bestandsinhoud (magic bytes) ===
+                const mimeCheck = await SecurityUtils.validateFileMIME(file);
+                if (!mimeCheck.valid) {
+                    if (placeholder) {
+                        placeholder.innerHTML = `
+                            <i class="fa-solid fa-shield-halved text-4xl text-red-500 mb-4"></i>
+                            <p class="font-semibold text-red-600 mb-2">Beveiligingscontrole mislukt!</p>
+                            <p class="text-sm text-gray-500">Dit bestand lijkt geen geldig CSV/Excel bestand te zijn.</p>
+                            <p class="text-xs text-gray-400 mt-2">Controleer of u het juiste bestand heeft geselecteerd.</p>
+                        `;
+                    }
+                    Logger.warn('❌ MIME type validation failed for:', file.name);
+                    
+                    setTimeout(() => {
+                        if (placeholder) {
+                            placeholder.innerHTML = `
+                                <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-300 mb-4"></i>
+                                <p class="font-semibold text-trust-blue mb-2">Sleep uw bestand hierheen of klik om te uploaden</p>
+                                <p class="text-sm text-gray-500">Alleen CSV of Excel bestanden (.csv, .xlsx, .xls)</p>
+                            `;
+                        }
+                    }, 4000);
+                    return;
+                }
+                
+                // Show uploading state
+                if (placeholder) {
+                    placeholder.innerHTML = `
+                        <i class="fa-solid fa-spinner fa-spin text-4xl text-energy-green mb-4"></i>
+                        <p class="font-semibold text-trust-blue mb-2">Bestand wordt geüpload...</p>
+                        <p class="text-sm text-gray-500">${SecurityUtils.escapeHtml(file.name)}</p>
+                    `;
+                }
+                
+                // Generate unique filename: sessionId/timestamp_originalname
+                const uniqueName = `${this.state.sessionId}/${Date.now()}_${file.name}`;
+                
+                let uploadSuccess = false;
+                
+                if (this.supabase) {
+                    try {
+                        // Upload to Supabase Storage bucket 'survey-uploads'
+                        const { data, error } = await this.supabase.storage
+                            .from('survey-uploads')
+                            .upload(uniqueName, file, {
+                                cacheControl: '3600',
+                                upsert: false,
+                                contentType: file.type || 'text/csv' // Explizit MIME type
+                            });
+                        
+                        if (error) {
+                            console.error('❌ File upload error:', error);
+                            // Fallback: store metadata only
+                        } else {
+                            uploadSuccess = true;
+                            Logger.log('✅ File uploaded to:', uniqueName);
+                        }
+                    } catch (e) {
+                        console.error('❌ File upload failed:', e);
+                    }
+                }
+                
+                // Store file info in state (NO public URL - files are private!)
+                this.state.uploadedFile = {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: file.lastModified,
+                    storagePath: uploadSuccess ? uniqueName : null // Only path, access via Dashboard
+                };
+                
+                // Update UI
+                if (placeholder) {
+                    placeholder.classList.add('hidden');
+                    placeholder.innerHTML = `
+                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-300 mb-4"></i>
+                        <p class="font-semibold text-trust-blue mb-2">Sleep uw bestand hierheen of klik om te uploaden</p>
+                    `;
+                }
+                if (success) success.classList.remove('hidden');
+                if (filename) filename.textContent = file.name + (uploadSuccess ? ' ✓' : '');
+                
+                Logger.log('📁 File processed:', this.state.uploadedFile);
+            }
+        },
+
+        // Collect answer from current step
+        collectAnswer() {
+            const step = this.getCurrentStep();
+            if (!step) return null;
+
+            switch(step.type) {
+                case 'choice':
+                    const radio = document.querySelector('input[name="step-answer"]:checked');
+                    if (radio) {
+                        this.state.answers[step.id] = radio.value;
+                        return { value: radio.value, nextStep: radio.dataset.nextStep };
+                    }
+                    return null;
+                    
+                case 'multiselect':
+                    const checkboxes = document.querySelectorAll('input[name="step-answer"]:checked');
+                    const values = Array.from(checkboxes).map(cb => cb.value);
+                    this.state.answers[step.id] = values;
+                    return { value: values, nextStep: step.nextStep };
+                    
+                case 'text':
+                    const textInput = document.getElementById('text-input');
+                    if (textInput) {
+                        this.state.answers[step.id] = textInput.value;
+                        return { value: textInput.value, nextStep: step.nextStep };
+                    }
+                    return null;
+                    
+                case 'file':
+                    this.state.answers[step.id] = this.state.uploadedFile;
+                    return { value: this.state.uploadedFile, nextStep: step.nextStep };
+                
+                case 'multiform':
+                    const multiformData = {};
+                    step.fields.forEach(field => {
+                        const input = document.getElementById(`multiform-${field.id}`);
+                        if (input) {
+                            // Convert to number if field type is number
+                            multiformData[field.id] = field.type === 'number' && input.value 
+                                ? parseFloat(input.value) 
+                                : input.value;
+                        }
+                    });
+                    this.state.answers[step.id] = multiformData;
+                    return { value: multiformData, nextStep: step.nextStep };
+                    
+                case 'contact_form':
+                    const contactData = {};
+                    step.fields.forEach(field => {
+                        const input = document.getElementById(`contact-${field.id}`);
+                        if (input) {
+                            // Checkbox fields: use .checked, otherwise use .value
+                            contactData[field.id] = field.type === 'checkbox' 
+                                ? input.checked 
+                                : input.value;
+                        }
+                    });
+                    this.state.answers[step.id] = contactData;
+                    return { value: contactData, nextStep: step.nextStep };
+                    
+                default:
+                    return null;
+            }
+        },
+
+        // Validate current step
+        validate() {
+            const step = this.getCurrentStep();
+            if (!step || !step.required) return true;
+
+            const answer = this.state.answers[step.id];
+            
+            switch(step.type) {
+                case 'choice':
+                    return answer !== null && answer !== undefined;
+                case 'multiselect':
+                    return true; // Optional by nature
+                case 'text':
+                    return answer && answer.trim().length > 0;
+                case 'file':
+                    return true; // Usually optional
+                case 'multiform':
+                    if (!answer) return false;
+                    for (const field of step.fields) {
+                        if (field.required) {
+                            const value = answer[field.id];
+                            if (value === null || value === undefined || value === '' || 
+                                (typeof value === 'string' && !value.trim())) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                case 'contact_form':
+                    if (!answer) return false;
+                    for (const field of step.fields) {
+                        if (field.required) {
+                            const value = answer[field.id];
+                            // Checkbox: must be true (checked)
+                            if (field.type === 'checkbox') {
+                                if (value !== true) return false;
+                            } else {
+                                // Text/email/tel: must have non-empty value
+                                if (!value || (typeof value === 'string' && !value.trim())) {
+                                    return false;
+                                }
+                            }
+                        }
+                        if (field.type === 'email' && answer[field.id]) {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailRegex.test(answer[field.id])) return false;
+                        }
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        },
+
+        // Go to next step
+        nextStep() {
+            try {
+                const result = this.collectAnswer();
+                const step = this.getCurrentStep();
+                
+                if (!step) {
+                    console.error('❌ Cannot navigate: current step not found');
+                    return;
+                }
+                
+                // Don't navigate away from success page
+                if (step.type === 'success') {
+                    return;
+                }
+                
+                if (step.required && !this.validate()) {
+                    alert('Vul alstublieft dit veld in om verder te gaan.');
+                    return;
+                }
+
+                // Determine next step
+                let nextStepId = result?.nextStep || step.nextStep || 'next';
+                
+                if (nextStepId === 'next') {
+                    // Find next step in sequence
+                    const currentIndex = this.config.steps.findIndex(s => s.id === this.state.currentStepId);
+                    if (currentIndex < this.config.steps.length - 1) {
+                        nextStepId = this.config.steps[currentIndex + 1].id;
+                    } else {
+                        Logger.warn('⚠️ No more steps in sequence');
+                        return;
+                    }
+                }
+
+                // Validate target step exists before navigating
+                if (!this.stepExists(nextStepId)) {
+                    console.error(`❌ Target step "${nextStepId}" does not exist!`);
+                    this.showError(
+                        'Navigatiefout', 
+                        `De volgende stap "${nextStepId}" bestaat niet. Dit is waarschijnlijk een typefout in de configuratie.`
+                    );
+                    return;
+                }
+
+                // Navigate
+                this.state.currentStepId = nextStepId;
+                this.state.stepHistory.push(nextStepId);
+                this.state.stepStartTime = Date.now();  // Reset step timer
+                this.render();
+                
+                // Track step completion and save progress
+                this.trackEvent('step_complete', { answer: result?.value });
+                this.saveProgress('in_progress');
+                
+                const container = document.getElementById('survey-container');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (error) {
+                console.error('❌ nextStep error:', error);
+                this.showError('Er is een fout opgetreden bij het navigeren.', error.message);
+            }
+        },
+
+        // Go to previous step
+        prevStep() {
+            try {
+                if (this.state.stepHistory.length > 1) {
+                    this.state.stepHistory.pop();
+                    this.state.currentStepId = this.state.stepHistory[this.state.stepHistory.length - 1];
+                    this.state.stepStartTime = Date.now();  // Reset step timer
+                    this.render();
+                    
+                    // Track step back
+                    this.trackEvent('step_back');
+                    
+                    const container = document.getElementById('survey-container');
+                    if (container) {
+                        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            } catch (error) {
+                console.error('❌ prevStep error:', error);
+                this.showError('Er is een fout opgetreden bij het teruggaan.', error.message);
+            }
+        },
+
+        // Submit survey
+        submit() {
+            const result = this.collectAnswer();
+            const step = this.getCurrentStep();
+            
+            if (!this.validate()) {
+                alert('Vul alstublieft alle verplichte velden in.');
+                return;
+            }
+
+            // Determine next step using same logic as nextStep()
+            const nextId = result?.nextStep || step?.nextStep || 'next';
+            
+            // If this is not the final contact step, just navigate
+            if (nextId !== 'success' && nextId !== 'next') {
+                // Navigate to specified next step
+                if (!this.stepExists(nextId)) {
+                    console.error(`❌ Target step "${nextId}" does not exist!`);
+                    this.showError('Navigatiefout', `De volgende stap "${nextId}" bestaat niet.`);
+                    return;
+                }
+                this.state.currentStepId = nextId;
+                this.state.stepHistory.push(nextId);
+                this.render();
+                const container = document.getElementById('survey-container');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                return;
+            }
+
+            // Final submission - show loading state
+            const btn = document.getElementById('next-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Verzenden...';
+            btn.disabled = true;
+
+            this.submitToBackend()
+                .then(response => {
+                    Logger.sensitive('✅ Survey submitted:', response);
+                    // Use nextStep from config, fallback to 'success'
+                    const finalStepId = step?.nextStep || 'success';
+                    if (this.stepExists(finalStepId)) {
+                        this.state.currentStepId = finalStepId;
+                    } else {
+                        this.state.currentStepId = 'success';
+                    }
+                    this.state.stepHistory.push(this.state.currentStepId);
+                    this.render();
+                })
+                .catch(error => {
+                    console.error('❌ Submit error:', error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    alert('Er is iets misgegaan. Probeer het opnieuw.');
+                });
+        },
+
+        // Submit to backend (Supabase)
+        async submitToBackend() {
+            // Mark as submitted to prevent drop-off tracking
+            this.state.isSubmitted = true;
+            
+            // Save final progress as completed (with CURRENT session)
+            await this.saveProgress('completed');
+            
+            // Track completion event
+            await this.trackEvent('completion', {
+                total_steps: this.state.stepHistory.length,
+                final_progress: this.state.maxProgress
+            });
+            
+            const completedSessionId = this.state.sessionId;
+            
+            // Clear session from localStorage AND generate NEW session for next run
+            localStorage.removeItem('survey_session_id');
+            localStorage.removeItem('survey_session_expiry');
+            
+            // Generate fresh session ID immediately (for potential next run without page reload)
+            this.state.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            Logger.sensitive('🆕 Fresh session ready for next run:', this.state.sessionId);
+            
+            // Return success with the completed session ID
+            return { success: true, id: completedSessionId };
+        },
+
+        // Get clean export data for Supabase
+        // =============================================
+        // MAPPING TABEL - Step ID → Database Kolom (Versie 2.1)
+        // =============================================
+        // | Step ID             | DB Kolom                | Waarden                                    |
+        // |---------------------|-------------------------|--------------------------------------------|
+        // | intro_email.email   | intro_email             | email adres                                |
+        // | intro_email.email   | contact_email           | email adres (kopie voor contact)           |
+        // | segmentation        | segmentation            | offerte/orientatie/eigenaar                |
+        // | offer_details.*     | offer_*                 | offerte details                            |
+        // | offer_assumptions   | offer_assumptions       | [...array van aannames]                    |
+        // | owner_details.*     | owner_*                 | eigenaar details                           |
+        // | data_availability   | has_data_export         | yes/no                                     |
+        // | file_upload         | uploaded_file_name      | bestandsnaam                               |
+        // | app_system          | app_system_used         | vrije tekst                                |
+        // | market_context      | contract_type           | dynamisch/vast/variabel/onbekend           |
+        // | btw_check           | btw_awareness           | btw antwoord                               |
+        // | terugleverkosten    | terugleverkosten        | ja/nee/onbekend                            |
+        // | behavior_validation | validation_steps_taken  | [...array van acties]                      |
+        // | behavior_hesitation | main_hesitation_reason  | 2027_onzekerheid/wantrouwen_verkoper/etc.  |
+        // | contact_permission  | contact_preference      | ja_bellen/ja_email/nee                     |
+        // | contact_call.*      | contact_* + best_time   | naam, telefoon, beste tijd, consent        |
+        // | contact_email_only.*| contact_* + email_*     | naam, email bevestiging, consent           |
+        // =============================================
+        getExportData() {
+            // 1. Haal de ruwe antwoorden op
+            const a = this.state.answers;
+
+            // 2. Helper functie om veilig data op te halen (voorkomt crashes bij undefined)
+            const getVal = (key) => a[key] || null;
+            
+            // 3. Helper voor complexe objecten (zoals contact_form steps)
+            const getField = (stepId, fieldId) => {
+                return a[stepId] && a[stepId][fieldId] ? a[stepId][fieldId] : null;
+            };
+            
+            // 4. Helper voor arrays (multiselect)
+            const getArray = (key) => Array.isArray(a[key]) ? a[key] : [];
+            
+            // 5. Helper voor checkbox/boolean
+            const getBool = (stepId, fieldId) => {
+                return a[stepId] && a[stepId][fieldId] === true;
+            };
+
+            // 6. CONSTRUEER DE DATABASE RIJ
+            // Koppeling: Config Step ID (links) -> DB Kolom (rechts)
+            // ============================================
+            // VERSIE 2.4.0-Investment-Validation - Aangepast aan surveyConfig.json
+            // ============================================
+            return {
+                session_id: this.state.sessionId,
+                current_step_id: this.state.currentStepId,
+                is_completed: this.state.isCompleted,
+                
+                // --- SEGMENTATIE (step: segmentation) ---
+                segmentation: getVal('segmentation'),
+
+                // --- ZONNEPANELEN (step: pv_check_offer / pv_check_orient / pv_check_owner) ---
+                has_pv: getVal('pv_check_offer') || getVal('pv_check_orient') || getVal('pv_check_owner'),
+
+                // --- OFFERTE DETAILS (step: offer_details) ---
+                offer_price_eur: getField('offer_details', 'offer_price_eur'),
+                offer_capacity_kwh: getField('offer_details', 'offer_capacity_kwh'),
+                offer_payback_years: getField('offer_details', 'offer_payback_years'),
+                
+                // --- OFFERTE AANNAMES (step: offer_assumptions) ---
+                offer_assumptions: getArray('offer_assumptions'),
+
+                // --- EIGENAAR DETAILS (step: owner_details) ---
+                owner_purchase_price_eur: getField('owner_details', 'owner_purchase_price_eur'),
+                owner_capacity_kwh: getField('owner_details', 'owner_capacity_kwh'),
+                owner_install_year: getField('owner_details', 'owner_install_year'),
+
+                // --- DATA BESCHIKBAARHEID (step: data_availability of data_availability_owners) ---
+                has_data_export: getVal('data_availability') || getVal('data_availability_owners'),
+                
+                // --- FILE UPLOAD (step: file_upload of file_upload_owners) ---
+                uploaded_file_name: a['file_upload']?.name || a['file_upload_owners']?.name || null,
+                uploaded_file_path: a['file_upload']?.storagePath || a['file_upload_owners']?.storagePath || null,
+
+                // --- MARKT CONTEXT (step: market_context of market_context_owners) ---
+                contract_type: getVal('market_context') || getVal('market_context_owners'),
+                
+                // --- TERUGLEVERKOSTEN (step: terugleverkosten of terugleverkosten_owners) ---
+                terugleverkosten: getVal('terugleverkosten') || getVal('terugleverkosten_owners'),
+
+                // --- GEDRAG & MENING ---
+                // step: behavior_hesitation (voor niet-eigenaren)
+                main_hesitation_reason: getVal('behavior_hesitation'),
+                // step: owner_experience (voor eigenaren)
+                owner_experience: getVal('owner_experience'),
+                
+                // --- MARKTONDERZOEK (step: investment_behavior) ---
+                // Hoeveel geld besteed aan onafhankelijk advies/tools
+                investment_behavior: getVal('investment_behavior'),
+
+                // --- LEAD CAPTURE (step: final_lead_capture) ---
+                // SECURITY: Sanitize all PII before storage
+                contact_name: SecurityUtils.sanitizeText(getField('final_lead_capture', 'name')),
+                contact_email: (() => {
+                    const email = getField('final_lead_capture', 'email');
+                    return email && SecurityUtils.isValidEmail(email) ? email.toLowerCase().trim() : null;
+                })(),
+                contact_phone: SecurityUtils.sanitizePhone(getField('final_lead_capture', 'phone')),
+                interview_optin: getBool('final_lead_capture', 'interview_optin'),
+
+                // --- META DATA ---
+                raw_answers: a,
+                updated_at: new Date().toISOString()
+            };
+        },
+
+        // Toggle admin panel
+        toggleAdminPanel() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('config-editor').value = JSON.stringify(this.config, null, 2);
+            }
+        },
+
+        // Save config from admin panel
+        saveConfig() {
+            const editor = document.getElementById('config-editor');
+            const errorDiv = document.getElementById('config-error');
+            const statusSpan = document.getElementById('config-status');
+
+            try {
+                const newConfig = JSON.parse(editor.value);
+                
+                // Validate basic structure
+                if (!newConfig.steps || !Array.isArray(newConfig.steps)) {
+                    throw new Error('Config must have a "steps" array');
+                }
+
+                // Reset and reinitialize
+                this.config = newConfig;
+                this.state.currentStepId = this.config.steps[0].id;
+                this.state.stepHistory = [this.state.currentStepId];
+                this.state.answers = {};
+                this.state.uploadedFile = null;
+
+                // Update UI
+                errorDiv.classList.add('hidden');
+                statusSpan.textContent = 'Saved!';
+                statusSpan.classList.remove('text-gray-500');
+                statusSpan.classList.add('text-energy-green');
+                
+                setTimeout(() => {
+                    statusSpan.textContent = 'Ready';
+                    statusSpan.classList.add('text-gray-500');
+                    statusSpan.classList.remove('text-energy-green');
+                }, 2000);
+
+                this.render();
+                Logger.log('✅ Survey config updated and reloaded');
+                
+            } catch (e) {
+                errorDiv.textContent = `Error: ${e.message}`;
+                errorDiv.classList.remove('hidden');
+                statusSpan.textContent = 'Error';
+                statusSpan.classList.add('text-red-500');
+            }
+        },
+
+        // Export current answers
+        exportAnswers() {
+            const exportData = this.getExportData();
+            Logger.log('═══════════════════════════════════════');
+            Logger.log('📤 CURRENT SURVEY ANSWERS EXPORT');
+            Logger.log('═══════════════════════════════════════');
+            Logger.sensitive(JSON.stringify(exportData, null, 2));
+            Logger.log('═══════════════════════════════════════');
+            
+            // Also copy to clipboard (only in debug mode for security)
+            if (DEBUG_MODE) {
+                navigator.clipboard?.writeText(JSON.stringify(exportData, null, 2))
+                    .then(() => alert('Answers copied to clipboard!'))
+                    .catch(() => alert('Check console for exported data'));
+            }
+        }
+    };
+
+    // =============================================
+    // SURVEY CONFIG LOADER
+    // Laadt de config uit surveyConfig.json
+    // =============================================
+    async function loadSurveyConfig() {
+        // Eerst checken of er een custom config in localStorage staat
+        const saved = localStorage.getItem('surveyConfig');
+        if (saved) {
+            try {
+                const parsedConfig = JSON.parse(saved);
+                Logger.warn('⚠️ Aangepaste config geladen uit localStorage!');
+                console.info('   💡 Tip: localStorage.removeItem("surveyConfig") om externe JSON te gebruiken');
+                return parsedConfig;
+            } catch (e) {
+                Logger.warn('Failed to parse saved config, loading from JSON file');
+            }
+        }
+        
+        // Laad config uit externe JSON file
+        try {
+            const response = await fetch('surveyConfig.json');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const config = await response.json();
+            Logger.log('✅ Config geladen uit surveyConfig.json');
+            return config;
+        } catch (error) {
+            console.error('❌ Kon surveyConfig.json niet laden:', error);
+            // Toon foutmelding aan gebruiker
+            document.getElementById('survey-container').innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fa-solid fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-red-600 mb-2">Configuratiefout</h3>
+                    <p class="text-gray-600">Kon de vragenlijst niet laden. Probeer de pagina te verversen.</p>
+                    <p class="text-sm text-gray-400 mt-2">Error: ${error.message}</p>
+                </div>
+            `;
+            return null;
+        }
+    }
+
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', async () => {
+        const config = await loadSurveyConfig();
+        if (config) {
+            SurveyEngine.init(config);
+        }
+    });
+    </script>
+
+    <!-- Trust & Security Section -->
+    <section class="py-16 bg-gray-50 border-t border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 text-center">
+                <div>
+                    <div class="bg-trust-blue/10 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-shield-halved text-trust-blue text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-trust-blue mb-2">Privacy First</h4>
+                    <p class="text-gray-500 text-sm">Uw data blijft van u. Wij analyseren alleen wat nodig is.</p>
+                </div>
+                <div>
+                    <div class="bg-trust-blue/10 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-graduation-cap text-trust-blue text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-trust-blue mb-2">Academisch Onderzoek</h4>
+                    <p class="text-gray-500 text-sm">Onderdeel van een afstudeerproject aan Fontys Hogeschool.</p>
+                </div>
+                <div>
+                    <div class="bg-trust-blue/10 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-scale-balanced text-trust-blue text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-trust-blue mb-2">100% Onafhankelijk</h4>
+                    <p class="text-gray-500 text-sm">Geen banden met batterij-verkopers of energiebedrijven.</p>
+                </div>
+                <div>
+                    <div class="bg-trust-blue/10 w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-code text-trust-blue text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-trust-blue mb-2">Open Methodologie</h4>
+                    <p class="text-gray-500 text-sm">Onze berekeningsmethode is transparant en verifieerbaar.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-trust-blue py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fa-solid fa-bolt text-energy-green text-2xl"></i>
+                        <span class="font-bold text-white text-xl">Energy-Truth Simulator</span>
+                    </div>
+                    <p class="text-gray-400 mb-4 leading-relaxed">
+                        Een onafhankelijke tool om huiseigenaren te beschermen tegen misleidende verkoop van thuisbatterijen. 
+                        Gebaseerd op echte data, wetenschappelijke methodes en transparante berekeningen.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://www.linkedin.com/in/andré-langer" target="_blank" rel="noopener noreferrer" class="bg-white/10 hover:bg-white/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors" title="LinkedIn">
+                            <i class="fa-brands fa-linkedin-in text-white"></i>
+                        </a>
+                        <a href="https://github.com/AlferNL" target="_blank" rel="noopener noreferrer" class="bg-white/10 hover:bg-white/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors" title="GitHub">
+                            <i class="fa-brands fa-github text-white"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#probleem" class="text-gray-400 hover:text-white transition-colors">Het Probleem</a></li>
+                        <li><a href="#oplossing" class="text-gray-400 hover:text-white transition-colors">Onze Oplossing</a></li>
+                        <li><a href="#onderzoek" class="text-gray-400 hover:text-white transition-colors">Doe Mee</a></li>
+                        <li><a href="#early-adopter" class="text-gray-400 hover:text-white transition-colors">Early Adopters</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-4">Contact</h4>
+                    <ul class="space-y-2">
+                        <li class="text-gray-400">
+                            <i class="fa-solid fa-envelope mr-2 text-energy-green"></i>
+                            <a href="mailto:i274867@fontysict.nl" class="hover:text-white transition-colors">i274867@fontysict.nl</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Disclaimer -->
+            <div class="border-t border-white/10 pt-8">
+                <div class="bg-white/5 rounded-xl p-6 mb-6">
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-circle-info text-energy-green mr-3 mt-1"></i>
+                        <div>
+                            <h5 class="font-semibold text-white mb-2">Disclaimer</h5>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Dit is een <strong class="text-white">studentenonderzoeksproject</strong> van Fontys Hogeschool. 
+                                De Energy-Truth Simulator is bedoeld als educatieve tool en geeft geen financieel advies. 
+                                Resultaten zijn indicatief en gebaseerd op historische data en aannames. 
+                                Raadpleeg altijd een onafhankelijk adviseur voordat u grote financiële beslissingen neemt.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
+                    <p>© 2026 Energy-Truth Simulator. Alle rechten voorbehouden.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" onclick="openModal('privacy-modal'); return false;" class="hover:text-white transition-colors">Privacy Policy</a>
+                        <a href="#" onclick="openModal('voorwaarden-modal'); return false;" class="hover:text-white transition-colors">Voorwaarden</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Menu Script -->
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }
+            });
+        });
+
+        // Navbar background change on scroll
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-md');
+            } else {
+                nav.classList.remove('shadow-md');
+            }
+        });
+    </script>
+
+    <!-- =============================================
+         PRIVACY POLICY MODAL
+         ============================================= -->
+    <div id="privacy-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" onclick="closeModal('privacy-modal')"></div>
+        <!-- Modal Content -->
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto pointer-events-auto">
+                <!-- Header -->
+                <div class="sticky top-0 bg-trust-blue text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i class="fa-solid fa-shield-halved mr-3"></i>Privacy Policy
+                    </h2>
+                    <button onclick="closeModal('privacy-modal')" class="text-white/80 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-2xl"></i>
+                    </button>
+                </div>
+                <!-- Body -->
+                <div class="px-6 py-6 text-gray-700 space-y-5">
+                    <div class="bg-energy-green/10 border border-energy-green/30 rounded-xl p-4">
+                        <p class="text-sm font-semibold text-trust-blue flex items-center">
+                            <i class="fa-solid fa-graduation-cap mr-2 text-energy-green"></i>
+                            HBO Afstudeeronderzoek - Fontys Hogeschool ICT
+                        </p>
+                    </div>
+
+                    <h3 class="font-bold text-trust-blue text-lg">1. Wie zijn wij?</h3>
+                    <p>De Energy-Truth Simulator is een <strong>studentenonderzoeksproject</strong> van Fontys Hogeschool ICT. Dit onderzoek richt zich op het analyseren van de werkelijke terugverdientijd van thuisbatterijen op basis van uw persoonlijke energiedata.</p>
+
+                    <h3 class="font-bold text-trust-blue text-lg">2. Welke gegevens verzamelen wij?</h3>
+                    <ul class="list-disc list-inside space-y-2 ml-2">
+                        <li><strong>P1-data (energieverbruik)</strong> – Geüploade CSV/Excel bestanden met uw slimme meter gegevens</li>
+                        <li><strong>Contactgegevens</strong> – Naam, e-mailadres en optioneel telefoonnummer</li>
+                        <li><strong>Enquêteantwoorden</strong> – Uw antwoorden over thuisbatterijen en energiegebruik</li>
+                    </ul>
+
+                    <h3 class="font-bold text-trust-blue text-lg">3. Hoe worden uw gegevens opgeslagen?</h3>
+                    <p>Alle gegevens worden <strong>veilig opgeslagen in Supabase</strong>, een beveiligde cloud database met:</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2 text-sm">
+                        <li>Encryptie tijdens transport (TLS/SSL)</li>
+                        <li>Row Level Security (RLS) voor toegangscontrole</li>
+                        <li>Servers binnen de EU (GDPR-compliant)</li>
+                    </ul>
+
+                    <h3 class="font-bold text-trust-blue text-lg">4. Waarvoor gebruiken wij uw gegevens?</h3>
+                    <p>Uw gegevens worden <strong>uitsluitend</strong> gebruikt voor:</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2">
+                        <li>Wetenschappelijke analyse in het kader van dit afstudeeronderzoek</li>
+                        <li>Genereren van een persoonlijke simulatierapport</li>
+                        <li>Eventueel contact opnemen voor een kort interview (alleen met uw toestemming)</li>
+                    </ul>
+
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
+                        <p class="font-bold text-red-700 flex items-center">
+                            <i class="fa-solid fa-ban mr-2"></i>
+                            Wij verkopen GEEN data aan commerciële partijen!
+                        </p>
+                        <p class="text-sm text-red-600 mt-1">Uw gegevens worden nooit gedeeld met derden voor marketing of commerciële doeleinden.</p>
+                    </div>
+
+                    <h3 class="font-bold text-trust-blue text-lg">5. Hoe lang bewaren wij uw gegevens?</h3>
+                    <p>Alle verzamelde gegevens worden <strong>uiterlijk juli 2026</strong> verwijderd na afronding van het onderzoek. U kunt op elk moment verzoeken om eerder verwijdering van uw gegevens.</p>
+
+                    <h3 class="font-bold text-trust-blue text-lg">6. Uw rechten</h3>
+                    <p>Conform de AVG/GDPR heeft u het recht op:</p>
+                    <ul class="list-disc list-inside space-y-1 ml-2 text-sm">
+                        <li>Inzage in uw gegevens</li>
+                        <li>Correctie van onjuiste gegevens</li>
+                        <li>Verwijdering van uw gegevens ("recht om vergeten te worden")</li>
+                        <li>Intrekken van toestemming</li>
+                    </ul>
+
+                    <h3 class="font-bold text-trust-blue text-lg">7. Contact</h3>
+                    <p class="text-sm">Vragen over deze Privacy Policy? Neem contact op via het e-mailadres dat u ontvangt in de bevestigingsmail na deelname.</p>
+
+                    <p class="text-xs text-gray-400 mt-6 pt-4 border-t">Laatst bijgewerkt: Februari 2026</p>
+                </div>
+                <!-- Footer -->
+                <div class="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t">
+                    <button onclick="closeModal('privacy-modal')" class="w-full bg-trust-blue hover:bg-trust-blue-light text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                        Sluiten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         VOORWAARDEN MODAL
+         ============================================= -->
+    <div id="voorwaarden-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" onclick="closeModal('voorwaarden-modal')"></div>
+        <!-- Modal Content -->
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto pointer-events-auto">
+                <!-- Header -->
+                <div class="sticky top-0 bg-trust-blue text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <i class="fa-solid fa-file-contract mr-3"></i>Voorwaarden
+                    </h2>
+                    <button onclick="closeModal('voorwaarden-modal')" class="text-white/80 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-2xl"></i>
+                    </button>
+                </div>
+                <!-- Body -->
+                <div class="px-6 py-6 text-gray-700 space-y-5">
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p class="font-semibold text-amber-800 flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                            Belangrijke mededeling
+                        </p>
+                        <p class="text-sm text-amber-700 mt-1">Door gebruik te maken van de Energy-Truth Simulator gaat u akkoord met onderstaande voorwaarden.</p>
+                    </div>
+
+                    <h3 class="font-bold text-trust-blue text-lg">1. Doel van de Simulator</h3>
+                    <p>De Energy-Truth Simulator is een <strong>onderzoeksinstrument</strong> ontwikkeld in het kader van een HBO-afstudeerproject aan Fontys Hogeschool ICT. Het doel is het verzamelen van inzichten over de werkelijke terugverdientijd van thuisbatterijen.</p>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p class="font-bold text-trust-blue flex items-center">
+                            <i class="fa-solid fa-info-circle mr-2"></i>
+                            Geen financieel advies
+                        </p>
+                        <p class="text-sm text-blue-700 mt-1">De resultaten van deze simulator vormen <strong>geen officieel financieel advies</strong>. De berekeningen zijn indicatief en gebaseerd op historische data, aannames en modelleringstechnieken. Raadpleeg altijd een gekwalificeerd adviseur voordat u financiële beslissingen neemt.</p>
+                    </div>
+
+                    <h3 class="font-bold text-trust-blue text-lg">2. Vrijwillige Deelname</h3>
+                    <p>Deelname aan dit onderzoek is <strong>volledig vrijwillig</strong>. U kunt op elk moment stoppen zonder opgaaf van reden. Uw gegevens worden in dat geval op verzoek verwijderd.</p>
+
+                    <h3 class="font-bold text-trust-blue text-lg">3. Nauwkeurigheid van Resultaten</h3>
+                    <ul class="list-disc list-inside space-y-2 ml-2 text-sm">
+                        <li>Resultaten zijn <strong>indicatief</strong> en afhankelijk van de kwaliteit van de aangeleverde data</li>
+                        <li>Toekomstige energieprijzen en regelgeving kunnen afwijken van de gebruikte aannames</li>
+                        <li>De simulator houdt geen rekening met alle individuele omstandigheden</li>
+                    </ul>
+
+                    <h3 class="font-bold text-trust-blue text-lg">4. Aansprakelijkheid</h3>
+                    <p class="text-sm">Fontys Hogeschool, de onderzoeker en de Energy-Truth Simulator zijn <strong>niet aansprakelijk</strong> voor beslissingen die u neemt op basis van de simulatieresultaten. Gebruik de informatie op eigen risico.</p>
+
+                    <h3 class="font-bold text-trust-blue text-lg">5. Intellectueel Eigendom</h3>
+                    <p class="text-sm">Alle content, design en functionaliteit van de Energy-Truth Simulator blijven eigendom van de onderzoeker en Fontys Hogeschool ICT.</p>
+
+                    <h3 class="font-bold text-trust-blue text-lg">6. Wijzigingen</h3>
+                    <p class="text-sm">Deze voorwaarden kunnen worden aangepast gedurende de onderzoeksperiode. Significante wijzigingen worden gecommuniceerd via de website.</p>
+
+                    <p class="text-xs text-gray-400 mt-6 pt-4 border-t">Laatst bijgewerkt: Februari 2026</p>
+                </div>
+                <!-- Footer -->
+                <div class="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t">
+                    <button onclick="closeModal('voorwaarden-modal')" class="w-full bg-trust-blue hover:bg-trust-blue-light text-white font-semibold py-3 px-6 rounded-xl transition-colors">
+                        Sluiten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Open/Close Script -->
+    <script>
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scroll
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('[id$="-modal"]').forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        closeModal(modal.id);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
