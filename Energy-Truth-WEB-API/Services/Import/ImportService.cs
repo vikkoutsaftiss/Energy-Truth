@@ -19,18 +19,25 @@ public class ImportService : IImportService
     }
     public async Task<List<EnergyImportDTO>> ProcessCsv(Stream fileStream, Dictionary<string, string> mapping, string providerName)
     {
+        using var peekReader = new StreamReader(fileStream, leaveOpen: true);
+        var headerLine = await peekReader.ReadLineAsync();
+        fileStream.Position = 0;
+
+        var detectedDelimiter = DetectDelimiter(headerLine ?? string.Empty);
+
         if (providerName != "Handmatige invoer")
         {
             var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName);
 
+            var delimiter = detectedDelimiter != '\0' ? detectedDelimiter.ToString() : provider.Delimiter;
+
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 HasHeaderRecord = true,
-                Delimiter = provider.Delimiter,
+                Delimiter = delimiter,
                 Mode = provider.CsvMode,
                 HeaderValidated = null,
                 MissingFieldFound = null
-
             };
 
             using var reader = new StreamReader(fileStream);
@@ -47,15 +54,12 @@ public class ImportService : IImportService
         }
 
         // Handmatige invoer
-        using var manualReader = new StreamReader(fileStream, leaveOpen: true);
-        var headerLine = await manualReader.ReadLineAsync();
-        var delimiter = DetectDelimiter(headerLine ?? string.Empty);
-        fileStream.Position = 0;
+        var manualDelimiter = detectedDelimiter != '\0' ? detectedDelimiter.ToString() : ",";
 
         var manualConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
-            Delimiter = delimiter.ToString(),
+            Delimiter = manualDelimiter,
             Mode = CsvMode.NoEscape,
             HeaderValidated = null,
             MissingFieldFound = null
@@ -63,8 +67,8 @@ public class ImportService : IImportService
 
         var date = new List<string> { "yyyy-MM-dd HH:mm" };
 
-        using var manualReader2 = new StreamReader(fileStream);
-        var rawManualContent = await manualReader2.ReadToEndAsync();
+        using var manualReader = new StreamReader(fileStream);
+        var rawManualContent = await manualReader.ReadToEndAsync();
         using var manualStringReader = new StringReader(rawManualContent);
         using var manualCsv = new CsvReader(manualStringReader, manualConfig);
 

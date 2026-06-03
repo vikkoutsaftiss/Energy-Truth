@@ -1,5 +1,7 @@
-﻿@page "/"
+﻿@* @page "/"
 @using Energy_Truth_Presentation.Components
+
+
 
 <PageTitle>Energy Truth - Dashboard</PageTitle>
 
@@ -18,3 +20,497 @@
         <ExplanationFileUpload />
     </MudCardActions>
 </MudStack>
+
+ *@
+
+@page "/"
+@layout Energy_Truth_Presentation.Layout.LandingLayout
+@inject NavigationManager Nav
+
+<PageTitle>Energy-Truth | Nationaal Thuisbatterij Onderzoek 2026</PageTitle>
+
+<HeadContent>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #1e3a5f 60%, #0f172a 100%); }
+        .gradient-cta {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+            transition: all 0.2s ease;
+        }
+        .gradient-cta:hover {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
+            box-shadow: 0 6px 25px rgba(34, 197, 94, 0.5);
+            transform: translateY(-2px);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+        @@keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+        }
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.1); transform: translateY(-4px); }
+        .nav-scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    </style>
+</HeadContent>
+
+<!-- Navigation -->
+<nav style="position:fixed; top:0; left:0; right:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; height:56px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-bolt" style="color:#22c55e; font-size:1.25rem;"></i>
+                <span style="font-weight:700; color:#1e3a5f; font-size:1.125rem;">Energy-Truth</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:2rem;">
+                <a href="#probleem" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Het Probleem</a>
+                <a href="#oplossing" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Onze Oplossing</a>
+                <a href="#voordelen" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Meedoen</a>
+                <a href="/login" class="gradient-cta" style="color:white; text-decoration:none; padding:8px 20px; border-radius:8px; font-weight:600; font-size:0.95rem;">
+                    <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Beta-Toegang
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="gradient-hero" style="padding-top:56px;">
+    <div style="max-width:1280px; margin:0 auto; padding:5rem 1.5rem 4rem;">
+        <div style="display:grid; grid-template-columns:7fr 5fr; gap:3rem; align-items:center;">
+
+            <!-- Left: Text -->
+            <div>
+                <div style="display:inline-flex; align-items:center; background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.3); border-radius:999px; padding:8px 16px; margin-bottom:1.5rem;">
+                    <i class="fa-solid fa-lock" style="color:#22c55e; margin-right:8px; font-size:0.875rem;"></i>
+                    <span style="color:#22c55e; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Exclusieve Beta-Toegang</span>
+                </div>
+
+                <h1 style="font-size:3.25rem; font-weight:800; color:white; line-height:1.1; margin-bottom:1.25rem;">
+                    De <span class="gradient-text">Eerlijke Waarheid</span> over Thuisbatterijen
+                </h1>
+
+                <p style="font-size:1rem; color:#9ca3af; font-weight:500; margin-bottom:0.75rem;">
+                    Geen verkooppraatjes, maar harde data.
+                </p>
+                <p style="font-size:1.125rem; color:#d1d5db; margin-bottom:2rem; line-height:1.7; max-width:600px;">
+                    De markt is een chaos van claims. Help ons onafhankelijke rekenmodel te trainen met uw P1-data en claim uw plek als <strong style="color:white;">Beta-Tester</strong> voor de eerste eerlijke simulator van Nederland.
+                </p>
+
+                <a href="/login" class="gradient-cta glow-pulse" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
+                    <i class="fa-solid fa-rocket" style="margin-right:12px;"></i>
+                    Start Validatie & Claim Beta-Toegang
+                </a>
+
+                <div style="margin-top:1.5rem; display:flex; flex-wrap:wrap; gap:1.5rem;">
+                    <div style="display:flex; align-items:center; color:#d1d5db;">
+                        <i class="fa-solid fa-circle-check" style="color:#22c55e; margin-right:8px;"></i>
+                        <span style="font-size:0.875rem;">Check op 2027-regels</span>
+                    </div>
+                    <div style="display:flex; align-items:center; color:#d1d5db;">
+                        <i class="fa-solid fa-circle-check" style="color:#22c55e; margin-right:8px;"></i>
+                        <span style="font-size:0.875rem;">Check op verborgen kosten</span>
+                    </div>
+                    <div style="display:flex; align-items:center; color:#d1d5db;">
+                        <i class="fa-solid fa-circle-check" style="color:#22c55e; margin-right:8px;"></i>
+                        <span style="font-size:0.875rem;">100% Onafhankelijk</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:1.25rem; display:inline-flex; align-items:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 16px;">
+                    <i class="fa-solid fa-graduation-cap" style="color:#22c55e; margin-right:8px;"></i>
+                    <span style="color:#9ca3af; font-size:0.875rem;">Onafhankelijk HBO-Onderzoek 2026 • Wij verkopen niets</span>
+                </div>
+            </div>
+
+            <!-- Right: Card -->
+            <div style="position:relative;">
+                <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(12px); border-radius:16px; padding:2rem; border:1px solid rgba(255,255,255,0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <span style="color:white; font-weight:600;">Beta-Tester Voordelen</span>
+                        <div style="background:rgba(34,197,94,0.2); border-radius:999px; padding:4px 10px;">
+                            <span style="color:#22c55e; font-size:0.75rem; font-weight:700;">GRATIS</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:1rem;">
+                        @foreach (var benefit in _heroBenefits)
+                        {
+                            <div style="display:flex; align-items:flex-start;">
+                                <div style="background:rgba(34,197,94,0.2); border-radius:999px; padding:6px; margin-right:12px; margin-top:2px; flex-shrink:0;">
+                                    <i class="fa-solid fa-check" style="color:#22c55e; font-size:0.75rem;"></i>
+                                </div>
+                                <div>
+                                    <div style="color:white; font-size:0.875rem; font-weight:500;">@benefit.Title</div>
+                                    <div style="color:#9ca3af; font-size:0.75rem;">@benefit.Desc</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.2);">
+                        <div style="display:flex; align-items:center; color:#fbbf24;">
+                            <i class="fa-solid fa-users" style="margin-right:8px;"></i>
+                            <span style="font-size:0.875rem; font-weight:500;">Beperkt aantal plekken beschikbaar</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glow-pulse" style="position:absolute; top:-12px; right:-12px; background:#22c55e; border-radius:999px; padding:10px; box-shadow:0 4px 12px rgba(34,197,94,0.4);">
+                    <i class="fa-solid fa-bolt" style="color:white; font-size:1.125rem;"></i>
+                </div>
+                <div style="position:absolute; bottom:-12px; left:-12px; background:white; border-radius:999px; padding:10px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                    <i class="fa-solid fa-shield-halved" style="color:#1e3a5f; font-size:1.125rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust Indicators -->
+<section style="background:linear-gradient(to right, #f9fafb, white, #f9fafb); padding:2rem 0; border-bottom:1px solid #e5e7eb;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2rem;">
+            @foreach (var badge in _trustBadges)
+            {
+                <div style="display:flex; align-items:center; gap:8px; background:white; padding:8px 16px; border-radius:999px; box-shadow:0 1px 4px rgba(0,0,0,0.08); border:1px solid #f3f4f6;">
+                    <i class="@badge.Icon" style="color:#22c55e; font-size:1.125rem;"></i>
+                    <span style="font-weight:500; color:#374151; font-size:0.9rem;">@badge.Label</span>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Problem Section -->
+<section id="probleem" style="padding:5rem 0; background:white;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="text-align:center; margin-bottom:4rem;">
+            <span style="display:inline-block; background:#fef3c7; color:#b45309; padding:8px 16px; border-radius:999px; font-size:0.875rem; font-weight:600; margin-bottom:1rem;">
+                <i class="fa-solid fa-scale-balanced" style="margin-right:8px;"></i>Financiële Onzekerheid
+            </span>
+            <h2 style="font-size:2.25rem; font-weight:700; color:#1e3a5f; margin-bottom:1.5rem;">
+                Waarom eerlijke informatie zo belangrijk is
+            </h2>
+            <p style="font-size:1.125rem; color:#6b7280; max-width:700px; margin:0 auto;">
+                De thuisbatterij-markt is complex. Onafhankelijke informatie helpt u een weloverwogen keuze te maken.
+            </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
+            @foreach (var card in _problemCards)
+            {
+                <div class="card-hover" style="background:@card.Bg; border-radius:16px; padding:2rem; border:1px solid @card.Border;">
+                    <div style="background:@card.IconBg; width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:1.5rem;">
+                        <i class="@card.Icon" style="color:@card.IconColor; font-size:1.5rem;"></i>
+                    </div>
+                    <h3 style="font-size:1.125rem; font-weight:700; color:#1e3a5f; margin-bottom:1rem;">@card.Title</h3>
+                    <p style="color:#6b7280; line-height:1.7; margin-bottom:1rem;">@card.Text</p>
+                    <div style="background:white; border-radius:8px; padding:1rem; border:1px solid @card.Border;">
+                        <p style="font-size:0.875rem; color:#6b7280; font-style:italic;">@card.Quote</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Stats Banner -->
+        <div style="background:#1e3a5f; border-radius:16px; padding:3rem;">
+            <h3 style="font-size:1.5rem; font-weight:700; color:white; text-align:center; margin-bottom:2rem;">Waarom onafhankelijk narekenen loont</h3>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
+                <div>
+                    <div style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">3-20</div>
+                    <div style="color:#d1d5db;">Jaar spreiding</div>
+                </div>
+                <div>
+                    <div style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">100%</div>
+                    <div style="color:#d1d5db;">Onafhankelijk, geen verkoop</div>
+                </div>
+                <div>
+                    <div style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">Uw</div>
+                    <div style="color:#d1d5db;">Eigen data als basis</div>
+                </div>
+                <div>
+                    <div style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">Gratis</div>
+                    <div style="color:#d1d5db;">Voor deelnemers aan onderzoek</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Solution Section -->
+<section id="oplossing" style="padding:5rem 0; background:#f9fafb;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="text-align:center; margin-bottom:4rem;">
+            <span style="display:inline-block; background:rgba(34,197,94,0.1); color:#22c55e; padding:8px 16px; border-radius:999px; font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem;">
+                <i class="fa-solid fa-rocket" style="margin-right:8px;"></i>Hoe Word Je Beta-Tester?
+            </span>
+            <h2 style="font-size:2.25rem; font-weight:700; color:#1e3a5f; margin-bottom:1.5rem;">3 Stappen naar Beta-Toegang</h2>
+            <p style="font-size:1.125rem; color:#6b7280; max-width:700px; margin:0 auto;">
+                Word onderdeel van de beweging voor <strong>transparantie</strong> in de energiemarkt.
+            </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
+            @foreach (var step in _steps)
+            {
+                <div class="card-hover" style="background:white; border-radius:16px; padding:2rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); text-align:center; border:2px solid transparent;">
+                    <div style="background:@step.IconBg; width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                        <i class="@step.Icon" style="color:white; font-size:1.5rem;"></i>
+                    </div>
+                    <div style="color:#22c55e; font-weight:700; font-size:0.8rem; margin-bottom:8px;">@step.Label</div>
+                    <h3 style="font-size:1.125rem; font-weight:700; color:#1e3a5f; margin-bottom:1rem;">@step.Title</h3>
+                    <p style="color:#6b7280; line-height:1.7;">@step.Text</p>
+                </div>
+            }
+        </div>
+
+        <!-- What Beta Testers Get -->
+        <div style="background:linear-gradient(to right, #1e3a5f, #2d4a6f); border-radius:16px; padding:3rem;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center;">
+                <div>
+                    <h3 style="font-size:1.5rem; font-weight:700; color:white; margin-bottom:1.5rem;">
+                        <i class="fa-solid fa-gift" style="color:#22c55e; margin-right:12px;"></i>Wat krijg je als Beta-Tester?
+                    </h3>
+                    <p style="color:#d1d5db; margin-bottom:1.5rem; line-height:1.7;">Als dank voor uw bijdrage aan ons onderzoek ontvangt u exclusieve voordelen:</p>
+                    <div style="display:flex; flex-direction:column; gap:1rem;">
+                        @foreach (var benefit in _betaBenefits)
+                        {
+                            <div style="display:flex; align-items:flex-start;">
+                                <div style="background:rgba(34,197,94,0.2); border-radius:999px; padding:8px; margin-right:16px; margin-top:2px; flex-shrink:0;">
+                                    <i class="fa-solid fa-check" style="color:#22c55e;"></i>
+                                </div>
+                                <div>
+                                    <div style="color:white; font-weight:600;">@benefit.Title</div>
+                                    <div style="color:#9ca3af; font-size:0.875rem;">@benefit.Desc</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div style="background:rgba(255,255,255,0.1); border-radius:12px; padding:1.5rem; border:1px solid rgba(255,255,255,0.2);">
+                    <div style="text-align:center; margin-bottom:1.5rem;">
+                        <span style="color:#22c55e; font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Beperkte Plekken</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:1.5rem; border:1px solid rgba(255,255,255,0.1); margin-bottom:1rem; text-align:center;">
+                        <i class="fa-solid fa-user-plus" style="color:#22c55e; font-size:3rem; margin-bottom:1rem; display:block;"></i>
+                        <p style="color:white; font-weight:600; font-size:1.125rem; margin-bottom:8px;">Word Beta-Tester</p>
+                        <p style="color:#9ca3af; font-size:0.875rem; margin-bottom:1rem;">Help ons het model te valideren met échte Nederlandse data</p>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:8px; color:#fbbf24;">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                            <span style="font-size:0.875rem; font-weight:500;">Launch: Q2 2026</span>
+                        </div>
+                    </div>
+                    <a href="/login" class="gradient-cta" style="display:flex; align-items:center; justify-content:center; color:white; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700;">
+                        <i class="fa-solid fa-rocket" style="margin-right:8px;"></i>Claim je plek
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Beta CTA Section -->
+<section id="voordelen" style="padding:5rem 0; background:#1e3a5f;">
+    <div style="max-width:900px; margin:0 auto; padding:0 1.5rem; text-align:center;">
+        <div style="display:inline-flex; align-items:center; background:rgba(251,191,36,0.2); border:1px solid rgba(251,191,36,0.3); border-radius:999px; padding:8px 16px; margin-bottom:1.5rem;">
+            <i class="fa-solid fa-star" style="color:#fbbf24; margin-right:8px; font-size:0.875rem;"></i>
+            <span style="color:#fbbf24; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Priority Beta-Toegang</span>
+        </div>
+        <h2 style="font-size:2.25rem; font-weight:700; color:white; margin-bottom:1.5rem;">
+            Heeft u al een CSV-export van uw P1-data?
+        </h2>
+        <p style="font-size:1.125rem; color:#d1d5db; margin-bottom:2rem; line-height:1.7;">
+            Bijvoorbeeld via <strong style="color:white;">HomeWizard</strong>, <strong style="color:white;">uw netbeheerder</strong>, of een andere slimme meter-oplossing?
+        </p>
+
+        <div style="background:rgba(255,255,255,0.1); border-radius:16px; padding:2rem; margin-bottom:2rem; border:1px solid rgba(255,255,255,0.2);">
+            <h3 style="font-size:1.25rem; font-weight:700; color:#22c55e; margin-bottom:1rem;">
+                <i class="fa-solid fa-users" style="margin-right:8px;"></i>Word onderdeel van de beweging
+            </h3>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; text-align:left;">
+                @foreach (var item in _movementItems)
+                {
+                    <div style="display:flex; align-items:flex-start;">
+                        <i class="@item.Icon" style="color:#22c55e; margin-right:12px; margin-top:2px;"></i>
+                        <div>
+                            <div style="color:white; font-weight:600;">@item.Title</div>
+                            <div style="color:#9ca3af; font-size:0.875rem;">@item.Desc</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <a href="/login" class="gradient-cta glow-pulse" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
+            <i class="fa-solid fa-upload" style="margin-right:12px;"></i>Upload P1-data & Claim Beta
+        </a>
+    </div>
+</section>
+
+<!-- Trust & Security -->
+<section style="padding:4rem 0; background:#f9fafb; border-top:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
+            @foreach (var item in _trustItems)
+            {
+                <div>
+                    <div style="background:rgba(30,58,95,0.1); width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                        <i class="@item.Icon" style="color:#1e3a5f; font-size:1.5rem;"></i>
+                    </div>
+                    <h4 style="font-weight:700; color:#1e3a5f; margin-bottom:8px;">@item.Title</h4>
+                    <p style="color:#9ca3af; font-size:0.875rem;">@item.Desc</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer style="background:#1e3a5f; padding:3rem 0;">
+    <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:2rem; margin-bottom:2rem;">
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:1rem;">
+                    <i class="fa-solid fa-bolt" style="color:#22c55e; font-size:1.5rem;"></i>
+                    <span style="font-weight:700; color:white; font-size:1.125rem;">Energy-Truth Simulator</span>
+                </div>
+                <p style="color:#9ca3af; line-height:1.7; margin-bottom:1rem; font-size:0.9rem;">
+                    Een onafhankelijke tool om huiseigenaren te beschermen tegen misleidende verkoop van thuisbatterijen.
+                    Gebaseerd op echte data, wetenschappelijke methodes en transparante berekeningen.
+                </p>
+            </div>
+            <div>
+                <h4 style="font-weight:700; color:white; margin-bottom:1rem;">Links</h4>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <a href="#probleem" style="color:#9ca3af; text-decoration:none; font-size:0.9rem;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#9ca3af'">Het Probleem</a>
+                    <a href="#oplossing" style="color:#9ca3af; text-decoration:none; font-size:0.9rem;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#9ca3af'">Onze Oplossing</a>
+                    <a href="#voordelen" style="color:#9ca3af; text-decoration:none; font-size:0.9rem;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#9ca3af'">Doe Mee</a>
+                </div>
+            </div>
+            <div>
+                <h4 style="font-weight:700; color:white; margin-bottom:1rem;">Contact</h4>
+                <a href="mailto:i274867@fontysict.nl" style="color:#9ca3af; text-decoration:none; font-size:0.9rem;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#9ca3af'">
+                    <i class="fa-solid fa-envelope" style="color:#22c55e; margin-right:8px;"></i>i274867@fontysict.nl
+                </a>
+            </div>
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:2rem;">
+            <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:1.5rem; margin-bottom:1.5rem;">
+                <div style="display:flex; align-items:flex-start;">
+                    <i class="fa-solid fa-circle-info" style="color:#22c55e; margin-right:12px; margin-top:2px;"></i>
+                    <div>
+                        <h5 style="font-weight:600; color:white; margin-bottom:8px;">Disclaimer</h5>
+                        <p style="color:#9ca3af; font-size:0.875rem; line-height:1.7;">
+                            Dit is een <strong style="color:white;">studentenonderzoeksproject</strong> van Fontys Hogeschool.
+                            De Energy-Truth Simulator is bedoeld als educatieve tool en geeft geen financieel advies.
+                            Resultaten zijn indicatief en gebaseerd op historische data en aannames.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; color:#6b7280; font-size:0.875rem;">
+                <p>© 2026 Energy-Truth Simulator. Alle rechten voorbehouden.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+@code {
+    record HeroBenefit(string Title, string Desc);
+    record TrustBadge(string Icon, string Label);
+    record ProblemCard(string Bg, string Border, string IconBg, string Icon, string IconColor, string Title, string Text, string Quote);
+    record StepItem(string IconBg, string Icon, string Label, string Title, string Text);
+    record BetaBenefit(string Title, string Desc);
+    record MovementItem(string Icon, string Title, string Desc);
+    record TrustItem(string Icon, string Title, string Desc);
+
+    private List<HeroBenefit> _heroBenefits = new()
+    {
+        new("Priority Access", "Als eerste de simulator gebruiken"),
+        new("Persoonlijke Analyse", "Op basis van uw echte data"),
+        new("Bijdragen aan Transparantie", "Help de energiemarkt eerlijker maken"),
+    };
+
+    private List<TrustBadge> _trustBadges = new()
+    {
+        new("fa-solid fa-graduation-cap", "HBO-Onderzoek 2026"),
+        new("fa-solid fa-calendar-check", "2027-regels gevalideerd"),
+        new("fa-solid fa-magnifying-glass-dollar", "Verborgen kosten check"),
+        new("fa-solid fa-ban", "100% Onafhankelijk"),
+    };
+
+    private List<ProblemCard> _problemCards = new()
+    {
+        new(
+            "linear-gradient(135deg, #fffbeb, #fff7ed)",
+            "#fde68a",
+            "#fef3c7",
+            "fa-solid fa-scale-balanced",
+            "#d97706",
+            "ACM Informatie",
+            "De Autoriteit Consument & Markt (ACM) adviseert consumenten om onafhankelijk onderzoek te doen voordat u een thuisbatterij koopt.",
+            "\"Vergelijk altijd meerdere aanbiedingen en vraag om realistische berekeningen.\""
+        ),
+        new(
+            "linear-gradient(135deg, #eff6ff, #eef2ff)",
+            "#bfdbfe",
+            "#dbeafe",
+            "fa-solid fa-building-columns",
+            "#2563eb",
+            "Rabobank Inzichten",
+            "Volgens Rabobank is het belangrijk om bij terugverdientijden rekening te houden met uw specifieke situatie.",
+            "Terugverdientijd kan oplopen van 3-7 jaar (beloofd) tot 12-20+ jaar (werkelijkheid)."
+        ),
+        new(
+            "linear-gradient(135deg, #f0fdf4, #ecfdf5)",
+            "#bbf7d0",
+            "#dcfce7",
+            "fa-solid fa-calendar-check",
+            "#16a34a",
+            "Salderingswijziging 2027",
+            "De afbouw van saldering vanaf 2027 maakt een goede berekening extra waardevol om de juiste keuze te maken.",
+            "Wij helpen u doorrekenen wat dit concreet voor uw situatie betekent."
+        ),
+    };
+
+    private List<StepItem> _steps = new()
+    {
+        new("linear-gradient(135deg, #1e3a5f, #2d4a6f)", "fa-solid fa-upload", "STAP 1", "Upload of Vul In",
+            "Upload uw P1-data (indien beschikbaar) of vul uw energiespecificaties handmatig in via onze slimme vragenlijst."),
+        new("linear-gradient(135deg, #1e3a5f, #2d4a6f)", "fa-solid fa-brain", "STAP 2", "AI Model Training",
+            "Onze AI analyseert uw profiel en traint ons rekenmodel met uw geanonimiseerde data voor nauwkeurigere resultaten."),
+        new("linear-gradient(135deg, #22c55e, #16a34a)", "fa-solid fa-bell", "STAP 3", "Priority Access",
+            "U ontvangt een seintje zodra de Simulator live gaat. Als Beta-Tester krijgt u als eerste toegang en een persoonlijke analyse."),
+    };
+
+    private List<BetaBenefit> _betaBenefits = new()
+    {
+        new("Gratis persoonlijke analyse", "Volledige simulatie van uw specifieke situatie"),
+        new("Priority notificatie", "Als eerste weten wanneer de tool live gaat"),
+        new("Bijdragen aan transparantie", "Help de energiemarkt eerlijker maken voor iedereen"),
+    };
+
+    private List<MovementItem> _movementItems = new()
+    {
+        new("fa-solid fa-gift", "Gratis analyse", "Volledige simulatie van uw situatie"),
+        new("fa-solid fa-clock", "Vroege toegang", "Als eerste de tool gebruiken"),
+        new("fa-solid fa-comments", "Direct contact", "Persoonlijke begeleiding"),
+    };
+
+    private List<TrustItem> _trustItems = new()
+    {
+        new("fa-solid fa-shield-halved", "Privacy First", "Uw data blijft van u. Wij analyseren alleen wat nodig is."),
+        new("fa-solid fa-graduation-cap", "Academisch Onderzoek", "Onderdeel van een afstudeerproject aan Fontys Hogeschool."),
+        new("fa-solid fa-scale-balanced", "100% Onafhankelijk", "Geen banden met batterij-verkopers of energiebedrijven."),
+        new("fa-solid fa-code", "Open Methodologie", "Onze berekeningsmethode is transparant en verifieerbaar."),
+    };
+}

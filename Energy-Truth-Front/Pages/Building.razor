@@ -43,10 +43,13 @@
                   InputType="InputType.Number" />
 </div>
 
-<MudSelect T="ISTEnergyLabel" Label="Energielabel" @bind-Value="EnergyLabel">
+<MudSelect T="ISTEnergyLabel"
+           Label="Energielabel"
+           @bind-Value="EnergyLabel"
+           ToStringFunc="@(label => label.ToDisplayString())">
     @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
     {
-        <MudSelectItem Value="label">@label.ToDisplayString()</MudSelectItem>
+        <MudSelectItem Value="label">@label.ToString()</MudSelectItem>
     }
 </MudSelect>
 
@@ -67,11 +70,13 @@
     private ISTEnergyLabel EnergyLabel { get; set; }
     private int CustomerID;
     private string ErrorMessage = "";
+    [SupplyParameterFromQuery]
+    private bool SkipRedirect { get; set; }
 
 
     protected override async Task OnInitializedAsync()
     {
-        if (AuthService.CurrentUser != null)
+        if (AuthService.CurrentUser != null && !SkipRedirect)
         {
             CustomerID = AuthService.CurrentUser.Id;
 
