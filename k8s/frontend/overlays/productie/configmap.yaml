@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-config
+  namespace: energytruth-productie
+  annotations:
+    # Zorgt ervoor dat ArgoCD dit object niet als 'OutOfSync' markeert bij label-wijzigingen:
+    argocd.argoproj.io/sync-options: Prune=false,CompareOptions=IgnoreExtraneous
+    # Vertelt ArgoCD dat hij de resource niet mag claimen of deleten als de andere app hem aanpast:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+data:
+  frontend_url: "https://mierlofirst.org"
+  backend_url: "https://mierlofirst.org/api"
+  

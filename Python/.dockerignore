@@ -1,0 +1,30 @@
+# Wat NIET de image in mag. Houdt de image klein en voorkomt dat geheimen
+# (.env) of overbodige bestanden meegebakken worden.
+
+# Geheimen en lokale config -- nooit in de image
+.env
+.env.example
+secret.yaml.example
+
+# Kubernetes-manifests horen niet in de runtime-image (alleen in Git/CI)
+deploy/
+
+# Documentatie
+README.md
+*.md
+
+# Python-rommel
+__pycache__/
+*.pyc
+*.pyo
+*.bak
+
+# Git en editor
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Gegenereerde rapporten (mochten ze ooit lokaal ontstaan)
+outputs/
+*.pdf

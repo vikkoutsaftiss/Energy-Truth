@@ -9,6 +9,10 @@ spec:
       app: energytruth-backend
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
       labels:
         app: energytruth-backend
     spec:
@@ -18,11 +22,63 @@ spec:
         - name: backend
           image: ghcr.io/vikkoutsaftiss/energy-truth-backend:latest
           ports:
-          - containerPort: 8080
+            - containerPort: 8080
+          env:
+            - name: DOTNET_EnableDiagnostics
+              value: "1"
+            - name: COMPlus_ZapDisable
+              value: "1" # Schakelt pre-compiled code-optimalisatie uit die vaak 139 maskeert
+            - name: DOTNET_PRINT_TELEMETRY_MESSAGE
+              value: "true"
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: frontend_url
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: backend_url
+            - name: ALGORITME_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-network-config
+                  key: algoritme_url
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8080"
+            # Database credentials uit het Secret
+            - name: DATABASE_IP
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_IP
+            - name: DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: DATABASE_PORT
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-auth
+                  key: POSTGRES_PASSWORD
           resources:
             requests:
               memory: "128Mi"
               cpu: "250m"
             limits:
               memory: "256Mi"
-              cpu: "500m"
+              cpu: "1Gi"

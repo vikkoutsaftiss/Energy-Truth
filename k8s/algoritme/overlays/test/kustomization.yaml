@@ -1,0 +1,24 @@
+# =====================================================================
+# kustomization (overlay: test) -- de testomgeving.
+#
+# Dit pakt de gedeelde 'base' en zet er twee dingen overheen:
+#   1. de namespace (energytruth-test)
+#   2. de echte image: registry + versie-tag
+#
+# Registry-adres afgeleid van Vik's repo: de backend draait op
+# ghcr.io/vikkoutsaftiss/energy-truth-backend, dus het algoritme komt naast
+# de andere images in dezelfde GitHub Container Registry te staan. De CI
+# pusht de tag 'latest' (+ een datum-tijd-tag); hier verwijzen we naar latest.
+# =====================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: energytruth-test
+
+resources:
+  - ../../base
+
+images:
+  - name: energytruth-algoritme
+    newName: ghcr.io/vikkoutsaftiss/energy-truth-algoritme
+    newTag: latest                            # CI vervangt/voegt per build een datum-tijd-tag toe

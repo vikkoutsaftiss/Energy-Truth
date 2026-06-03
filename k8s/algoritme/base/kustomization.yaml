@@ -1,0 +1,22 @@
+# =====================================================================
+# kustomization (base) -- bundelt de drie bouwstenen.
+#
+# "Kustomize" is een manier om dezelfde manifests in meerdere omgevingen
+# (test/productie) te gebruiken zonder te kopieren. Deze 'base' is de
+# gedeelde kern; een 'overlay' (zie ../overlays/test) zet er de namespace
+# en de echte image-tag overheen. Vik werkt op dezelfde manier.
+# =====================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - refresher-cronjob.yaml
+
+# Handig label op alles, zodat je `kubectl get all -l project=energytruth` kunt doen.
+labels:
+  - pairs:
+      project: energytruth
+      component: algoritme
+    includeSelectors: false

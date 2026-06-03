@@ -2,6 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
+  namespace: energytruth-test
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
   ingressClassName: nginx
   rules:
@@ -13,5 +16,12 @@ spec:
             backend:
               service:
                 name: energytruth-frontend-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: energytruth-backend-service
                 port:
                   number: 80

@@ -9,6 +9,10 @@ spec:
       app: energytruth-frontend
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
       labels:
         app: energytruth-frontend
     spec:
@@ -17,8 +21,15 @@ spec:
       containers:
         - name: frontend
           image: ghcr.io/vikkoutsaftiss/energy-truth-frontend:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 80
+          env:
+            - name: BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: network-config
+                  key: backend_url
           resources:
             requests:
               memory: "64Mi"

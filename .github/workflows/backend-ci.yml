@@ -71,6 +71,7 @@ jobs:
         context: .
         # Specifiek pad naar de Dockerfile in de submap
         file: ./Energy-Truth-WEB-API/Dockerfile
+        platforms: linux/amd64 # <<< DIT DWINGT DE JUISTE CPU-INSTRUCTIES AF
         push: true
         tags: |
           ghcr.io/${{ github.repository_owner }}/energy-truth-backend:latest
