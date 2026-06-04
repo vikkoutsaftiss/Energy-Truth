@@ -4,6 +4,6 @@ metadata:
   name: backend-network-config
   namespace: energytruth-productie
 data:
-  frontend_url: "https://mierlofirst.org"
-  backend_url: "https://mierlofirst.org/api"
+  frontend_url: "https://energy-truth.nl"
+  backend_url: "https://energy-truth.nl/api"
   algoritme_url: ""
