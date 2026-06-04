@@ -1,0 +1,14 @@
+﻿@page "/logout"
+@using Energy_Truth_Presentation.Services
+@inject IAuthenticateService AuthService
+@inject NavigationManager Nav
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        AuthService.LogOut();
+                Nav.NavigateTo("/");
+    }
+
+}

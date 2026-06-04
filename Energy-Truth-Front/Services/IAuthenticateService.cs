@@ -9,6 +9,6 @@ namespace Energy_Truth_Presentation.Services
         CustomBatteryDTO CustomBattery { get; set; }
         bool LogIn(LoggedInUser user);
 
-        bool LogOut();
+        void LogOut();
     }
 }

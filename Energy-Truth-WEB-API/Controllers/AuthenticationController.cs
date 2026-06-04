@@ -36,12 +36,12 @@ namespace Energy_Truth_WEB_API.Controllers
                 }
                 else
                 {
-                    return Unauthorized("Ongeldige inloggegevens.");
+                    return BadRequest("Ongeldige inloggegevens.");
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Er is een fout opgetreden bij het inloggen van de klant: {ex.Message}");
+                return StatusCode(500, $"Er is een fout opgetreden bij het inloggen. Probeer het later opnieuw.");
             }
         }
 
@@ -86,7 +86,7 @@ namespace Energy_Truth_WEB_API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Er is een fout opgetreden bij het aanmaken van de klant: {ex.Message}");
+                return StatusCode(500, $"Er is een fout opgetreden bij het aanmaken van de klant. Probeer het later opnieuw.");
             }
         }
 

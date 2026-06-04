@@ -44,15 +44,17 @@ namespace Infrastructure.DataAccess
             return 0;
         }
 
-        public async Task<LoggedInUser> ValidateCredentialsAsync(LoginRequestDTO loginRequestDTO)
+        public async Task<CustomerAuthDTO?> GetCustomerAuthByEmailAsync(string email)
         {
-            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Email == loginRequestDTO.Email && c.Password == loginRequestDTO.Password);
-            
-            if (customer != null)
-            {
-                return new LoggedInUser(customer.Id, customer.Email, customer.Password);                    
-            }
-            return null;
+            return await _dbContext.Customers
+                .Where(c => c.Email == email)
+                .Select(c => new CustomerAuthDTO
+                {
+                    Id = c.Id,
+                    Email = c.Email,
+                    PasswordHash = c.Password
+                })
+                .FirstOrDefaultAsync();
         }
     }
 }

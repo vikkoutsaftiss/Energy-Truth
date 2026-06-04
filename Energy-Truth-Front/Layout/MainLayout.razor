@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using Energy_Truth_Presentation.Services
+@inject IAuthenticateService AuthService
+
+@inherits LayoutComponentBase
 
 <MudThemeProvider Theme="_theme" />
 <MudDialogProvider />
@@ -6,12 +9,27 @@
 <MudPopoverProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">Energy-Truth</MudText>
-        <MudSpacer />
-        <MudLink Href="https://learn.microsoft.com/aspnet/core/" Color="Color.Inherit" Target="_blank">About</MudLink>
-    </MudAppBar>
+    <nav style="position:fixed; top:0; left:0; right:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(8px); box-shadow:0 1px 4px rgba(0,0,0,0.08); z-index:1000;">
+        <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; height:56px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-bolt" style="color:#22c55e; font-size:1.25rem;"></i>
+                    <span style="font-weight:700; color:#1e3a5f; font-size:1.125rem;">Energy-Truth</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:2rem;">
+                    <a href="#probleem" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Het Probleem</a>
+                    <a href="#oplossing" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Onze Oplossing</a>
+                    <a href="#voordelen" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Meedoen</a>
+                    @if (AuthService.CurrentUser != null)
+                    {
+                        <a href="/logout" class="gradient-cta" style="color:white; text-decoration:none; padding:8px 20px; border-radius:8px; font-weight:600; font-size:0.95rem;">
+                            <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Logout
+                        </a>
+                    }                    
+                </div>
+            </div>
+        </div>
+    </nav>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
         <MudDrawerHeader>

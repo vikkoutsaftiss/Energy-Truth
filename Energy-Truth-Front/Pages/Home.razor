@@ -1,29 +1,4 @@
-﻿@* @page "/"
-@using Energy_Truth_Presentation.Components
-
-
-
-<PageTitle>Energy Truth - Dashboard</PageTitle>
-
-<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 70vh;" Spacing="4">
-    <MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom bij Energy Truth</MudText>
-    <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Primary">
-        Hét platform om je energieverbruik in kaart te brengen.
-        Ben jij ook klaar met beloftes welke veel te rooskleurig klinken en wil je eindelijk eens weten welke thuisbatterij echt bij jouw specifieke thuissituatie past?
-        Doe dan nu de test en krijg een go / no-go advies op maat gemaakt op basis van jouw energieverbruik.
-        </MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Href="buildinglist">
-        <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />
-        Start met Importeren
-    </MudButton>
-    <MudCardActions>
-        <ExplanationFileUpload />
-    </MudCardActions>
-</MudStack>
-
- *@
-
-@page "/"
+﻿@page "/"
 @layout Energy_Truth_Presentation.Layout.LandingLayout
 @inject NavigationManager Nav
 
@@ -77,7 +52,7 @@
                 <a href="#oplossing" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Onze Oplossing</a>
                 <a href="#voordelen" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Meedoen</a>
                 <a href="/login" class="gradient-cta" style="color:white; text-decoration:none; padding:8px 20px; border-radius:8px; font-weight:600; font-size:0.95rem;">
-                    <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Beta-Toegang
+                    <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Login
                 </a>
             </div>
         </div>

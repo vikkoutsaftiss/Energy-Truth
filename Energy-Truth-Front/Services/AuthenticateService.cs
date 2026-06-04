@@ -18,10 +18,9 @@ namespace Energy_Truth_Presentation.Services
             return true;
         }
 
-        public bool LogOut()
+        public void LogOut()
         {
             CurrentUser = null;
-            return false;
         }
     }
 }

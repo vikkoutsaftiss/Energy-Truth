@@ -63,7 +63,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IBatteryService, BatteryService>();
 builder.Services.AddScoped<IBatteryRepository, BatteryRepository>();
 builder.Services.AddDbContext<EnergyDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 

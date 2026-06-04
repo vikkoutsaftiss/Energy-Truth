@@ -113,3 +113,29 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.gradient-cta {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+    transition: all 0.2s ease;
+}
+
+    .gradient-cta:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
+        box-shadow: 0 6px 25px rgba(34, 197, 94, 0.5);
+        transform: translateY(-2px);
+    }
+
+.glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+    }
+}
