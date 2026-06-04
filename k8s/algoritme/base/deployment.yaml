@@ -71,6 +71,37 @@ spec:
                 secretKeyRef:
                   name: db-auth
                   key: POSTGRES_PASSWORD
+           # smtp secret env connection 
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: SMTP_USER
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: SMTP_PASS
+            - name: MAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: MAIL_FROM
+            - name: MAIL_FROM_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: smtp-auth
+                  key: MAIL_FROM_NAME
           # Niet-geheime config (defaults in de code) via de ConfigMap.
           envFrom:
             - configMapRef:
