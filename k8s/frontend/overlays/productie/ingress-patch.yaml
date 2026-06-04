@@ -12,10 +12,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - mierlofirst.org
+        - energy-truth.nl
       secretName: energytruth-tls-secret
   rules:
-    - host: mierlofirst.org
+    - host: energy-truth.nl
       http:
         paths:
           - path: /
