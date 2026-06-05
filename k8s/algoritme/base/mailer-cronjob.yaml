@@ -1,12 +1,5 @@
 # =====================================================================
 # CronJob -- de rapport-mailer (mailer.py).
-#
-# Verstuurt elke 2 minuten de rapporten waar "Verzonden_Op" nog leeg is
-# (PDF uit SimulatieRapport_PDF als bijlage, via Brevo SMTP), en stempelt
-# ze daarna. Draait een keer en stopt, dus net als de refresher een CronJob.
-#
-# Zelfde image als de worker; we overschrijven het commando naar mailer.py.
-# De mail-sjablonen (mail_template.html/.txt) zitten al in de image.
 # =====================================================================
 apiVersion: batch/v1
 kind: CronJob
@@ -16,7 +9,7 @@ spec:
   schedule: "*/2 * * * *"         # elke 2 minuten
   timeZone: "Europe/Amsterdam"
   concurrencyPolicy: Forbid       # nooit twee mailers tegelijk (geen dubbele mails)
-  startingDeadlineSeconds: 60     # gemiste run niet lang inhalen (draait toch zo weer)
+  startingDeadlineSeconds: 60     # gemiste run niet lang inhalen
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
@@ -46,6 +39,8 @@ spec:
                 capabilities:
                   drop: ["ALL"]
               env:
+                - name: HOME
+                  value: /tmp
                 - name: DATABASE_IP
                   valueFrom:
                     secretKeyRef:
@@ -71,6 +66,17 @@ spec:
                     secretKeyRef:
                       name: db-auth
                       key: POSTGRES_PASSWORD
+                # SMTP variabelen exact gematcht met de werkende deployment (3).yaml
+                - name: SMTP_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_HOST
+                - name: SMTP_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_PORT
                 - name: SMTP_USER
                   valueFrom:
                     secretKeyRef:
@@ -81,15 +87,25 @@ spec:
                     secretKeyRef:
                       name: smtp-auth
                       key: SMTP_PASS
+                - name: MAIL_FROM
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: MAIL_FROM
+                - name: MAIL_FROM_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: MAIL_FROM_NAME
               envFrom:
                 - configMapRef:
                     name: algoritme-config
               resources:
                 requests:
-                  memory: "128Mi"
+                  memory: "256Mi" # Verhoogd naar 256Mi om out-of-memory bij PDF-inlezing te voorkomen
                   cpu: "100m"
                 limits:
-                  memory: "256Mi"
+                  memory: "512Mi"
                   cpu: "250m"
               volumeMounts:
                 - name: tmp
