@@ -1,0 +1,99 @@
+# =====================================================================
+# CronJob -- de rapport-mailer (mailer.py).
+#
+# Verstuurt elke 2 minuten de rapporten waar "Verzonden_Op" nog leeg is
+# (PDF uit SimulatieRapport_PDF als bijlage, via Brevo SMTP), en stempelt
+# ze daarna. Draait een keer en stopt, dus net als de refresher een CronJob.
+#
+# Zelfde image als de worker; we overschrijven het commando naar mailer.py.
+# De mail-sjablonen (mail_template.html/.txt) zitten al in de image.
+# =====================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: algoritme-mailer
+spec:
+  schedule: "*/2 * * * *"         # elke 2 minuten
+  timeZone: "Europe/Amsterdam"
+  concurrencyPolicy: Forbid       # nooit twee mailers tegelijk (geen dubbele mails)
+  startingDeadlineSeconds: 60     # gemiste run niet lang inhalen (draait toch zo weer)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: algoritme-mailer
+        spec:
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: github-registry-secret
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: mailer
+              image: energytruth-algoritme
+              command: ["python", "mailer.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: DATABASE_IP
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_IP
+                - name: DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_PORT
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_DB
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_PASSWORD
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_USER
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_PASS
+              envFrom:
+                - configMapRef:
+                    name: algoritme-config
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "250m"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
