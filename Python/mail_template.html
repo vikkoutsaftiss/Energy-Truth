@@ -1,0 +1,90 @@
+<!--
+  Mailsjabloon (HTML) voor de Energy-Truth rapport-mailer.
+  Stijl afgeleid van https://energy-truth.nl/ (navy #1E3A5F, groen #22C55E, Inter).
+
+  Pas alleen dit bestand aan om de opmaak/tekst te wijzigen.
+  Placeholders (worden door mailer.py ingevuld):
+    ${bedrijfsnaam}  - naam van de klant (Klant.Bedrijfsnaam)
+    ${bestandsnaam}  - bestandsnaam van de PDF-bijlage
+    ${jaar}          - huidig jaartal
+
+  Let op: e-mailclients ondersteunen alleen INLINE CSS (style="...").
+  Inter is niet overal beschikbaar in mail, vandaar de fallback Arial/Helvetica.
+-->
+<!DOCTYPE html>
+<html lang="nl">
+  <body style="margin:0; padding:0; background-color:#f3f4f6;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                 style="max-width:600px; width:100%; background-color:#ffffff; border-radius:10px; overflow:hidden; font-family:'Inter', Arial, Helvetica, sans-serif; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+            <!-- Header -->
+            <tr>
+              <td style="background-color:#1e3a5f; padding:28px 32px 24px;">
+                <span style="color:#ffffff; font-size:22px; font-weight:700; letter-spacing:0.3px;">Energy-Truth</span>
+                <span style="display:inline-block; margin-left:10px; padding:2px 8px; background-color:#22c55e; color:#0b3d1f; font-size:11px; font-weight:700; border-radius:10px; letter-spacing:0.5px; vertical-align:middle;">BETA</span>
+                <div style="margin-top:6px; color:#9fb3c8; font-size:13px;">Nationaal Thuisbatterij Onderzoek ${jaar}</div>
+              </td>
+            </tr>
+            <!-- groene accentlijn -->
+            <tr><td style="height:4px; background-color:#22c55e; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:32px;">
+                <p style="margin:0 0 16px; font-size:16px; color:#1e3a5f; font-weight:600;">Beste ${bedrijfsnaam},</p>
+
+                <p style="margin:0 0 16px; font-size:15px; line-height:1.6; color:#374151;">
+                  In de bijlage vindt u uw persoonlijke simulatierapport van Energy-Truth.
+                  Het rapport rekent onafhankelijk voor u door wat een thuisbatterij voor uw
+                  gebouw betekent, op basis van uw eigen verbruiks- en kostengegevens.
+                </p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0"
+                       style="margin:8px 0 20px; width:100%; background-color:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;">
+                  <tr>
+                    <td style="padding:14px 16px; font-size:14px; color:#15803d;">
+                      &#128206; Bijlage:&nbsp;<strong style="color:#166534;">${bestandsnaam}</strong>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Eerlijke beta / Fontys-melding -->
+                <table role="presentation" cellpadding="0" cellspacing="0"
+                       style="margin:0 0 22px; width:100%; background-color:#fef3c7; border:1px solid #fcd34d; border-radius:8px;">
+                  <tr>
+                    <td style="padding:14px 16px; font-size:13px; line-height:1.6; color:#92400e;">
+                      <strong>Even eerlijk:</strong> Energy-Truth is een studentenproject in
+                      betafase, gemaakt in het kader van de opleiding <strong>Fontys ICT</strong>.
+                      Deze mailbox wordt niet gelezen, dus reageren op dit bericht heeft geen zin.
+                      Vragen of feedback? Mail gerust naar
+                      <a href="mailto:i274867@fontysict.nl" style="color:#92400e; font-weight:600;">i274867@fontysict.nl</a>.
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0; font-size:15px; color:#374151;">
+                  Met vriendelijke groet,<br>
+                  <strong style="color:#1e3a5f;">Het Energy-Truth team</strong>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="background-color:#f9fafb; padding:18px 32px; border-top:1px solid #eeeeee;">
+                <p style="margin:0; font-size:12px; line-height:1.5; color:#9ca3af;">
+                  &copy; ${jaar} Energy-Truth &middot; Fontys ICT-schoolproject (beta) &middot;
+                  automatisch gegenereerd, no-reply &middot; contact: i274867@fontysict.nl
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
