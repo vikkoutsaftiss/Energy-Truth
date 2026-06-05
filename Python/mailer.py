@@ -29,6 +29,7 @@ import datetime
 import html
 import logging
 import os
+import re
 import smtplib
 import ssl
 import sys
@@ -101,7 +102,8 @@ SELECT_COLUMNS = """
            r."Gebouw_ID"     AS gebouw_id,
            k."Email"         AS email,
            k."Email_verifieerd" AS email_verifieerd,
-           k."Bedrijfsnaam"  AS bedrijfsnaam
+           k."Bedrijfsnaam"  AS bedrijfsnaam,
+           r."Gegenereerd_Op" AS gegenereerd_op
     FROM "SimulatieRapport_PDF" r
     JOIN "Gebouw" g ON g."ID"  = r."Gebouw_ID"
     JOIN "Klant"  k ON k."ID"  = g."Klant_ID"
@@ -142,8 +144,30 @@ def _render(path, context):
     return Template(raw).safe_substitute(context)
 
 
-def build_message(to_addr, bestandsnaam, pdf_bytes, bedrijfsnaam):
-    filename = bestandsnaam or "rapport.pdf"
+_ONVEILIGE_TEKENS = re.compile(r'[\\/:*?"<>|]+')
+
+
+def _safe_filename_part(naam):
+    """Maak tekst veilig als deel van een bestandsnaam: verboden tekens eruit,
+    witruimte normaliseren, afkappen op 60 tekens."""
+    schoon = _ONVEILIGE_TEKENS.sub(" ", naam)
+    schoon = " ".join(schoon.split())
+    return schoon[:60] or "klant"
+
+
+def _datum_str(value):
+    """Rapportdatum als YYYY-MM-DD. Valt terug op vandaag als de waarde leeg is."""
+    if hasattr(value, "strftime"):
+        return value.strftime("%Y-%m-%d")
+    if value:
+        return str(value)[:10]
+    return datetime.date.today().isoformat()
+
+
+def build_message(to_addr, bestandsnaam, pdf_bytes, bedrijfsnaam, gegenereerd_op):
+    # Nette klantnaam voor de bijlage i.p.v. de interne DB-bestandsnaam
+    # (bv. "rapport_batch_2.pdf"). Vorm: "Energy-Truth rapport - <bedrijf> - <datum>.pdf".
+    filename = f"Energy-Truth rapport - {_safe_filename_part(bedrijfsnaam or 'klant')} - {_datum_str(gegenereerd_op)}.pdf"
     jaar = datetime.date.today().year
 
     # Platte tekst: ongewijzigde waarden. HTML: dezelfde waarden maar
@@ -206,7 +230,7 @@ def run(rapport_id=None, mark=True, dry_run=False):
 
         try:
             for (rid, bestandsnaam, pdf_bytes, gebouw_id,
-                 email, email_verifieerd, bedrijfsnaam) in rows:
+                 email, email_verifieerd, bedrijfsnaam, gegenereerd_op) in rows:
 
                 if not email:
                     log.warning("Rapport %s (gebouw %s): geen e-mailadres, overslaan.",
@@ -223,7 +247,7 @@ def run(rapport_id=None, mark=True, dry_run=False):
                     skipped += 1
                     continue
 
-                msg = build_message(email, bestandsnaam, pdf_bytes, bedrijfsnaam)
+                msg = build_message(email, bestandsnaam, pdf_bytes, bedrijfsnaam, gegenereerd_op)
 
                 if dry_run:
                     log.info("[dry-run] zou rapport %s naar %s sturen (%s).",
