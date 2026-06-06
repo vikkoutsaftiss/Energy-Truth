@@ -10,6 +10,7 @@ namespace Energy_Truth.Shared.Repositories
     {
         Task<int> CreateCustomerAsync(CreateCustomerDTO customerDTO);
         Task<int> GetCustomerByEmailAsync(string email);
-        Task<LoggedInUser> ValidateCredentialsAsync(LoginRequestDTO loginRequestDTO);
+        Task<CustomerAuthDTO?> GetCustomerAuthByEmailAsync(string email);
+        Task<bool> IsAdminAsync(int customerId);
     }
 }

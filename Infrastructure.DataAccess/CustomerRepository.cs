@@ -23,7 +23,7 @@ namespace Infrastructure.DataAccess
                 //VATNumber = customerDTO.VATNumber,
                 Address = customerDTO.Address,
                 Password = customerDTO.Password,
-                //BusinessName = customerDTO.BusinessName,
+                Name = customerDTO.Name,
                 //CustomerType = customerDTO.CustomerType,
                 //EmailConfirmed = customerDTO.EmailConfirmed
             };
@@ -44,15 +44,26 @@ namespace Infrastructure.DataAccess
             return 0;
         }
 
-        public async Task<LoggedInUser> ValidateCredentialsAsync(LoginRequestDTO loginRequestDTO)
+        public async Task<CustomerAuthDTO?> GetCustomerAuthByEmailAsync(string email)
         {
-            var customer = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Email == loginRequestDTO.Email && c.Password == loginRequestDTO.Password);
-            
-            if (customer != null)
-            {
-                return new LoggedInUser(customer.Id, customer.Email, customer.Password);                    
-            }
-            return null;
+            return await _dbContext.Customers
+                .Where(c => c.Email == email)
+                .Select(c => new CustomerAuthDTO
+                {
+                    Id = c.Id,
+                    Email = c.Email,
+                    PasswordHash = c.Password,
+                    IsAdmin = c.IsAdmin
+
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> IsAdminAsync(int customerId)
+        {
+            var customer = await _dbContext.Customers.FindAsync(customerId);
+            Console.WriteLine($"IsAdminAsync - CustomerId: {customerId}, IsAdmin: {customer?.IsAdmin}");
+            return customer?.IsAdmin ?? false;
         }
     }
 }

@@ -14,7 +14,7 @@
 }
 
 
-<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom @AuthService.CurrentUser?.Email</MudText>
+<MudText Typo="Typo.h2" Align="Align.Center" Style="font-weight: 700;">Welkom @AuthService.CurrentUser?.Name</MudText>
 
 <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Vul hieronder de gegevens van je woning in.</MudText>
 
@@ -27,48 +27,53 @@
     </MudAlert>
 }
 
-<div data-testid="postalcode-field">
-    <MudTextField T="string"
-                  Label="Postcode"
-                  Variant="Variant.Outlined"
-                  @bind-Value="PostalCode"
-                  InputType="InputType.Text" />
-</div>
+<MudForm @ref="_form">
 
-<div data-testid="buildyear-field">
-    <MudTextField T="string"
-                  Label="Bouwjaar"
-                  Variant="Variant.Outlined"
-                  @bind-Value="ConstructionYear"
-                  InputType="InputType.Number" />
-</div>
+        <div data-testid="postalcode-field">
+            <MudTextField T="string"
+                          Label="Postcode"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_building.PostalCode"
+                          InputType="InputType.Text" 
+                          For="@(() => _building.PostalCode)" />
 
-<MudSelect T="ISTEnergyLabel"
-           Label="Energielabel"
-           @bind-Value="EnergyLabel"
-           ToStringFunc="@(label => label.ToDisplayString())">
-    @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
-    {
-        <MudSelectItem Value="label">@label.ToString()</MudSelectItem>
-    }
-</MudSelect>
 
-<div data-testid="submit-button">
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               FullWidth="true"
-               Size="Size.Large"
-               Class="mt-4"
-               @onclick="@HandleSubmit">
-        Sla gebouw op
-    </MudButton>
-</div>
+        </div>
 
-@code {
-    private string PostalCode { get; set; } = "";
-    private string ConstructionYear { get; set; } = "2000";
-    private ISTEnergyLabel EnergyLabel { get; set; }
-    private int CustomerID;
+        <div data-testid="buildyear-field">
+        <MudTextField T="string"
+                          Variant="Variant.Outlined"
+                          @bind-Value="_building.ConstructionYear"
+                          InputType="InputType.Number" 
+                          For="@(() => _building.ConstructionYear)" />
+        </div>
+
+    <MudSelect T="string"
+               Label="Selecteer een energielabel"
+               @bind-Value="_building.ISTEnergyLabel"
+               Variant="Variant.Outlined"
+               For="@(() => _building.ISTEnergyLabel)">
+        @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
+        {
+            <MudSelectItem T="string" Value="@label.ToString()">@label.ToDisplayString()</MudSelectItem>
+        }
+    </MudSelect>
+
+        <div data-testid="submit-button">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       Class="mt-4"
+                       @onclick="@HandleSubmit">
+                Sla gebouw op
+            </MudButton>
+        </div>
+</MudForm>
+
+    @code {
+    private CreateBuildingDTO _building = new CreateBuildingDTO();    
+    private MudForm _form;
     private string ErrorMessage = "";
     [SupplyParameterFromQuery]
     private bool SkipRedirect { get; set; }
@@ -78,7 +83,7 @@
     {
         if (AuthService.CurrentUser != null && !SkipRedirect)
         {
-            CustomerID = AuthService.CurrentUser.Id;
+            _building.CustomerId = AuthService.CurrentUser.Id;
 
             var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
             if (response.IsSuccessStatusCode)
@@ -94,16 +99,17 @@
 
     private async Task HandleSubmit()
     {
+        await _form.Validate();
+        if (!_form.IsValid) return;
         try
-        {
-            var building = new CreateBuildingDTO
+        {           
+
+            if (!int.TryParse(_building.ConstructionYear, out _))
             {
-                CustomerId = CustomerID,
-                PostalCode = PostalCode,
-                ConstructionYear = ConstructionYear,
-                ISTEnergyLabel = EnergyLabel.ToString()
-            };
-            var response = await HttpClient.PostAsJsonAsync("api/building/createbuilding", building);
+                throw new ArgumentException("Bouwjaar moet een geldig jaartal zijn.");
+            }
+            
+            var response = await HttpClient.PostAsJsonAsync("api/building/createbuilding", _building);
             if (response.IsSuccessStatusCode)
             {
                 NavigationManager.NavigateTo("/buildinglist");

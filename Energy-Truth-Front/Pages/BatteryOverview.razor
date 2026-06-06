@@ -9,10 +9,16 @@
 @inject NavigationManager NavigationManager
 
 
-@* @if (AuthService.CurrentUser != null)
+@if (AuthService.CurrentUser == null)
 {
     NavigationManager.NavigateTo("/building");
-}*@
+}
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+}
+
 
 <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: 700;">Hieronder staan alle batterijen weergeven welke wij meenemen in de berekening van jouw adviesrapport.</MudText>
 <MudExpansionPanels Class="mt-4">
@@ -28,13 +34,22 @@
                 <MudTextField T="decimal" Label="Aanschafprijs (€) *" @bind-Value="_customBattery.Price" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField T="decimal?" Label="Round-trip rendement (0-1)" @bind-Value="_customBattery.RoundTripEfficiency" HelperText="Standaard 0,90" />
+                <MudTextField T="decimal?" Label="Round-trip rendement (0-1)" 
+                @bind-Value="_customBattery.RoundTripEfficiency" 
+                HelperText="Standaard 0,90" 
+                Validation="EfficiencyValidation"/>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField T="decimal?" Label="Max laadsnelheid (kW)" @bind-Value="_customBattery.MaxChargePower" HelperText="Standaard 2,5 kW" />
+                <MudTextField T="decimal?" Label="Max laadsnelheid (kW)" 
+                    @bind-Value="_customBattery.MaxChargePower" 
+                    HelperText="Standaard 2,5 kW" 
+                    Validation="ChargePowerValidation"/>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField T="decimal?" Label="Max ontlaadsnelheid (kW)" @bind-Value="_customBattery.MaxDischargePower" HelperText="Standaard 3,68 kW" />
+                <MudTextField T="decimal?" Label="Max ontlaadsnelheid (kW)" 
+                    @bind-Value="_customBattery.MaxDischargePower" 
+                    HelperText="Standaard 0,8 kW" 
+                    Validation="DischargePowerValidation"/>
             </MudItem>
         </MudGrid>
         <MudText Typo="Typo.caption" Class="mt-2">* Verplicht</MudText>
@@ -89,8 +104,17 @@
 
     @code {
     private List<BatteryDTO> _batteries = new();
-    private CustomBatteryDTO _customBattery = new();
+    private Func<decimal?, string?> EfficiencyValidation => v => ValidateRange(v, 0, 1);
+    private Func<decimal?, string?> ChargePowerValidation => v => ValidateRange(v, 0, 22);
+    private Func<decimal?, string?> DischargePowerValidation => v => ValidateRange(v, 0, 22);
+    private CustomBatteryDTO _customBattery = new()
+        {
+            RoundTripEfficiency = 0.90m,
+            MaxChargePower = 2.5m,
+            MaxDischargePower = 0.8m
+        };
     private BatteryDTO _newBattery = new();
+    private string? _errorMessage;
     private bool _customBatterySaved;
     [Parameter]
     public int BuildingId { get; set; }
@@ -101,6 +125,11 @@
         if (response.IsSuccessStatusCode)
         {
             _batteries = await response.Content.ReadFromJsonAsync<List<BatteryDTO>>();
+            if (_batteries == null)
+            {
+                _batteries = new List<BatteryDTO>();
+                _errorMessage = "Er zijn geen batterijen gevonden.";
+            }
         }
        
     }
@@ -109,6 +138,12 @@
     {
         AuthService.CustomBattery = _customBattery;
         _customBatterySaved = true;
+    }
+
+    private string? ValidateRange(decimal? value, decimal min, decimal max)
+    {
+        if (value == null) return null;
+        return value >= min && value <= max ? null : $"Waarde moet tussen {min} en {max} liggen";
     }
 
     

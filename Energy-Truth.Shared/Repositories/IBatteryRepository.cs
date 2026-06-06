@@ -5,5 +5,7 @@ namespace Energy_Truth.Shared.Repositories
     public interface IBatteryRepository
     {
         Task<List<BatteryDTO>> GetBatteriesAsync();
+        Task<bool> UpdateBatteryAsync(int batteryId, BatteryDTO dto);
+        Task<BatteryDTO?> CreateBatteryAsync(BatteryDTO dto);
     }
 }

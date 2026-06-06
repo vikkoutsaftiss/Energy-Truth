@@ -21,10 +21,12 @@ namespace Infrastructure.DataAccess.Entities
         [Column("Adres")]
         public string Address { get; set; }
         [Column("Bedrijfsnaam")]
-        public string? BusinessName { get; set; }
+        public string? Name { get; set; }
         [Column("Klanttype")]
         public string? CustomerType { get; set; }
         [Column("Email_verifieerd")]
         public bool? EmailConfirmed { get; set; }
+        [Column("IsAdmin")]
+        public bool IsAdmin { get; set; }
     }
 }

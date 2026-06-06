@@ -18,5 +18,16 @@ namespace Energy_Truth_WEB_API.Services.Battery
             List<BatteryDTO> batteries = await _batteryRepository.GetBatteriesAsync();
             return batteries;
         }
+
+        public async Task<bool> UpdateBatteryAsync(int batteryId, BatteryDTO dto)
+        {
+            bool result = await _batteryRepository.UpdateBatteryAsync(batteryId, dto);
+            return result;
+        }
+
+        public async Task<BatteryDTO?> CreateBatteryAsync(BatteryDTO dto)
+        {
+            return await _batteryRepository.CreateBatteryAsync(dto);         
+        }
     }
 }

@@ -28,67 +28,84 @@
     </MudAlert>
 }
 
-<div data-testid="username-field">
-    <MudTextField T="string"
-                  Label="Email"
-                  Variant="Variant.Outlined"
-                  @bind-Value="Email"
-                  InputType="InputType.Text" />
-</div>
+<MudForm @ref="_form">
 
-<div data-testid="password-field">
-    <MudTextField T="string"
-                  Label="Wachtwoord"
-                  Variant="Variant.Outlined"
-                  @bind-Value="Password"
-                  InputType="@PasswordInput"
-                  Adornment="Adornment.End"
-                  AdornmentAriaLabel="Toggle Password Visibility"
-                  OnAdornmentClick="TogglePasswordVisibility"
-                  AdornmentIcon="@PasswordVisibilityIcon" />
-</div>
+    <div data-testid="email-field">
+        <MudTextField T="string"
+                      Label="Email"
+                      InputType="InputType.Email"
+                      Variant="Variant.Outlined"
+                      @bind-Value="RegisterRequest.Email"
+                      For="@(() => RegisterRequest.Email)"/>
+    </div>
 
-<div data-testid="passwordconfirm-field">
-    <MudTextField T="string"
-                  Label="Bevestig Wachtwoord"
-                  Variant="Variant.Outlined"
-                  @bind-Value="ConfirmPassword"
-                  InputType="@PasswordInput"
-                  Adornment="Adornment.End"
-                  AdornmentAriaLabel="Toggle Password Visibility"
-                  OnAdornmentClick="TogglePasswordVisibility"
-                  AdornmentIcon="@PasswordVisibilityIcon" />
-</div>
+    <div data-testid="username-field">
+        <MudTextField T="string"
+                      Label="Name"
+                      Variant="Variant.Outlined"
+                      @bind-Value="RegisterRequest.Name"
+                      InputType="InputType.Text"
+                      For="@(() => RegisterRequest.Name)"/>
+    </div>
 
-<div data-testid="address-field">
-    <MudTextField T="string"
-                  Label="Adres"
-                  Variant="Variant.Outlined"
-                  @bind-Value="Address"
-                  InputType="InputType.Text" />
-</div>
 
-<div data-testid="register-button">
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               FullWidth="true"
-               Size="Size.Large"
-               Class="mt-4"
-               @onclick="@HandleUserRegistration">
-        Registreren
-    </MudButton>
-</div>
+
+    <div data-testid="password-field">
+        <MudTextField T="string"
+                      Label="Wachtwoord"
+                      Variant="Variant.Outlined"
+                      @bind-Value="RegisterRequest.Password"
+                      InputType="@PasswordInput"
+                      Adornment="Adornment.End"
+                      AdornmentAriaLabel="Toggle Password Visibility"
+                      OnAdornmentClick="TogglePasswordVisibility"
+                      AdornmentIcon="@PasswordVisibilityIcon"
+                      For="@(() => RegisterRequest.Password)"/>
+    </div>
+
+    <div data-testid="passwordconfirm-field">
+        <MudTextField T="string"
+                      Label="Bevestig Wachtwoord"
+                      Variant="Variant.Outlined"
+                      @bind-Value="RegisterRequest.ConfirmPassword"
+                      InputType="@PasswordInput"
+                      Adornment="Adornment.End"
+                      AdornmentAriaLabel="Toggle Password Visibility"
+                      OnAdornmentClick="TogglePasswordVisibility"
+                      AdornmentIcon="@PasswordVisibilityIcon" 
+                      For="@(() => RegisterRequest.ConfirmPassword)"/>
+    </div>
+
+    <div data-testid="address-field">
+        <MudTextField T="string"
+                      Label="Adres"
+                      Variant="Variant.Outlined"
+                      @bind-Value="RegisterRequest.Address"
+                      InputType="InputType.Text" 
+                      For="@(() => RegisterRequest.Address)"/>
+    </div>
+
+    <div data-testid="register-button">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   Size="Size.Large"
+                   Class="mt-4"
+                   @onclick="@HandleUserRegistration">
+            Registreren
+        </MudButton>
+    </div>
+</MudForm>
 
 @code {
-    private string Email { get; set; } = "";
-    private string Password { get; set; } = "";
-    private string ConfirmPassword { get; set; } = "";
-    private string Address { get; set; } = "";
+
+    private CreateCustomerDTO RegisterRequest { get; set; } = new();
     private bool isPasswordVisible;
     private InputType PasswordInput = InputType.Password;
     private string PasswordVisibilityIcon = Icons.Material.Filled.VisibilityOff;
     private string ErrorMessage = null;
     private string SuccessMessage = null;
+    private MudForm _form;
 
     private void TogglePasswordVisibility()
     {
@@ -99,22 +116,23 @@
 
     private async Task HandleUserRegistration()
     {
-        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(ConfirmPassword))
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        if (string.IsNullOrWhiteSpace(RegisterRequest.Email) || string.IsNullOrWhiteSpace(RegisterRequest.Password) || string.IsNullOrWhiteSpace(RegisterRequest.ConfirmPassword))
         {
             // Show an error message to the user (this can be done using a Snackbar or similar component)
             ErrorMessage = "Alle velden dienen ingevuld te zijn";
             return;
         }
 
-        if (Password != ConfirmPassword)
+        if (RegisterRequest.Password != RegisterRequest.ConfirmPassword)
         {
             ErrorMessage = "Wachtwoord en bevestiging komen niet overeen.";
             return;
         }
 
-        CreateCustomerDTO registerRequest = new CreateCustomerDTO { Email = Email, Password = Password, Address = Address };
-
-        var result = await HttpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
+        var result = await HttpClient.PostAsJsonAsync("api/authentication/register", RegisterRequest);
 
         if (result.IsSuccessStatusCode)
         {

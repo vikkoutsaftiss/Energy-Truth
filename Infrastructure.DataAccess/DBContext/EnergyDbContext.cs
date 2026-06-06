@@ -17,7 +17,7 @@ namespace Infrastructure.DataAccess.DBContext
         public DbSet<ImportBatch> ImportBatches { get; set; }
         public DbSet<Building> Buildings { get; set; }
         public DbSet<Customer> Customers { get; set; }
-        public DbSet<Battery> Battery { get; set; }
+        public DbSet<Battery> Batteries { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,6 +26,15 @@ namespace Infrastructure.DataAccess.DBContext
             modelBuilder.Entity<ImportBatch>()
                 .Property(b => b.CustomBattery)
                 .HasColumnType("jsonb");
+
+            modelBuilder.Entity<Battery>()
+                .Property(b => b.Id)
+                .ValueGeneratedOnAdd();
+        }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Debug);
+
         }
 
     }

@@ -1,0 +1,239 @@
+﻿@page "/admin"
+@using Energy_Truth_Presentation.Services
+@using Energy_Truth.Shared.DTO_s
+@inject HttpClient HttpClient
+@inject ISnackbar Snackbar
+
+@inject IAuthenticateService AuthService
+
+@if (AuthService.CurrentUser == null || !AuthService.CurrentUser.IsAdmin)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Color="Color.Error" />
+        <MudText Typo="Typo.h5" Class="mt-4">Geen toegang</MudText>
+        <MudText Class="mt-2">Je hebt geen rechten om deze pagina te bekijken.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Href="/login">
+            Inloggen
+        </MudButton>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+        <MudText Typo="Typo.h5" Class="mb-4">Batterijbeheer</MudText>
+
+        @if (_errorMessage != null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">@_errorMessage</MudAlert>
+        }
+
+        <MudSelect T="BatteryDTO"
+                   Value="_selectedBattery"
+                   ValueChanged="OnBatterySelected"
+                   ToStringFunc="@(b => b?.ProductName ?? string.Empty)"
+                   Variant="Variant.Outlined"
+                   Class="mb-6">
+            @foreach (var battery in _batteries)
+            {
+                <MudSelectItem Value="@battery">@battery.ProductName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudExpansionPanel Text="Nieuwe batterij aanmaken" Class="mb-6">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Naam" @bind-Value="_newBattery.ProductName" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Prijs (€)" @bind-Value="_newBattery.Price" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="€" Format="F2" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Capaciteit (kWh)" @bind-Value="_newBattery.CapacityKWh" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Gegarandeerde cycli" @bind-Value="_newBattery.GuaranteedCycles" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Garantieperiode (jaar)" @bind-Value="_newBattery.WarrantyPeriodYears" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Max laadvermogen (kW)" @bind-Value="_newBattery.MaxChargePower" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Max ontlaadvermogen (kW)" @bind-Value="_newBattery.MaxDischargePower" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField Label="Installatiekosten (€)" @bind-Value="_newBattery.InstallationCost" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentText="€" Format="F2" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Label="Chemie" @bind-Value="_newBattery.Chemistry" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       OnClick="CreateBatteryAsync"
+                       Disabled="_isCreating"
+                       Class="mt-4">
+                @if (_isCreating)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                }
+                Aanmaken
+            </MudButton>
+        </MudExpansionPanel>
+
+        @if (_selectedBattery != null)
+        {
+            <MudPaper Class="pa-6" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-4">@_selectedBattery.ProductName</MudText>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Label="Naam"
+                                      @bind-Value="_selectedBattery.ProductName"
+                                      Variant="Variant.Outlined"
+                                      ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Label="Prijs (€)"
+                                      @bind-Value="_selectedBattery.Price"
+                                      Variant="Variant.Outlined"
+                                      Format="F2"
+                                      Adornment="Adornment.Start"
+                                      AdornmentText="€" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch T="bool"
+                                   Label="Actief"
+                                   Value="@(_selectedBattery.IsActive ?? false)"
+                                   ValueChanged="@(v => _selectedBattery.IsActive = v)"
+                                   Color="Color.Primary" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudStack Row="true" Class="mt-4" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="SaveChangesAsync"
+                               Disabled="_isSaving">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Opslaan
+                    </MudButton>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Secondary"
+                               OnClick="CancelEdit">
+                        Annuleren
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudContainer>
+}
+
+
+
+
+
+@code {
+    private List<BatteryDTO> _batteries = new();
+    private BatteryDTO? _selectedBattery;
+    private BatteryDTO? _originalBattery;
+    private string? _errorMessage;
+    private bool _isSaving;
+    private BatteryDTO _cloneBattery(BatteryDTO battery) => new BatteryDTO
+    {
+        Id = battery.Id,
+        ProductName = battery.ProductName,
+        CapacityKWh = battery.CapacityKWh,
+        Price = battery.Price,
+        GuaranteedCycles = battery.GuaranteedCycles,
+        WarrantyPeriodYears = battery.WarrantyPeriodYears,
+        MaxChargePower = battery.MaxChargePower,
+        MaxDischargePower = battery.MaxDischargePower,
+        InstallationCost = battery.InstallationCost
+    };
+    private BatteryDTO _newBattery = new();
+    private bool _isCreating;
+
+    private async Task CreateBatteryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newBattery.ProductName)) return;
+
+        _isCreating = true;
+        var response = await HttpClient.PostAsJsonAsync("api/battery/createbattery", _newBattery);
+        _isCreating = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            var created = await response.Content.ReadFromJsonAsync<BatteryDTO>();
+            if (created != null)
+                _batteries.Add(created);
+
+            _newBattery = new(); // form resetten
+            Snackbar.Add("Batterij aangemaakt.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Aanmaken mislukt.", Severity.Error);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.CurrentUser == null || !AuthService.CurrentUser.IsAdmin)
+            return;
+
+        var response = await HttpClient.GetAsync("api/battery/getbatteries");
+        if (response.IsSuccessStatusCode)
+        {
+            _batteries = await response.Content.ReadFromJsonAsync<List<BatteryDTO>>() ?? new();
+            if (_batteries.Count == 0)
+                _errorMessage = "Er zijn geen batterijen gevonden.";
+        }
+        else
+        {
+            _errorMessage = "Fout bij ophalen van batterijen.";
+        }
+        Console.WriteLine($"Batteries loaded: {_batteries.Count}");
+        foreach (var b in _batteries)
+            Console.WriteLine($"  - {b.Id}: {b.ProductName}");
+    }
+
+    // Sla een kopie op zodat je kunt annuleren
+    private void OnBatterySelected(BatteryDTO battery)
+    {
+        _selectedBattery = battery;
+        _originalBattery = _cloneBattery(battery);
+    }
+
+    private async Task SaveChangesAsync()
+    {
+        if (_selectedBattery == null) return;
+
+        _isSaving = true;
+        var response = await HttpClient.PutAsJsonAsync($"api/battery/updatebattery/{_selectedBattery.Id}", _selectedBattery);
+        _isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Wijzigingen opgeslagen.", Severity.Success);
+            _originalBattery = _cloneBattery(_selectedBattery);
+        }
+        else
+        {
+            Snackbar.Add("Opslaan mislukt.", Severity.Error);
+        }
+    }
+
+    private void CancelEdit()
+    {
+        if (_originalBattery != null)
+            _selectedBattery = _cloneBattery(_originalBattery);
+    }
+
+    
+}
