@@ -52,11 +52,18 @@ namespace Energy_Truth_WEB_API.Services.Customer
             var customer = new LoggedInUser
                 {
                     Id = customerAuth.Id,
+                    Name = customerAuth.Name,
                     Email = customerAuth.Email,
-                    IsLoggedIn = true
-                };
+                    IsLoggedIn = true,
+                    IsAdmin = customerAuth.IsAdmin
+            };
 
             return customer;
+        }
+
+        public async Task<bool> IsAdminAsync(int customerId)
+        {
+            return await _customerRepository.IsAdminAsync(customerId);
         }
     }
 }

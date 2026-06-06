@@ -9,7 +9,7 @@
 @inject NavigationManager NavigationManager
 
 
-@if (AuthService.CurrentUser != null)
+@if (AuthService.CurrentUser == null)
 {
     NavigationManager.NavigateTo("/building");
 }

@@ -34,6 +34,8 @@ namespace Infrastructure.DataAccess.Entities
         public decimal? InstallationCost { get; set; }
         [Column("Chemie")]
         public string Chemistry { get; set; }
+        [Column("Actief")]
+        public bool? IsActive { get; set; }
 
 
 

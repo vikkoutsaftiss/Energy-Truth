@@ -23,7 +23,7 @@ namespace Infrastructure.DataAccess
                 //VATNumber = customerDTO.VATNumber,
                 Address = customerDTO.Address,
                 Password = customerDTO.Password,
-                //BusinessName = customerDTO.BusinessName,
+                Name = customerDTO.Name,
                 //CustomerType = customerDTO.CustomerType,
                 //EmailConfirmed = customerDTO.EmailConfirmed
             };
@@ -52,9 +52,18 @@ namespace Infrastructure.DataAccess
                 {
                     Id = c.Id,
                     Email = c.Email,
-                    PasswordHash = c.Password
+                    PasswordHash = c.Password,
+                    IsAdmin = c.IsAdmin
+
                 })
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> IsAdminAsync(int customerId)
+        {
+            var customer = await _dbContext.Customers.FindAsync(customerId);
+            Console.WriteLine($"IsAdminAsync - CustomerId: {customerId}, IsAdmin: {customer?.IsAdmin}");
+            return customer?.IsAdmin ?? false;
         }
     }
 }

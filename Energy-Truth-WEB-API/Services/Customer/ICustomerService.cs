@@ -10,5 +10,6 @@ namespace Energy_Truth_WEB_API.Services.Customer
         Task<int> CreateCustomerAsync(CreateCustomerDTO customerDTO);
         Task<int> GetCustomerByEmailAsync(string email);
         Task<LoggedInUser> LoginCustomerAsync(LoginRequestDTO loginRequestDTO);
+        Task<bool> IsAdminAsync(int customerId);
     }
 }

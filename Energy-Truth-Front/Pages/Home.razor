@@ -36,6 +36,25 @@
         .card-hover { transition: all 0.2s ease; }
         .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.1); transform: translateY(-4px); }
         .nav-scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+
+        /* ===== MOBILE ===== */
+        @@media (max-width: 768px) {
+            .nav-links { display: none !important; }
+            .hero-grid { grid-template-columns: 1fr !important; }
+            .hero-card { display: none !important; }
+            .hero-title { font-size: 2rem !important; }
+            .grid-3 { grid-template-columns: 1fr !important; }
+            .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+            .grid-stats { grid-template-columns: repeat(2, 1fr) !important; }
+            .grid-beta { grid-template-columns: 1fr !important; }
+            .grid-footer { grid-template-columns: 1fr !important; }
+            .grid-movement { grid-template-columns: 1fr !important; }
+            .trust-badges { gap: 0.75rem !important; }
+            .section-pad { padding: 3rem 0 !important; }
+            .hero-cta { font-size: 1rem !important; padding: 14px 24px !important; }
+            .stats-banner { padding: 2rem 1.25rem !important; }
+            .stats-number { font-size: 2rem !important; }
+        }
     </style>
 </HeadContent>
 
@@ -47,7 +66,7 @@
                 <i class="fa-solid fa-bolt" style="color:#22c55e; font-size:1.25rem;"></i>
                 <span style="font-weight:700; color:#1e3a5f; font-size:1.125rem;">Energy-Truth</span>
             </div>
-            <div style="display:flex; align-items:center; gap:2rem;">
+            <div class="nav-links" style="display:flex; align-items:center; gap:2rem;">
                 <a href="#probleem" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Het Probleem</a>
                 <a href="#oplossing" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Onze Oplossing</a>
                 <a href="#voordelen" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Meedoen</a>
@@ -55,14 +74,24 @@
                     <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Login
                 </a>
             </div>
+            <!-- Mobile login only -->
+            <a href="/login" class="gradient-cta" style="display:none; color:white; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.875rem;" id="mobile-login">
+                <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Login
+            </a>
         </div>
     </div>
 </nav>
 
+<style>
+    @@media (max-width: 768px) {
+        #mobile-login { display:inline-flex !important; align-items:center; }
+    }
+</style>
+
 <!-- Hero Section -->
-<section class="gradient-hero" style="padding-top:56px;">
+<section class="gradient-hero section-pad" style="padding-top:56px;">
     <div style="max-width:1280px; margin:0 auto; padding:5rem 1.5rem 4rem;">
-        <div style="display:grid; grid-template-columns:7fr 5fr; gap:3rem; align-items:center;">
+        <div class="hero-grid" style="display:grid; grid-template-columns:7fr 5fr; gap:3rem; align-items:center;">
 
             <!-- Left: Text -->
             <div>
@@ -71,7 +100,7 @@
                     <span style="color:#22c55e; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Exclusieve Beta-Toegang</span>
                 </div>
 
-                <h1 style="font-size:3.25rem; font-weight:800; color:white; line-height:1.1; margin-bottom:1.25rem;">
+                <h1 class="hero-title" style="font-size:3.25rem; font-weight:800; color:white; line-height:1.1; margin-bottom:1.25rem;">
                     De <span class="gradient-text">Eerlijke Waarheid</span> over Thuisbatterijen
                 </h1>
 
@@ -82,7 +111,7 @@
                     De markt is een chaos van claims. Help ons onafhankelijke rekenmodel te trainen met uw P1-data en claim uw plek als <strong style="color:white;">Beta-Tester</strong> voor de eerste eerlijke simulator van Nederland.
                 </p>
 
-                <a href="/login" class="gradient-cta glow-pulse" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
+                <a href="/login" class="gradient-cta glow-pulse hero-cta" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
                     <i class="fa-solid fa-rocket" style="margin-right:12px;"></i>
                     Start Validatie & Claim Beta-Toegang
                 </a>
@@ -108,8 +137,8 @@
                 </div>
             </div>
 
-            <!-- Right: Card -->
-            <div style="position:relative;">
+            <!-- Right: Card (hidden on mobile) -->
+            <div class="hero-card" style="position:relative;">
                 <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(12px); border-radius:16px; padding:2rem; border:1px solid rgba(255,255,255,0.2);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
                         <span style="color:white; font-weight:600;">Beta-Tester Voordelen</span>
@@ -152,7 +181,7 @@
 <!-- Trust Indicators -->
 <section style="background:linear-gradient(to right, #f9fafb, white, #f9fafb); padding:2rem 0; border-bottom:1px solid #e5e7eb;">
     <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
-        <div style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2rem;">
+        <div class="trust-badges" style="display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2rem;">
             @foreach (var badge in _trustBadges)
             {
                 <div style="display:flex; align-items:center; gap:8px; background:white; padding:8px 16px; border-radius:999px; box-shadow:0 1px 4px rgba(0,0,0,0.08); border:1px solid #f3f4f6;">
@@ -165,7 +194,7 @@
 </section>
 
 <!-- Problem Section -->
-<section id="probleem" style="padding:5rem 0; background:white;">
+<section id="probleem" class="section-pad" style="padding:5rem 0; background:white;">
     <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
         <div style="text-align:center; margin-bottom:4rem;">
             <span style="display:inline-block; background:#fef3c7; color:#b45309; padding:8px 16px; border-radius:999px; font-size:0.875rem; font-weight:600; margin-bottom:1rem;">
@@ -179,7 +208,7 @@
             </p>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
+        <div class="grid-3" style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
             @foreach (var card in _problemCards)
             {
                 <div class="card-hover" style="background:@card.Bg; border-radius:16px; padding:2rem; border:1px solid @card.Border;">
@@ -196,23 +225,23 @@
         </div>
 
         <!-- Stats Banner -->
-        <div style="background:#1e3a5f; border-radius:16px; padding:3rem;">
+        <div class="stats-banner" style="background:#1e3a5f; border-radius:16px; padding:3rem;">
             <h3 style="font-size:1.5rem; font-weight:700; color:white; text-align:center; margin-bottom:2rem;">Waarom onafhankelijk narekenen loont</h3>
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
+            <div class="grid-stats" style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
                 <div>
-                    <div style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">3-20</div>
+                    <div class="stats-number" style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">3-20</div>
                     <div style="color:#d1d5db;">Jaar spreiding</div>
                 </div>
                 <div>
-                    <div style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">100%</div>
+                    <div class="stats-number" style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">100%</div>
                     <div style="color:#d1d5db;">Onafhankelijk, geen verkoop</div>
                 </div>
                 <div>
-                    <div style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">Uw</div>
+                    <div class="stats-number" style="font-size:3rem; font-weight:700; color:white; margin-bottom:8px;">Uw</div>
                     <div style="color:#d1d5db;">Eigen data als basis</div>
                 </div>
                 <div>
-                    <div style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">Gratis</div>
+                    <div class="stats-number" style="font-size:3rem; font-weight:700; color:#22c55e; margin-bottom:8px;">Gratis</div>
                     <div style="color:#d1d5db;">Voor deelnemers aan onderzoek</div>
                 </div>
             </div>
@@ -221,7 +250,7 @@
 </section>
 
 <!-- Solution Section -->
-<section id="oplossing" style="padding:5rem 0; background:#f9fafb;">
+<section id="oplossing" class="section-pad" style="padding:5rem 0; background:#f9fafb;">
     <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
         <div style="text-align:center; margin-bottom:4rem;">
             <span style="display:inline-block; background:rgba(34,197,94,0.1); color:#22c55e; padding:8px 16px; border-radius:999px; font-size:0.875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem;">
@@ -233,7 +262,7 @@
             </p>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
+        <div class="grid-3" style="display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-bottom:4rem;">
             @foreach (var step in _steps)
             {
                 <div class="card-hover" style="background:white; border-radius:16px; padding:2rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); text-align:center; border:2px solid transparent;">
@@ -249,7 +278,7 @@
 
         <!-- What Beta Testers Get -->
         <div style="background:linear-gradient(to right, #1e3a5f, #2d4a6f); border-radius:16px; padding:3rem;">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center;">
+            <div class="grid-beta" style="display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center;">
                 <div>
                     <h3 style="font-size:1.5rem; font-weight:700; color:white; margin-bottom:1.5rem;">
                         <i class="fa-solid fa-gift" style="color:#22c55e; margin-right:12px;"></i>Wat krijg je als Beta-Tester?
@@ -293,7 +322,7 @@
 </section>
 
 <!-- Beta CTA Section -->
-<section id="voordelen" style="padding:5rem 0; background:#1e3a5f;">
+<section id="voordelen" class="section-pad" style="padding:5rem 0; background:#1e3a5f;">
     <div style="max-width:900px; margin:0 auto; padding:0 1.5rem; text-align:center;">
         <div style="display:inline-flex; align-items:center; background:rgba(251,191,36,0.2); border:1px solid rgba(251,191,36,0.3); border-radius:999px; padding:8px 16px; margin-bottom:1.5rem;">
             <i class="fa-solid fa-star" style="color:#fbbf24; margin-right:8px; font-size:0.875rem;"></i>
@@ -310,7 +339,7 @@
             <h3 style="font-size:1.25rem; font-weight:700; color:#22c55e; margin-bottom:1rem;">
                 <i class="fa-solid fa-users" style="margin-right:8px;"></i>Word onderdeel van de beweging
             </h3>
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; text-align:left;">
+            <div class="grid-movement" style="display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; text-align:left;">
                 @foreach (var item in _movementItems)
                 {
                     <div style="display:flex; align-items:flex-start;">
@@ -324,16 +353,16 @@
             </div>
         </div>
 
-        <a href="/login" class="gradient-cta glow-pulse" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
+        <a href="/login" class="gradient-cta glow-pulse hero-cta" style="display:inline-flex; align-items:center; color:white; text-decoration:none; padding:16px 40px; border-radius:12px; font-weight:700; font-size:1.125rem;">
             <i class="fa-solid fa-upload" style="margin-right:12px;"></i>Upload P1-data & Claim Beta
         </a>
     </div>
 </section>
 
 <!-- Trust & Security -->
-<section style="padding:4rem 0; background:#f9fafb; border-top:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;">
+<section class="section-pad" style="padding:4rem 0; background:#f9fafb; border-top:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;">
     <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
+        <div class="grid-4" style="display:grid; grid-template-columns:repeat(4,1fr); gap:2rem; text-align:center;">
             @foreach (var item in _trustItems)
             {
                 <div>
@@ -351,7 +380,7 @@
 <!-- Footer -->
 <footer style="background:#1e3a5f; padding:3rem 0;">
     <div style="max-width:1280px; margin:0 auto; padding:0 1.5rem;">
-        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:2rem; margin-bottom:2rem;">
+        <div class="grid-footer" style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:2rem; margin-bottom:2rem;">
             <div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:1rem;">
                     <i class="fa-solid fa-bolt" style="color:#22c55e; font-size:1.5rem;"></i>

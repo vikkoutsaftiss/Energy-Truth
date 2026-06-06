@@ -19,5 +19,6 @@ namespace Energy_Truth.Shared.DTO_s
         public decimal RoundTripEfficiency { get; set; }
         public decimal? InstallationCost { get; set; }
         public string Chemistry { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

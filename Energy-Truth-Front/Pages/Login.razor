@@ -93,7 +93,10 @@
             {
                 bool success = AuthService.LogIn(response);
 
-                Console.WriteLine($"Id: {response?.Id}, Email: {response?.Email}");
+                HttpClient.DefaultRequestHeaders.Remove("X-Customer-Id");
+                HttpClient.DefaultRequestHeaders.Add("X-Customer-Id", response.Id.ToString());
+
+                Console.WriteLine($"Id: {response?.Id}, Email: {response?.Email}, IsAdmin: {response?.IsAdmin}");
 
 
                 NavigationManager.NavigateTo("/building");

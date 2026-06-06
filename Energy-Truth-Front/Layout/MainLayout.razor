@@ -20,6 +20,12 @@
                     <a href="#probleem" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Het Probleem</a>
                     <a href="#oplossing" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Onze Oplossing</a>
                     <a href="#voordelen" style="color:#4b5563; text-decoration:none; font-size:0.95rem;">Meedoen</a>
+                    @if (AuthService.CurrentUser?.IsAdmin == true)
+                    {
+                        <a href="/admin" class="gradient-cta" style="color:white; text-decoration:none; padding:8px 20px; border-radius:8px; font-weight:600; font-size:0.95rem;">
+                            <i class="fa-solid fa-rocket" style="margin-right:6px;"></i>Admin panel
+                        </a>
+                    }
                     @if (AuthService.CurrentUser != null)
                     {
                         <a href="/logout" class="gradient-cta" style="color:white; text-decoration:none; padding:8px 20px; border-radius:8px; font-weight:600; font-size:0.95rem;">
