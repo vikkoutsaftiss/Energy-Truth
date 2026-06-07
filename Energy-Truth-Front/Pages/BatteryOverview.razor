@@ -71,6 +71,7 @@
 </MudExpansionPanels>
 
 <MudButton Variant="Variant.Filled" Color="Color.Secondary" Class="mt-3"
+           data-testid="skip-battery-button"
            OnClick="@(() => NavigationManager.NavigateTo($"/csvimporter/{BuildingId}"))">
     Doorgaan zonder custom batterij
 </MudButton>

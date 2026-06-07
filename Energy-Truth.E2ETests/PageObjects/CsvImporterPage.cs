@@ -14,24 +14,6 @@ namespace Energy_Truth.E2ETests.PageObjects
             _page = page;
         }
 
-        public async Task GoToLoginPage()
-        {
-            await _page.GotoAsync("https://localhost:7140/login");
-            await _page.WaitForSelectorAsync("#username", new()
-            {
-                State = WaitForSelectorState.Visible,
-            });
-        }
-
-        public async Task GoToPageAsync()
-        {
-            await _page.GotoAsync("https://localhost:7140/csvimporter");
-            await _page.WaitForSelectorAsync(".mud-select", new()
-            {
-                State = WaitForSelectorState.Visible,
-            });
-        }
-
         public async Task SelectProviderAsync(string providerName)
         {
             await _page.GetByTestId("provider-select").ClickAsync();
@@ -60,7 +42,10 @@ namespace Energy_Truth.E2ETests.PageObjects
 
         public async Task<bool> IsCalculationResultVisibleAsync()
         {
-            await _page.GetByTestId("total-import").WaitForAsync();
+            await _page.WaitForURLAsync("**/importsuccess**", new PageWaitForURLOptions
+            {
+                Timeout = 60000
+            });
             return true;
         }
     }

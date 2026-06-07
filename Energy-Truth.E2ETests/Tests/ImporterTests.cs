@@ -1,7 +1,7 @@
 ﻿using Energy_Truth.E2ETests.PageObjects;
 using Microsoft.Playwright;
 
-namespace Energy_Truth.E2ETests
+namespace Energy_Truth.E2ETests.Tests
 {
     [Parallelizable(ParallelScope.Self)]
     [TestFixture]
@@ -18,22 +18,28 @@ namespace Energy_Truth.E2ETests
         [SetUp]
         public async Task Setup()
         {
-
             Page.Console += (_, msg) => Console.WriteLine($"BROWSER: {msg.Type}: {msg.Text}");
             Page.PageError += (_, err) => Console.WriteLine($"PAGE ERROR: {err}");
 
             var loginPage = new LoginPage(Page);
             await loginPage.GoToLoginAsync();
             await loginPage.LoginAsync("testhash", "123");
+
+            var buildingListPage = new BuildingListPageObject(Page);
+            await buildingListPage.SelectFirstBuildingAsync();
+
+            var batteryOverviewPage = new BatteryOverviewPageObject(Page);
+            await batteryOverviewPage.WaitForPageAsync();
+            await batteryOverviewPage.ContinueWithoutBatteryAsync();
         }
-        
+
 
         [Test]
         public async Task CanUploadCSVWithHomeWizardAsChosenProvider()
         {            
             var csvImporterPage = new CsvImporterPage(Page);
             
-            await csvImporterPage.SelectProviderAsync("Home Wizard");
+            await csvImporterPage.SelectProviderAsync("HomeWizard");
             await csvImporterPage.UploadFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestData", "test-HomeWizard.csv"));
             await csvImporterPage.ProcessDataAsync();
             await csvImporterPage.StartCalculationAsync();

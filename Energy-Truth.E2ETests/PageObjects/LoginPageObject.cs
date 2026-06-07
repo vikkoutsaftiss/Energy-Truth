@@ -25,8 +25,7 @@ namespace Energy_Truth.E2ETests.PageObjects
             await _page.Locator("[data-testid='username-field'] input").FillAsync(username);
             await _page.Locator("[data-testid='password-field'] input").FillAsync(password);
             await _page.ClickAsync("[data-testid='login-button']");
-
-            await _page.WaitForURLAsync("**/building**");
+            await _page.WaitForURLAsync("**/buildinglist**");
         }
     }
 }
