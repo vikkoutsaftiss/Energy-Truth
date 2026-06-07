@@ -24,7 +24,7 @@ namespace Energy_Truth.E2ETests
 
             var loginPage = new LoginPage(Page);
             await loginPage.GoToLoginAsync();
-            await loginPage.LoginAsync("admin", "password");
+            await loginPage.LoginAsync("testhash", "123");
         }
         
 
