@@ -1,0 +1,49 @@
+name: SonarQube Cloud Analysis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-and-analyze:
+    runs-on: windows-latest
+    
+    steps:
+      # 1. Haal de code op uit GitHub
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Cruciaal voor SonarQube om de Git-historie te begrijpen
+
+      # 2. Installeer Java (SonarQube scanner draait op Java)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+
+      # 3. Installeer .NET (Zorg dat dit matcht met jouw versie, bijv. 8.0 of 10.0)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # 4. Installeer de SonarScanner tool wereldwijd op de GitHub-server
+      - name: Install SonarQube Cloud scanner
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+
+      # 5. Het bouwen en scannen van de applicatie
+      - name: Build and analyze
+        shell: pwsh
+        run: |
+          # A. Start de SonarScanner (Vervang JOUW_PROJECT_KEY en JOUW_ORGANISATIE!)
+          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py"
+          
+          # B. De werkelijke .NET Build (Nu in een schone cloud-omgeving zónder file locks!)
+          dotnet build --configuration Release
+          
+          # C. Sluit de scan af en stuur de data naar SonarCloud
+          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
