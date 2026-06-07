@@ -39,14 +39,14 @@ jobs:
       - name: Build, test and analyze
         shell: pwsh
         run: |
-          # A. Start de SonarScanner en geef aan waar het OpenCover testrapport dadelijk landt
-          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
+          # A. Start de SonarScanner en laat hem automatisch zoeken naar alle opencover bestanden
+          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py" /d:sonar.cs.opencover.reportsPaths="**/*.opencover.xml"
           
           # B. De werkelijke .NET Build
           dotnet build --configuration Release
           
-          # C. Draai de Unit Tests en genereer de OpenCover XML (E2E-tests uitsluiten om hangs te voorkomen)
-          dotnet test --configuration Release --no-build --filter "FullyQualifiedName!~E2ETests" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/coverage.opencover.xml
+          # C. Draai de Unit Tests met de ingebouwde XPlat coverage collector (E2E-tests uitgesloten)
+          dotnet test --configuration Release --no-build --filter "FullyQualifiedName!~E2ETests" --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
           
-          # D. Sluit de scan af en stuur de code + testdata naar SonarCloud
+          # D. Sluit de scan af en stuur de data naar SonarCloud
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
