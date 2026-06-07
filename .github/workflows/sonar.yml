@@ -24,7 +24,7 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
-      # 3. Installeer .NET (Zorg dat dit matcht met jouw versie, bijv. 8.0 of 10.0)
+      # 3. Installeer .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -35,15 +35,18 @@ jobs:
         run: |
           dotnet tool install --global dotnet-sonarscanner
 
-      # 5. Het bouwen en scannen van de applicatie
-      - name: Build and analyze
+      # 5. Het bouwen, testen en scannen van de applicatie
+      - name: Build, test and analyze
         shell: pwsh
         run: |
-          # A. Start de SonarScanner (Vervang JOUW_PROJECT_KEY en JOUW_ORGANISATIE!)
-          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py"
+          # A. Start de SonarScanner en geef aan waar het OpenCover testrapport dadelijk landt
+          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
           
-          # B. De werkelijke .NET Build (Nu in een schone cloud-omgeving zónder file locks!)
+          # B. De werkelijke .NET Build
           dotnet build --configuration Release
           
-          # C. Sluit de scan af en stuur de data naar SonarCloud
+          # C. Draai de Unit Tests en genereer de OpenCover XML (E2E-tests uitsluiten om hangs te voorkomen)
+          dotnet test --configuration Release --no-build --filter "FullyQualifiedName!~E2ETests" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/coverage.opencover.xml
+          
+          # D. Sluit de scan af en stuur de code + testdata naar SonarCloud
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
