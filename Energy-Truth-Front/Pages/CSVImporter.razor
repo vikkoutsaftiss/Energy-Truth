@@ -40,9 +40,7 @@ else
 
     
 
-    <MudStack AlignItems="AlignItems.Center" Class="mt-8">
-        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size: 10rem;" Color="Color.Primary" />
-    </MudStack>
+    
 
     <div data-testid="provider-select">
         <MudSelect T="string"
@@ -62,11 +60,25 @@ else
     @if (selectedProvider == null)
     {
         <MudStack AlignItems="AlignItems.Center" Class="mt-8">
+            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Style="font-size: 10rem;" Color="Color.Primary" />
+        </MudStack>
+
+        <MudStack AlignItems="AlignItems.Center" Class="mt-8">
             <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Dark" Style="max-width: 1000px;">
                 Selecteer hierboven de bron van je CSV bestand. Staat jouw bron er niet tussen? Kies dan "Handmatige invoer" en koppel zelf de kolommen aan de juiste velden of neem contact op met de klantenservice, dan voegen we de provider toe voor automatische koppeling.
             </MudText>
         </MudStack>
     }
+
+    @if (selectedProvider == "HomeWizard")
+    {
+        <HomeWizardExportExplanation />
+    }
+    @if (selectedProvider == "UMeter")
+    {
+        <UMeterExportExplanation />
+    }
+    
 
     @if (selectedProvider != null)
     {

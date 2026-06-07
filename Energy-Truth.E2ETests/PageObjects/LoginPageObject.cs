@@ -1,7 +1,4 @@
 ﻿using Microsoft.Playwright;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Energy_Truth.E2ETests.PageObjects
 {
@@ -28,6 +25,8 @@ namespace Energy_Truth.E2ETests.PageObjects
             await _page.Locator("[data-testid='username-field'] input").FillAsync(username);
             await _page.Locator("[data-testid='password-field'] input").FillAsync(password);
             await _page.ClickAsync("[data-testid='login-button']");
+
+            await _page.WaitForURLAsync("**/building**");
         }
     }
 }
