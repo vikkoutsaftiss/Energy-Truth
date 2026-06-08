@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /Energy-Truth WEB API/appsettings.Development.json
 /.sonarqube/conf
+/Energy-Truth-Front/wwwroot/appsettings.json
+/Energy-Truth-WEB-API/appsettings.Development.json
+/Energy-Truth-WEB-API/appsettings.json
