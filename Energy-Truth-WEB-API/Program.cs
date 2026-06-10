@@ -21,8 +21,9 @@ var dbPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
 var ip = Environment.GetEnvironmentVariable("DATABASE_IP") ?? "localhost";
 var port = Environment.GetEnvironmentVariable("DATABASE_PORT") ?? "5432";
 
-var connectionString = $"Host={ip};Port={port};Database={dbName};Username={dbUser};Password={dbPassword}";
-
+var connectionString = Environment.GetEnvironmentVariable("POSTGRES_DB") != null
+    ? $"Host={ip};Port={port};Database={dbName};Username={dbUser};Password={dbPassword}"
+    : builder.Configuration.GetConnectionString("DefaultConnection");
 // Program.cs
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -62,8 +63,12 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IBatteryService, BatteryService>();
 builder.Services.AddScoped<IBatteryRepository, BatteryRepository>();
 builder.Services.AddScoped<IImportCalculator, ImportCalculatorService>();
+//builder.Services.AddDbContext<EnergyDbContext>(options =>
+//    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<EnergyDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
+
+
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 
