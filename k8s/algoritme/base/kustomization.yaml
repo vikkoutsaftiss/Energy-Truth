@@ -1,5 +1,5 @@
 # =====================================================================
-# kustomization (base) -- bundelt de drie bouwstenen.
+# kustomization (base) -- bundelt de bouwstenen.
 #
 # "Kustomize" is een manier om dezelfde manifests in meerdere omgevingen
 # (test/productie) te gebruiken zonder te kopieren. Deze 'base' is de
@@ -13,6 +13,7 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - refresher-cronjob.yaml
+  - mailer-cronjob.yaml
 
 # Handig label op alles, zodat je `kubectl get all -l project=energytruth` kunt doen.
 labels:

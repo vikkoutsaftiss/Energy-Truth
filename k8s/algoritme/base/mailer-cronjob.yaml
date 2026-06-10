@@ -1,0 +1,115 @@
+# =====================================================================
+# CronJob -- de rapport-mailer (mailer.py).
+# =====================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: algoritme-mailer
+spec:
+  schedule: "*/2 * * * *"         # elke 2 minuten
+  timeZone: "Europe/Amsterdam"
+  concurrencyPolicy: Forbid       # nooit twee mailers tegelijk (geen dubbele mails)
+  startingDeadlineSeconds: 60     # gemiste run niet lang inhalen
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: algoritme-mailer
+        spec:
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: github-registry-secret
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: mailer
+              image: energytruth-algoritme
+              command: ["python", "mailer.py"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: HOME
+                  value: /tmp
+                - name: DATABASE_IP
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_IP
+                - name: DATABASE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: DATABASE_PORT
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_DB
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-auth
+                      key: POSTGRES_PASSWORD
+                # SMTP variabelen exact gematcht met de werkende deployment (3).yaml
+                - name: SMTP_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_HOST
+                - name: SMTP_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_PORT
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_USER
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: SMTP_PASS
+                - name: MAIL_FROM
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: MAIL_FROM
+                - name: MAIL_FROM_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-auth
+                      key: MAIL_FROM_NAME
+              envFrom:
+                - configMapRef:
+                    name: algoritme-config
+              resources:
+                requests:
+                  memory: "256Mi" # Verhoogd naar 256Mi om out-of-memory bij PDF-inlezing te voorkomen
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "250m"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

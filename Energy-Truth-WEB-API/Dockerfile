@@ -2,16 +2,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Kopieer eerst alleen de .csproj bestanden voor betere Docker cache
+# 1. Kopieer EERST alle .csproj bestanden voor optimale Docker caching
 COPY Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj Energy-Truth-WEB-API/
 COPY Energy-Truth.Shared/Energy-Truth.Shared.csproj Energy-Truth.Shared/
+COPY Infrastructure.DataAccess/Infrastructure.DataAccess.csproj Infrastructure.DataAccess/ 
 
-# Herstel dependencies
+# Herstel alle dependencies op basis van de gecachte projectbestanden
 RUN dotnet restore Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj
 
-# Kopieer daarna de volledige broncode
+# 2. Kopieer DAARNA pas de volledige broncode van alle mappen
 COPY Energy-Truth-WEB-API/ Energy-Truth-WEB-API/
 COPY Energy-Truth.Shared/ Energy-Truth.Shared/
+COPY Infrastructure.DataAccess/ Infrastructure.DataAccess/ 
 
 # Publiceer de applicatie
 RUN dotnet publish Energy-Truth-WEB-API/Energy-Truth-WEB-API.csproj -c Release -o /app/publish

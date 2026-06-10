@@ -1,8 +1,9 @@
 # =====================================================================
-# ConfigMap -- NIET-geheime instellingen voor worker en refresher.
+# ConfigMap -- NIET-geheime instellingen voor worker, refresher en mailer.
 #
 # Een ConfigMap is een lijstje instellingen (geen wachtwoorden!). De
-# wachtwoorden/DB-gegevens komen apart uit het Secret 'db-auth' (van Marijn).
+# wachtwoorden/DB-gegevens komen apart uit het Secret 'db-auth', de
+# SMTP-login uit het Secret 'smtp-auth' (beide van Marijn).
 # Alles hier heeft al een verstandige default in de code; dit maakt ze
 # alleen zichtbaar/aanpasbaar zonder de image opnieuw te bouwen.
 # =====================================================================
@@ -22,3 +23,13 @@ data:
   POLL_INTERVAL_SECONDS: "30"
   # Log-detailniveau: DEBUG / INFO / WARNING / ERROR.
   LOG_LEVEL: "INFO"
+  # --- Mailer (mailer.py), niet-geheim. De SMTP-login zit in smtp-auth. ---
+  # SMTP-relay van Brevo.
+  SMTP_HOST: "smtp-relay.brevo.com"
+  SMTP_PORT: "587"
+  # Afzender. Nu het geverifieerde testadres; later rapporten@energytruth.nl.
+  MAIL_FROM: "rapporten@mierlofirst.org"
+  MAIL_FROM_NAME: "Energy-Truth"
+  MAIL_SUBJECT: "Uw Energy-Truth simulatierapport"
+  # Alleen mailen naar geverifieerde adressen (Klant.Email_verifieerd)? true/false
+  REQUIRE_VERIFIED: "false"

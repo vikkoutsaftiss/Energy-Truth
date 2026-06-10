@@ -1,0 +1,20 @@
+Beste ${bedrijfsnaam},
+
+In de bijlage vindt u uw persoonlijke simulatierapport van Energy-Truth.
+Het rapport rekent onafhankelijk voor u door wat een thuisbatterij voor uw
+gebouw betekent, op basis van uw eigen verbruiks- en kostengegevens.
+
+Bijlage: ${bestandsnaam}
+
+----------------------------------------------------------------------
+Even eerlijk: Energy-Truth is een studentenproject in betafase, gemaakt
+in het kader van de opleiding Fontys ICT. Deze mailbox wordt niet gelezen,
+dus reageren op dit bericht heeft geen zin. Vragen of feedback? Mail naar
+i274867@fontysict.nl.
+----------------------------------------------------------------------
+
+Met vriendelijke groet,
+Het Energy-Truth team
+
+(c) ${jaar} Energy-Truth - Fontys ICT-schoolproject (beta) - no-reply
+contact: i274867@fontysict.nl
