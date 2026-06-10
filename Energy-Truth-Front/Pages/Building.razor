@@ -81,17 +81,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (AuthService.CurrentUser != null && !SkipRedirect)
+        if (AuthService.CurrentUser != null)
         {
             _building.CustomerId = AuthService.CurrentUser.Id;
 
-            var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
-            if (response.IsSuccessStatusCode)
+            if (!SkipRedirect)
             {
-                var buildings = await response.Content.ReadFromJsonAsync<List<BuildingDTO>>();
-                if (buildings != null && buildings.Any())
+                var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
+                if (response.IsSuccessStatusCode)
                 {
-                    NavigationManager.NavigateTo("/buildinglist");
+                    var buildings = await response.Content.ReadFromJsonAsync<List<BuildingDTO>>();
+                    if (buildings != null && buildings.Any())
+                    {
+                        NavigationManager.NavigateTo("/buildinglist");
+                    }
                 }
             }
         }
