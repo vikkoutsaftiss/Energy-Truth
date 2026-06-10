@@ -12,13 +12,20 @@ namespace Energy_Truth_WEB_API.Calculators
         public ImportCalculatorService(IEnumerable<IEnergyProvider> energyProviders)
         {
             _energyProviders = energyProviders;
-        }       
+        }
 
         public IEnumerable<UsageDataDTO> CalculateImport(List<EnergyImportDTO> data, string providerName)
         {
             var provider = _energyProviders.FirstOrDefault(p => p.Name == providerName);
 
-            return provider?.IsCumulative ?? true
+            if (provider == null)
+            {
+                return IsCumulativeData(data)
+                    ? CalculateCumulativeImport(data, providerName)
+                    : MapDirectImport(data, providerName);
+            }
+
+            return provider.IsCumulative
                 ? CalculateCumulativeImport(data, providerName)
                 : MapDirectImport(data, providerName);
         }
@@ -74,6 +81,20 @@ namespace Energy_Truth_WEB_API.Calculators
                 })
                 .Where(d => d.KWhBought >= 0 && d.KWhSold >= 0)
                 .Where(d => d.KWhBought <= 50 && d.KWhSold <= 50);
+        }
+
+        private bool IsCumulativeData(List<EnergyImportDTO> data)
+        {
+            var sample = data.Take(10).Where(d => d.ImportT1 != null).ToList();
+            if (sample.Count < 2) return false;
+
+            var avgValue = sample.Average(d => d.ImportT1 ?? 0);
+            var isLargeValues = avgValue > 10;
+
+            var isIncreasing = sample.Zip(sample.Skip(1), (a, b) =>
+                (b.ImportT1 ?? 0) >= (a.ImportT1 ?? 0)).All(x => x);
+
+            return isLargeValues && isIncreasing;
         }
     }
 }

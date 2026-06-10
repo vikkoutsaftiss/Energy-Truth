@@ -33,7 +33,7 @@ else
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <MudAlert Severity="Severity.Error" Elevation="1" Dense="true" Class="mb-3"
-        ShowCloseIcon="true" CloseIconClicked="() => errorMessage = null">
+                  ShowCloseIcon="true" CloseIconClicked="() => errorMessage = null">
             <strong>Oeps!</strong> @errorMessage
         </MudAlert>
     }
@@ -44,10 +44,10 @@ else
 
     <div data-testid="provider-select">
         <MudSelect T="string"
-        Label="Kies je provider"
-        Placeholder="Kies een provider..."
-        Value="selectedProvider"
-        ValueChanged="OnProviderSelected">
+                   Label="Kies je provider"
+                   Placeholder="Kies een provider..."
+                   Value="selectedProvider"
+                   ValueChanged="OnProviderSelected">
             @foreach (var provider in providerNames)
             {
                 <MudSelectItem Value="@provider">@provider</MudSelectItem>
@@ -77,6 +77,10 @@ else
     @if (selectedProvider == "UMeter")
     {
         <UMeterExportExplanation />
+    }
+    @if (selectedProvider == "Handmatige invoer")
+    {
+        <ManualImportExplanation />
     }
     
 
@@ -129,8 +133,8 @@ else
                                 {
                                     <MudItem xs="12" sm="6">
                                         <MudSelect T="string" Label="@displayNames[key]"
-                                        Value="@userMapping[key]"
-                                        ValueChanged="@(val => userMapping[key] = val)">
+                                                   Value="@userMapping[key]"
+                                                   ValueChanged="@(val => userMapping[key] = val)">
                                             @foreach (var header in csvHeaders)
                                             {
                                                 <MudSelectItem Value="@header">@header</MudSelectItem>
@@ -143,7 +147,7 @@ else
                         <MudCardActions>
                             <div data-testid="process-data">
                                 <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                OnClick="ProcessImport" Disabled="@loading">
+                                           OnClick="ProcessImport" Disabled="@loading">
                                     @if (loading)
                                     {
                                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -190,7 +194,7 @@ else
                         <MudCardActions Class="justify-end">
                             <div data-testid="start-calculation">
                                 <MudButton Variant="Variant.Filled" Color="Color.Success"
-                                OnClick="StartCalculation" Disabled="@loading">
+                                           OnClick="StartCalculation" Disabled="@loading">
                                     <MudIcon Icon="@Icons.Material.Filled.Calculate" Class="mr-2" />
                                     Start Berekening
                                 </MudButton>
@@ -232,7 +236,7 @@ else
 @code {
     private List<string> csvHeaders = new();
     private Dictionary<string, string> userMapping = new();
-    private Dictionary<string, string> displayNames = new();    
+    private Dictionary<string, string> displayNames = new();
     private IBrowserFile? selectedFile;
     private List<EnergyImportDTO>? energyDataList;
     private CustomBatteryDTO _customBattery;
@@ -252,7 +256,7 @@ else
     {
         if (provider != null && provider != "Handmatige invoer")
         {
-            Provider = EnergyProviders.FirstOrDefault(p => p.Name == provider);            
+            Provider = EnergyProviders.FirstOrDefault(p => p.Name == provider);
         }
         else
         {
@@ -304,11 +308,14 @@ else
                 }
 
                 if (Provider.StripRowQuotes)
-                {
                     headerLine = headerLine.Trim('"');
-                }
 
-                csvHeaders = headerLine.Split(Provider.Delimiter).ToList();
+                var detectedDelimiter = DetectDelimiter(headerLine);
+                var resolvedDelimiter = detectedDelimiter != '\0'
+                    ? detectedDelimiter.ToString()
+                    : Provider.Delimiter;
+
+                csvHeaders = headerLine.Split(resolvedDelimiter).ToList();
 
                 displayNames = Provider.DisplayNames;
 
@@ -421,6 +428,7 @@ else
     private char DetectDelimiter(string headerLine)
     {
         var delimiters = new[] { ',', ';', '\t' };
-        return delimiters.OrderByDescending(d => headerLine.Count(c => c == d)).FirstOrDefault();
+        var best = delimiters.MaxBy(d => headerLine.Count(c => c == d));
+        return headerLine.Count(c => c == best) > 0 ? best : '\0';
     }
 }
