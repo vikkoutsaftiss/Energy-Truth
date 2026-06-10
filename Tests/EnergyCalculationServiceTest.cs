@@ -20,10 +20,11 @@ namespace _04._Tests
             IEnumerable<IEnergyProvider> providers = new List<IEnergyProvider> { mockProvider.Object };
 
             var service = new EnergyCalculationService(providers, mockCumulativeCalculator.Object, mockNonCumulativeCalculator.Object);
+
             var data = new List<EnergyImportDTO>
             {
-                new EnergyImportDTO { Time = DateTime.Now.AddDays(-1), ImportT1 = 10, ImportT2 = 20, ExportT1 = 5, ExportT2 = 15, L1MaxW = 1000, L2MaxW = 2000, L3MaxW = 3000 },
-                new EnergyImportDTO { Time = DateTime.Now, ImportT1 = 15, ImportT2 = 25, ExportT1 = 10, ExportT2 = 20, L1MaxW = 1100, L2MaxW = 2100, L3MaxW = 3100 }
+                new EnergyImportDTOBuilder().Build(),
+                new EnergyImportDTOBuilder().Build()
             };
 
             //Act
@@ -47,8 +48,8 @@ namespace _04._Tests
             var service = new EnergyCalculationService(providers, mockCumulativeCalculator.Object, mockNonCumulativeCalculator.Object);
             var data = new List<EnergyImportDTO>
             {
-                new EnergyImportDTO { Time = DateTime.Now.AddDays(-1), ImportT1 = 10, ImportT2 = 20, ExportT1 = 5, ExportT2 = 15, L1MaxW = 1000, L2MaxW = 2000, L3MaxW = 3000 },
-                new EnergyImportDTO { Time = DateTime.Now, ImportT1 = 15, ImportT2 = 25, ExportT1 = 10, ExportT2 = 20, L1MaxW = 1100, L2MaxW = 2100, L3MaxW = 3100 }
+                new EnergyImportDTOBuilder().Build(),
+                new EnergyImportDTOBuilder().Build()
             };
 
             //Act
@@ -72,7 +73,7 @@ namespace _04._Tests
             var service = new EnergyCalculationService(providers, mockCumulativeCalculator.Object, mockNonCumulativeCalculator.Object);
             var data = new List<EnergyImportDTO>
             {
-                new EnergyImportDTO { Time = DateTime.Now.AddDays(-1), ImportT1 = 10, ImportT2 = 20, ExportT1 = 5, ExportT2 = 15, L1MaxW = 1000, L2MaxW = 2000, L3MaxW = 3000 },
+                new EnergyImportDTOBuilder().Build(),
             };
 
             //Act
