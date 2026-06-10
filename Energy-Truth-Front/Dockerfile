@@ -1,7 +1,7 @@
 # Stage 1: Build met .NET SDK
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
-#
+
 # Kopieer eerst alleen de .csproj bestanden voor betere Docker cache
 COPY Energy-Truth-Front/Energy-Truth_Presentation.csproj Energy-Truth-Front/
 COPY Energy-Truth.Shared/Energy-Truth.Shared.csproj Energy-Truth.Shared/
@@ -26,11 +26,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Installeer gettext
 RUN apk add --no-cache gettext
 
-# 1. Kopieer het start-script naar de root van de container
-COPY Energy-Truth-Front/entrypoint.sh /entrypoint.sh
-
-# 2. Maak het script uitvoerbaar binnen Linux
-RUN chmod +x /entrypoint.sh
-
-# 3. Start de container via het script met de officiële exec form []
-ENTRYPOINT ["/entrypoint.sh"]
+CMD sh -c "echo '{\"ApiBaseUrl\":\"'$BACKEND_URL'\"}' > /usr/share/nginx/html/appsettings.json && exec nginx -g 'daemon off;'"
