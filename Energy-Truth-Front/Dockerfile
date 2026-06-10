@@ -27,7 +27,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 RUN apk add --no-cache gettext
 
 # 1. Kopieer het start-script naar de root van de container
-COPY entrypoint.sh /entrypoint.sh
+COPY Energy-Truth-Front/entrypoint.sh /entrypoint.sh
 
 # 2. Maak het script uitvoerbaar binnen Linux
 RUN chmod +x /entrypoint.sh
