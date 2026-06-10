@@ -21,12 +21,12 @@ namespace Energy_Truth.Shared
         public double? ExportT2 { get; set; }
 
         [Name("L1 max W")]
-        public int? L1MaxW { get; set; }
+        public double? L1MaxW { get; set; }
 
         [Name("L2 max W")]
-        public int? L2MaxW { get; set; }
+        public double? L2MaxW { get; set; }
 
         [Name("L3 max W")]
-        public int? L3MaxW { get; set; }
+        public double? L3MaxW { get; set; }
     }
 }

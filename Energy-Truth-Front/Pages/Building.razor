@@ -48,16 +48,18 @@
                           For="@(() => _building.ConstructionYear)" />
         </div>
 
-    <MudSelect T="string"
-               Label="Selecteer een energielabel"
-               @bind-Value="_building.ISTEnergyLabel"
-               Variant="Variant.Outlined"
-               For="@(() => _building.ISTEnergyLabel)">
-        @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
-        {
-            <MudSelectItem T="string" Value="@label.ToString()">@label.ToDisplayString()</MudSelectItem>
-        }
-    </MudSelect>
+        <div data-testid="energylabel-select">
+            <MudSelect T="string"
+                       Label="Selecteer een energielabel"
+                       @bind-Value="_building.ISTEnergyLabel"
+                       Variant="Variant.Outlined"
+                       For="@(() => _building.ISTEnergyLabel)">
+                @foreach (var label in Enum.GetValues<ISTEnergyLabel>())
+                {
+                    <MudSelectItem T="string" Value="@label.ToString()">@label.ToDisplayString()</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
 
         <div data-testid="submit-button">
             <MudButton Variant="Variant.Filled"
@@ -85,7 +87,7 @@
         {
             _building.CustomerId = AuthService.CurrentUser.Id;
 
-            if (!SkipRedirect)
+            if(!SkipRedirect)
             {
                 var response = await HttpClient.GetAsync($"api/building/getbuildingsbycustomerid/{AuthService.CurrentUser.Id}");
                 if (response.IsSuccessStatusCode)
@@ -96,7 +98,7 @@
                         NavigationManager.NavigateTo("/buildinglist");
                     }
                 }
-            }
+            }            
         }
     }
 

@@ -55,15 +55,15 @@ builder.Services.AddScoped<IPriceService, PriceService>();
 builder.Services.AddScoped<IImportBatchRepository, ImportBatchRepository>();
 builder.Services.AddScoped<IUsageDataRepository, UsageDataRepository>();
 builder.Services.AddScoped<IDateFilterService, DateFilterService>();
-builder.Services.AddScoped<ICumulativeCalculator, CumulativeCalculatorService>();
 builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IBuildingService, BuildingService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IBatteryService, BatteryService>();
 builder.Services.AddScoped<IBatteryRepository, BatteryRepository>();
+builder.Services.AddScoped<IImportCalculator, ImportCalculatorService>();
 builder.Services.AddDbContext<EnergyDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
 

@@ -22,9 +22,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             IFormFile file = null;
             string mapping = "{\"Time\":\"Time\",\"ImportT1\":\"ImportT1\",\"ImportT2\":\"ImportT2\",\"ExportT1\":\"ExportT1\",\"ExportT2\":\"ExportT2\",\"L1MaxW\":\"L1MaxW\",\"L2MaxW\":\"L2MaxW\",\"L3MaxW\":\"L3MaxW\"}";
             string provider = "TestProvider";
@@ -45,9 +45,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.Length).Returns(1024);
             fileMock.Setup(f => f.FileName).Returns("test.csv");
@@ -71,9 +71,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.Length).Returns(1024);
             fileMock.Setup(f => f.FileName).Returns("test.txt");
@@ -96,9 +96,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.Length).Returns(10 * 1024 * 1024 + 1);
             fileMock.Setup(f => f.FileName).Returns("test.csv");
@@ -121,9 +121,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var fileMock = new Mock<IFormFile>();
             fileMock.Setup(f => f.Length).Returns(1024);
             fileMock.Setup(f => f.FileName).Returns("test.csv");
@@ -147,9 +147,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var importData = new List<EnergyImportDTO>();
 
             // Act
@@ -167,9 +167,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var importData = new List<EnergyImportDTO>
             {
                 new EnergyImportDTO
@@ -200,9 +200,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var providerName = "TestProvider";
             var importData = new List<EnergyImportDTO>
             {
@@ -245,16 +245,16 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var providerName = "TestProvider";
             var importData = new ImportRequestDTO
             {
-                Data = new List<EnergyImportDTO>(),
+                Data = new List<EnergyImportDTO>(),                
                 CustomBattery = null
             };
-
+           
 
             // Act
             var result = await controller.PostToDatabase(importData, providerName, 1);
@@ -271,9 +271,9 @@ namespace _04._Tests
             var mockCalculationService = new Mock<IEnergyCalculationService>();
             var mockImportService = new Mock<IImportService>();
             var mockDateFilterService = new Mock<IDateFilterService>();
-            var mockCumulativeCalculator = new Mock<ICumulativeCalculator>();
+            var mockImportCalculator = new Mock<IImportCalculator>();
             var mockUsageDataRepository = new Mock<IUsageDataRepository>();
-            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockCumulativeCalculator.Object, mockUsageDataRepository.Object);
+            var controller = new ImportController(mockImportService.Object, mockCalculationService.Object, mockDateFilterService.Object, mockImportCalculator.Object, mockUsageDataRepository.Object);
             var providerName = "TestProvider";
             var importData = new ImportRequestDTO
             {
@@ -313,5 +313,5 @@ namespace _04._Tests
         }
     }
 
-
+    
 }

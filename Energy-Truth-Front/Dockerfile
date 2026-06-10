@@ -23,6 +23,14 @@ COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 # Kopieer de aangepaste nginx configuratie voor Blazor client-side routing
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Installeer gettext
 RUN apk add --no-cache gettext
 
-CMD sh -c "echo '{\"ApiBaseUrl\":\"'$BACKEND_URL'\"}' > /usr/share/nginx/html/appsettings.json && exec nginx -g 'daemon off;'"
+# 1. Kopieer het start-script naar de root van de container
+COPY entrypoint.sh /entrypoint.sh
+
+# 2. Maak het script uitvoerbaar binnen Linux
+RUN chmod +x /entrypoint.sh
+
+# 3. Start de container via het script met de officiële exec form []
+ENTRYPOINT ["/entrypoint.sh"]

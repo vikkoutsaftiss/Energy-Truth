@@ -16,15 +16,15 @@ public class ImportController : ControllerBase
     private readonly IImportService _importService; // dit is de service die verantwoordelijk is voor het verwerken van het CSV bestand.
     private readonly IEnergyCalculationService _energyCalculationService; // dit is de service die verantwoordelijk is voor het uitvoeren van de energie berekeningen.
     private readonly IDateFilterService _dateFilterService;
-    private readonly ICumulativeCalculator _cumulativeCalculator;
+    private readonly IImportCalculator _importCalculator;
     private readonly IUsageDataRepository _usageDataRepository;
 
-    public ImportController(IImportService importService, IEnergyCalculationService energyCalculationService, IDateFilterService dateFilterService, ICumulativeCalculator cumulativeCalculator, IUsageDataRepository usageDataRepository)
+    public ImportController(IImportService importService, IEnergyCalculationService energyCalculationService, IDateFilterService dateFilterService, IImportCalculator importCalculator, IUsageDataRepository usageDataRepository)
     {
         _importService = importService; 
         _energyCalculationService = energyCalculationService;
         _dateFilterService = dateFilterService;
-        _cumulativeCalculator = cumulativeCalculator;
+        _importCalculator = importCalculator;
         _usageDataRepository = usageDataRepository;
     }
 
@@ -103,7 +103,7 @@ public class ImportController : ControllerBase
 
         try
         {
-            var cumulativeValues = _cumulativeCalculator.CalculateCumulativeImport(request.Data, provider);
+            var cumulativeValues = _importCalculator.CalculateImport(request.Data, provider);
 
             var filteredData = await _dateFilterService.FilterExistingDatesAsync(cumulativeValues, buildingId);
 
@@ -111,10 +111,10 @@ public class ImportController : ControllerBase
 
             return Ok("Data succesvol geupload. Je ontvangt binnen 10 minuten een email met daarin je adviesrapport!");
         }
-        catch
+        catch (Exception ex)
         {
-            return StatusCode(500, "Er is een fout opgetreden tijdens het verwerken van de data.");
+            return StatusCode(500, ex.Message);
         }
-               
+
     }
 }

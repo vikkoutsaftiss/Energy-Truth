@@ -5,7 +5,12 @@
       "launchBrowser": true,
       "launchUrl": "scalar/v1",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "POSTGRES_DB": "app_test",
+        "POSTGRES_USER": "testuser",
+        "POSTGRES_PASSWORD": "EnergyTruthTestFontys",
+        "DATABASE_IP": "10.0.20.10",
+        "DATABASE_PORT": "5432"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5294"
@@ -15,7 +20,12 @@
       "launchBrowser": true,
       "launchUrl": "scalar/v1",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "POSTGRES_DB": "app_test",
+        "POSTGRES_USER": "testuser",
+        "POSTGRES_PASSWORD": "EnergyTruthTestFontys",
+        "DATABASE_IP": "10.0.20.10",
+        "DATABASE_PORT": "5432"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7020;http://localhost:5294"
