@@ -39,7 +39,7 @@ namespace Infrastructure.DataAccess
                 await transaction.CommitAsync();
                 return importBatchId;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
                 throw;
