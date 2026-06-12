@@ -32,7 +32,7 @@ namespace Energy_Truth_WEB_API.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return StatusCode(500, ex.Message); // tijdelijk, niet in productie
+                return StatusCode(500, "Er is iets fout gegaan bij het ophalen van de batterijen. Probeer het later opnieuw.");
             }
         }
 
@@ -54,7 +54,7 @@ namespace Energy_Truth_WEB_API.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return StatusCode(500, ex.Message); // tijdelijk, niet in productie
+                return StatusCode(500, "Er is iets fout gegaan bij het bijwerken van de batterij. Probeer het later opnieuw.");
             }
         }
 
@@ -70,13 +70,13 @@ namespace Energy_Truth_WEB_API.Controllers
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest("Batterij met deze naam en capaciteit bestaat al.");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return BadRequest();
+                return StatusCode(500, "Er is iets fout gegaan bij het aanmaken van de batterij. Probeer het later opnieuw.");
             }
         }
 

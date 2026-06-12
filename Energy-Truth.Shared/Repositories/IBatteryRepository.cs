@@ -7,5 +7,6 @@ namespace Energy_Truth.Shared.Repositories
         Task<List<BatteryDTO>> GetBatteriesAsync();
         Task<bool> UpdateBatteryAsync(int batteryId, BatteryDTO dto);
         Task<BatteryDTO?> CreateBatteryAsync(BatteryDTO dto);
+        Task<bool> GetBatteryByNameAndCapacity(string name, decimal capacity);
     }
 }

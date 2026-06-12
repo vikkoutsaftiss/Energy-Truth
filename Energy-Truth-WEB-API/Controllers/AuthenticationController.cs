@@ -30,7 +30,7 @@ namespace Energy_Truth_WEB_API.Controllers
             try
             {
                 var customer = await _customerService.LoginCustomerAsync(request);
-                if (customer != null)
+                if (customer != null && customer.IsLoggedIn)
                 {
                     return Ok(customer);
                 }
