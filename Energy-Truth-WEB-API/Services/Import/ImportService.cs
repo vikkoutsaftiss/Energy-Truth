@@ -24,95 +24,65 @@ public class ImportService : IImportService
         fileStream.Position = 0;
 
         var detectedDelimiter = DetectDelimiter(headerLine ?? string.Empty);
+        var detectedDateFormat = DetectDateFormat(headerLine ?? string.Empty, firstDataLine ?? string.Empty, mapping, detectedDelimiter);
+
+        IEnergyProvider? provider = null;
+        string resolvedDelimiter;
+        bool stripQuotes = false;
+        CsvMode csvMode = CsvMode.RFC4180;
 
         if (providerName != "Handmatige invoer")
         {
-            
-            var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName);
+            provider = _energyProvider.FirstOrDefault(p => p.Name == providerName)
+                ?? throw new ArgumentException($"Provider {providerName} niet gevonden");
 
-            var resolvedDelimiter = detectedDelimiter != '\0'
-                ? detectedDelimiter.ToString()
-                : provider.Delimiter;
-
-            var detectedDateFormat = DetectDateFormat(headerLine ?? string.Empty, firstDataLine ?? string.Empty, mapping, detectedDelimiter);
-
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                HasHeaderRecord = true,
-                Delimiter = resolvedDelimiter,
-                Mode = provider.CsvMode,
-                HeaderValidated = null,
-                MissingFieldFound = null
-            };
-
-            using var reader = new StreamReader(fileStream);
-            var rawContent = await reader.ReadToEndAsync();
-
-            if (provider.StripRowQuotes)
-                rawContent = rawContent.Replace("\"", "");
-
-            using var stringReader = new StringReader(rawContent);
-            using var csv = new CsvReader(stringReader, config);
-
-            var cleanedMapping = mapping
-                .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
-                .ToDictionary(k => k.Key, k => k.Value);
-
-            csv.Context.RegisterClassMap(new EnergyImportMap(cleanedMapping, new List<string> { detectedDateFormat }));
-
-            var results = new List<EnergyImportDTO>();
-            while (await csv.ReadAsync())
-            {
-                try
-                {
-                    results.Add(csv.GetRecord<EnergyImportDTO>());
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Rij {csv.Context.Parser.Row} geskipt: {ex.InnerException?.Message ?? ex.Message}");
-                }
-            }
-            return results;
+            resolvedDelimiter = detectedDelimiter != '\0' ? detectedDelimiter.ToString() : provider.Delimiter;
+            stripQuotes = provider.StripRowQuotes;
+            csvMode = provider.CsvMode;
+        }
+        else
+        {
+            resolvedDelimiter = detectedDelimiter != '\0' ? detectedDelimiter.ToString() : ",";
         }
 
-        // Handmatige invoer
-        var manualDelimiter = detectedDelimiter != '\0' ? detectedDelimiter.ToString() : ",";
-
-        var detectedManualDateFormat = DetectDateFormat(headerLine ?? string.Empty, firstDataLine ?? string.Empty, mapping, detectedDelimiter);
-
-        var manualConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
             HasHeaderRecord = true,
-            Delimiter = manualDelimiter,
-            Mode = CsvMode.RFC4180,
+            Delimiter = resolvedDelimiter,
+            Mode = csvMode,
             HeaderValidated = null,
             MissingFieldFound = null
         };
 
-        using var manualReader = new StreamReader(fileStream);
-        var rawManualContent = await manualReader.ReadToEndAsync();
-        using var manualStringReader = new StringReader(rawManualContent);
-        using var manualCsv = new CsvReader(manualStringReader, manualConfig);
+        using var reader = new StreamReader(fileStream);
+        var rawContent = await reader.ReadToEndAsync();
 
-        var cleanedManualMapping = mapping
+        if (stripQuotes)
+            rawContent = rawContent.Replace("\"", "");
+
+        using var stringReader = new StringReader(rawContent);
+        using var csv = new CsvReader(stringReader, config);
+
+        var cleanedMapping = mapping
             .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
             .ToDictionary(k => k.Key, k => k.Value);
 
-        manualCsv.Context.RegisterClassMap(new EnergyImportMap(cleanedManualMapping, new List<string> { detectedManualDateFormat }));
+        csv.Context.RegisterClassMap(new EnergyImportMap(cleanedMapping, new List<string> { detectedDateFormat }));
 
-        var manualResults = new List<EnergyImportDTO>();
-        while (await manualCsv.ReadAsync())
+        var results = new List<EnergyImportDTO>();
+        while (await csv.ReadAsync())
         {
             try
             {
-                manualResults.Add(manualCsv.GetRecord<EnergyImportDTO>());
+                results.Add(csv.GetRecord<EnergyImportDTO>());
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Rij {manualCsv.Context.Parser.Row} geskipt: {ex.InnerException?.Message ?? ex.Message}");
+                Console.WriteLine($"Rij {csv.Context.Parser.Row} geskipt: {ex.InnerException?.Message ?? ex.Message}");
             }
         }
-        return manualResults;
+
+        return results;
     }
 
     private static char DetectDelimiter(string headerLine)
