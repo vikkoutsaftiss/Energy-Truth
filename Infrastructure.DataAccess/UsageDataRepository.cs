@@ -49,16 +49,13 @@ namespace Infrastructure.DataAccess
         public async Task<HashSet<DateTime>> GetExistingTimestampsAsync(int buildingId)
         {
             var existingTimestamps = await _dbContext.UsageData
-                .Join(_dbContext.ImportBatches,
-                    u => u.ImportBatchId,
-                    b => b.ImportBatchId,
-                    (u, b) => new { u.UsageMoment, b.BuildingId })
-                .Where(x => x.BuildingId == buildingId)
-                .Select(x => x.UsageMoment)
+                .Where(u => u.ImportBatch.BuildingId == buildingId)
+                .Select(u => u.UsageMoment)
                 .ToHashSetAsync();
+
             return existingTimestamps;
         }
 
-        
+
     }
 }

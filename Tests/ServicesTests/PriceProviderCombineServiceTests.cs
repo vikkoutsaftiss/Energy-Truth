@@ -3,7 +3,7 @@ using Moq;
 using Energy_Truth.Shared;
 using Energy_Truth_WEB_API.Services.Provider;
 
-namespace _04._Tests
+namespace _04._Tests.ServicesTests
 {
     public class PriceProviderCombineServiceTests
     {

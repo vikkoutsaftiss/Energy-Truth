@@ -19,5 +19,7 @@ namespace Infrastructure.DataAccess.Entities
         public string Status { get; set; }
         [Column("Eigen_Batterij")]
         public string? CustomBattery { get; set; }
+
+        public UsageData UsageData { get; set; }
     }
 }

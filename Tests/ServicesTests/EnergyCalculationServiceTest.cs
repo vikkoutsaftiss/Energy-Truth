@@ -4,7 +4,7 @@ using Energy_Truth_WEB_API.Calculators;
 using Energy_Truth.Shared;
 using Energy_Truth.Shared.Providers;
 
-namespace _04._Tests
+namespace _04._Tests.ServicesTests
 {
     public class EnergyCalculationServiceTest
     {
