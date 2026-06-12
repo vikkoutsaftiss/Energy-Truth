@@ -36,7 +36,7 @@ jobs:
         shell: pwsh
         run: |
           # A. Start de SonarScanner en laat hem automatisch zoeken naar alle opencover bestanden
-          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py" /d:sonar.cs.opencover.reportsPaths="**\*.opencover.xml" /d:sonar.coverage.exclusions="**/**"          
+          dotnet-sonarscanner begin /k:"vikkoutsaftiss_Energy-Truth" /o:"vikkoutsaftiss" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/.sonarqube/**,**/python/**,**/Python/**,**/*.py,**/E2ETests/**" /d:sonar.cs.opencover.reportsPaths="**\*.opencover.xml" /d:sonar.coverage.exclusions="**/E2ETests/**"          
           # B. De werkelijke .NET Build
           dotnet build --configuration Release
           
