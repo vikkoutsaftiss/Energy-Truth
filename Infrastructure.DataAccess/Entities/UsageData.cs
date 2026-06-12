@@ -27,5 +27,7 @@ namespace Infrastructure.DataAccess.Entities
         public bool? IsInterpolated { get; set; }
         [Column("Origineel_Interval_Min")]
         public int? OriginalIntervalMinutes { get; set; }
+
+        public ImportBatch ImportBatch { get; set; }
     }
 }
