@@ -11,12 +11,10 @@ namespace Energy_Truth_WEB_API.Controllers
     public class BatteryController : ControllerBase
     {
         private readonly IBatteryService _batteryService;
-        private readonly ICustomerService _customerService;
 
-        public BatteryController(IBatteryService batteryService, ICustomerService customerService)
+        public BatteryController(IBatteryService batteryService)
         {
             _batteryService = batteryService;
-            _customerService = customerService;
         }
        
         [HttpGet("getbatteries")]
@@ -78,11 +76,6 @@ namespace Energy_Truth_WEB_API.Controllers
             }
         }
 
-        private async Task<bool> IsAdminAsync()
-        {
-            if (!Request.Headers.TryGetValue("X-Customer-Id", out var value)) return false;
-            if (!int.TryParse(value, out int customerId)) return false;
-            return await _customerService.IsAdminAsync(customerId);
-        }
+        
     }
 }

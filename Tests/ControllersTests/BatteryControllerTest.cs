@@ -21,7 +21,7 @@ namespace _04._Tests.ControllersTests
             mockBatteryService.Setup(s => s.GetBatteriesAsync()).ReturnsAsync(new List<BatteryDTO>());
 
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.GetBatteries();
 
             // Assert
@@ -36,7 +36,7 @@ namespace _04._Tests.ControllersTests
             var mockCustomerService = new Mock<ICustomerService>();
             mockBatteryService.Setup(s => s.GetBatteriesAsync()).ThrowsAsync(new Exception());
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.GetBatteries();
             // Assert
             var objectResult = Assert.IsType<ObjectResult>(result);
@@ -54,7 +54,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.UpdateBatteryAsync(batteryId, batteryDto)).ReturnsAsync(true);
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.UpdateBattery(batteryId, batteryDto);
             // Assert
             Assert.IsType<NoContentResult>(result);
@@ -70,7 +70,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.UpdateBatteryAsync(batteryId, batteryDto)).ReturnsAsync(false);
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.UpdateBattery(batteryId, batteryDto);
             // Assert
             Assert.IsType<NotFoundResult>(result);
@@ -86,7 +86,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.UpdateBatteryAsync(batteryId, batteryDto)).ThrowsAsync(new Exception());
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.UpdateBattery(batteryId, batteryDto);
             // Assert
             var objectResult = Assert.IsType<ObjectResult>(result);
@@ -103,7 +103,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.CreateBatteryAsync(batteryDto)).ReturnsAsync(batteryDto);
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.CreateBattery(batteryDto);
             // Assert
             Assert.IsType<OkObjectResult>(result);
@@ -118,7 +118,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.CreateBatteryAsync(batteryDto)).ReturnsAsync((BatteryDTO)null);
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.CreateBattery(batteryDto);
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
@@ -133,7 +133,7 @@ namespace _04._Tests.ControllersTests
             var batteryDto = new BatteryDTO();
             mockBatteryService.Setup(s => s.CreateBatteryAsync(batteryDto)).ThrowsAsync(new Exception());
             // Act
-            var controller = new BatteryController(mockBatteryService.Object, mockCustomerService.Object);
+            var controller = new BatteryController(mockBatteryService.Object);
             var result = await controller.CreateBattery(batteryDto);
             // Assert
             var objectResult = Assert.IsType<ObjectResult>(result);
