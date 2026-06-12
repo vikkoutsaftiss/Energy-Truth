@@ -27,7 +27,13 @@ namespace Energy_Truth_WEB_API.Services.Battery
 
         public async Task<BatteryDTO?> CreateBatteryAsync(BatteryDTO dto)
         {
-            return await _batteryRepository.CreateBatteryAsync(dto);         
+            var result = await _batteryRepository.GetBatteryByNameAndCapacity(dto.ProductName, dto.CapacityKWh);
+            if (!result)
+            {
+                return await _batteryRepository.CreateBatteryAsync(dto);
+            }
+            return null;
+                     
         }
     }
 }

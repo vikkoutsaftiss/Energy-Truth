@@ -5,7 +5,7 @@ using Energy_Truth_WEB_API.Services.Customer;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
-namespace _04._Tests
+namespace _04._Tests.ControllersTests
 {
     public class CustomerControllerTest
     {

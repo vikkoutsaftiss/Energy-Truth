@@ -11,7 +11,7 @@ using Energy_Truth_WEB_API.Calculators;
 using Energy_Truth.Shared.Repositories;
 
 
-namespace _04._Tests
+namespace _04._Tests.ControllersTests
 {
     public class ImportControllerTest
     {

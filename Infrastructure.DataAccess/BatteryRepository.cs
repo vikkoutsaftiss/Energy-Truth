@@ -107,5 +107,12 @@ namespace Infrastructure.DataAccess
                 IsActive = battery.IsActive
             };
         }
+
+        public async Task<bool> GetBatteryByNameAndCapacity(string name, decimal capacity)
+        {
+            var battery = await _dbContext.Batteries.FirstOrDefaultAsync(b => b.ProductName == name && b.CapacityKWh == capacity);
+
+            return battery != null;
+        }
     }
 }
