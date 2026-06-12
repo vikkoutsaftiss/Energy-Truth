@@ -22,8 +22,6 @@ namespace Energy_Truth_WEB_API.Controllers
         [HttpGet("getbatteries")]
         public async Task<IActionResult> GetBatteries()
         {
-            //if (!await IsAdminAsync()) return Unauthorized();
-
             try
             {
                 List<BatteryDTO> batteries = await _batteryService.GetBatteriesAsync();

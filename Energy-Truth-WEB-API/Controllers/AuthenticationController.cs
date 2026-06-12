@@ -9,7 +9,7 @@ namespace Energy_Truth_WEB_API.Controllers
 
     [ApiController]
     [Route("api/[controller]")] // Dit zorgt dat de URL /api/authentication wordt
-    public class AuthenticationController : Controller
+    public class AuthenticationController : ControllerBase
     {
         private readonly ICustomerService _customerService;
 
@@ -39,7 +39,7 @@ namespace Energy_Truth_WEB_API.Controllers
                     return BadRequest("Ongeldige inloggegevens.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, $"Er is een fout opgetreden bij het inloggen. Probeer het later opnieuw.");
             }
@@ -74,18 +74,17 @@ namespace Energy_Truth_WEB_API.Controllers
             {
                 var customerId = await _customerService.CreateCustomerAsync(registerRequest);
 
-                if (customerId == null)
-                {
-                    return StatusCode(500, "Er is een fout opgetreden bij het aanmaken van de klant.");
-                }
                 if (customerId == 0)
                 {
                     return BadRequest("Klant met dit e-mailadres bestaat al.");
                 }
+
                 return Ok();
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Fout bij aanmaken klant: {ex.Message}");
+
                 return StatusCode(500, $"Er is een fout opgetreden bij het aanmaken van de klant. Probeer het later opnieuw.");
             }
         }

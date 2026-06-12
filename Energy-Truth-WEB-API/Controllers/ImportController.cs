@@ -9,6 +9,9 @@ using Energy_Truth_WEB_API.Services.Import;
 using Energy_Truth_WEB_API.Services.DateFilter;
 using Energy_Truth.Shared.DTO_s;
 
+namespace Energy_Truth_WEB_API.Controllers;
+
+
 [ApiController]
 [Route("api/[controller]")] // Dit zorgt dat de URL /api/import wordt
 public class ImportController : ControllerBase
@@ -107,7 +110,7 @@ public class ImportController : ControllerBase
 
             var filteredData = await _dateFilterService.FilterExistingDatesAsync(cumulativeValues, buildingId);
 
-            var batchId = await _usageDataRepository.BulkInsertAsync(filteredData, buildingId, request.CustomBattery);
+            await _usageDataRepository.BulkInsertAsync(filteredData, buildingId, request.CustomBattery);
 
             return Ok("Data succesvol geupload. Je ontvangt binnen 10 minuten een email met daarin je adviesrapport!");
         }

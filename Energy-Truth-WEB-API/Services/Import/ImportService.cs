@@ -27,6 +27,7 @@ public class ImportService : IImportService
 
         if (providerName != "Handmatige invoer")
         {
+            
             var provider = _energyProvider.FirstOrDefault(p => p.Name == providerName);
 
             var resolvedDelimiter = detectedDelimiter != '\0'
@@ -60,7 +61,7 @@ public class ImportService : IImportService
             csv.Context.RegisterClassMap(new EnergyImportMap(cleanedMapping, new List<string> { detectedDateFormat }));
 
             var results = new List<EnergyImportDTO>();
-            while (csv.Read())
+            while (await csv.ReadAsync())
             {
                 try
                 {
@@ -100,7 +101,7 @@ public class ImportService : IImportService
         manualCsv.Context.RegisterClassMap(new EnergyImportMap(cleanedManualMapping, new List<string> { detectedManualDateFormat }));
 
         var manualResults = new List<EnergyImportDTO>();
-        while (manualCsv.Read())
+        while (await manualCsv.ReadAsync())
         {
             try
             {
@@ -114,24 +115,26 @@ public class ImportService : IImportService
         return manualResults;
     }
 
-    private char DetectDelimiter(string headerLine)
+    private static char DetectDelimiter(string headerLine)
     {
         var delimiters = new[] { ',', ';', '\t' };
         var best = delimiters.MaxBy(d => headerLine.Count(c => c == d));
         return headerLine.Count(c => c == best) > 0 ? best : '\0';
     }
 
-    private string DetectDateFormat(string headerLine, string firstDataLine, Dictionary<string, string> mapping, char delimiter)
+    private static string DetectDateFormat(string headerLine, string firstDataLine, Dictionary<string, string> mapping, char delimiter)
     {
+        var standardTimeSettings = "yyyy-MM-dd HH:mm";
+
         if (!mapping.TryGetValue(nameof(EnergyImportDTO.Time), out var timeCol))
-            return "yyyy-MM-dd HH:mm";
+            return standardTimeSettings;
 
         var headers = headerLine.Split(delimiter);
         var values = firstDataLine.Split(delimiter);
 
         var index = Array.IndexOf(headers, timeCol);
         if (index < 0 || index >= values.Length)
-            return "yyyy-MM-dd HH:mm";
+            return standardTimeSettings;
 
         var sampleValue = values[index].Trim().Trim('"');
 
@@ -166,6 +169,6 @@ public class ImportService : IImportService
                 return format;
         }
 
-        return "yyyy-MM-dd HH:mm";
+        return standardTimeSettings;
     }
 }
